@@ -1,0 +1,24 @@
+{
+  "branch": "dev/angie",
+  "tests": {
+    "tests": 58,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "pytest_duration_seconds": 51.322,
+  "validation_cli_exit_code": 0,
+  "pip_check": "passed",
+  "compileall": "passed",
+  "primary_evaluation_episodes": 120,
+  "level2_baseline_episodes": 80,
+  "evaluation_errors": [],
+  "csv_json_consistency": "passed",
+  "paired_seeds": "10000-10019",
+  "battery_accounting": "passed",
+  "model_sha256": "ec31412af8828b90d4404db92bd2760cb1af13184782b5186a38b48b8ce95531",
+  "layout_sha256": "5aefdbc89459bd5f72833e2cb37e64c17670e5db89e6b881d1756baeb18102a6",
+  "effective_training_timesteps": 20000,
+  "all_branch_refs_before_and_after": "0b8793d9e2eb486e85606c410d4a1fec533b0ce5",
+  "wheel_contains_canonical_config": true
+}

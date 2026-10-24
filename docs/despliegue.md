@@ -1,5 +1,11 @@
 # Despliegue del experimento 001
 
+Demo pública: https://warehouse-rush-experiment-001.vercel.app
+
+Proyecto: `warehouse-rush-experiment-001`, cuenta de Angie, entorno Production.
+Rama versionada: `dev/angie`. La publicación inicial se realiza con Vercel CLI;
+el despliegue automático de Git no está configurado.
+
 Se conserva la simulación Python y el visor Three.js. La versión pública usa una
 función Python y un frontend estático en Vercel, sin entrenamiento remoto ni
 base de datos. El comando local `view` sigue usando su servidor de desarrollo.

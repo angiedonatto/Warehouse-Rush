@@ -1,5 +1,7 @@
 # Warehouse Rush v0.2 — visor 3D y ambiente v0.1
 
+Demo del experimento 001: **https://warehouse-rush-experiment-001.vercel.app**
+
 Un robot recoge y entrega paquetes en una bodega 2D mediante un entorno
 Gymnasium. Incluye políticas Random y BFS, entrenamiento PPO con Stable-Baselines3,
 CLI, pruebas y evaluación reproducible. Cinemática discreta de 1 m y 1 s por paso.

@@ -56,6 +56,7 @@ test('all four cameras, route, sensors and block switch work', async ({ page, re
 });
 
 test('manual actions and completed deliveries stay synchronized', async ({ page, request }) => {
+  test.setTimeout(180000); // 91 transiciones HTTP reales y renderizado de ambas cargas.
   await open(page);
   await page.locator('#policy').selectOption('manual');
   await expect(page.locator('#manual-controls')).toBeVisible();

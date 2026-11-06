@@ -70,7 +70,7 @@ class SignedSessions:
 
     def load(self, token):
         if not token:
-            return ViewerSession(policy_factory=cloud_policy)
+            return ViewerSession(policy_factory=cloud_policy, settings={"makeup": True, "orders": 1})
         if len(token) > 3800 or "." not in token:
             raise ValueError("Sesión inválida; reinicia la misión")
         encoded, signature = token.rsplit(".", 1)

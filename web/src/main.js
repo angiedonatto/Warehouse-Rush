@@ -11,7 +11,7 @@ const inventoryPanel = document.createElement('section');inventoryPanel.classNam
 const rackSelect = document.createElement('select');rackSelect.setAttribute('aria-label', 'Seleccionar estantería');
 for (let i = 1; i <= 6; i++) { const id = `E${String(i).padStart(2, '0')}`;rackSelect.add(new Option(id, id)); }
 const rackDetail = document.createElement('div');rackDetail.id = 'rack-detail';inventoryPanel.append(rackSelect, rackDetail);sheet.after(inventoryPanel);
-rackSelect.addEventListener('change', () => { selectedRack = rackSelect.value;renderRack(rackDetail, current.state, selectedRack); });
+rackSelect.addEventListener('change', () => { selectedRack = rackSelect.value;if (scene) { scene.selectedRack = selectedRack;scene.dirty = true; }renderRack(rackDetail, current.state, selectedRack); });
 const makeupLabel = document.createElement('label');makeupLabel.className = 'makeup-control';
 makeupLabel.innerHTML = '<input id="makeup" type="checkbox"> Pedidos de maquillaje';
 const seedInput = document.createElement('input');seedInput.id = 'order-seed';seedInput.type = 'number';seedInput.min = '0';seedInput.max = '4294967295';seedInput.value = '10000';seedInput.setAttribute('aria-label', 'Semilla del pedido');
@@ -83,15 +83,17 @@ function renderState(payload, instant = false) {
   const banner = $('#mission-banner');banner.hidden = !payload.done;
   if (payload.done) {
     banner.classList.toggle('warning', !payload.info.success);
-    banner.textContent = payload.info.success ? `✓ Misión completada · ${s.entregas} entregas · ${s.tiempo} pasos` : `Episodio finalizado · ${{ time_limit: 'Límite de tiempo', battery_depleted: 'Batería agotada', unreachable_target: 'Objetivo inaccesible' }[payload.info.end_reason] || payload.info.end_reason}`;
+    banner.textContent = payload.info.success ? `✓ Misión completada · ${s.entregas} ${payload.makeup ? 'líneas entregadas' : 'entregas'} · ${s.tiempo} pasos` : `Episodio finalizado · ${{ time_limit: 'Límite de tiempo', battery_depleted: 'Batería agotada', unreachable_target: 'Objetivo inaccesible' }[payload.info.end_reason] || payload.info.end_reason}`;
     pause();
   }
+  document.querySelectorAll('.legend li').forEach(el => { if (['P1', 'P2'].includes(el.querySelector('kbd')?.textContent)) el.hidden = Boolean(payload.makeup); });
   renderOrderSheet(sheet, s);
   inventoryPanel.hidden = !s.inventory;
   if (s.inventory) renderRack(rackDetail, s, selectedRack);
   if (s.order) {
     const line = s.order.lines[s.pedido_actual];
-    $('#target').textContent = s.objetivo === 'DELIVERY' ? 'Despacho' : line ? `${line.level} · ${line.subcategory} × ${line.quantity}` : 'Entrega confirmada';
+    $('#cargo').textContent = s.cargo_lines?.length ? s.cargo_lines.map(l => `${l.subcategory} × ${l.quantity}`).join(' · ') : 'Sin productos';
+    $('#target').textContent = !s.objetivo ? 'Entrega confirmada' : s.objetivo === 'DELIVERY' ? 'Despacho' : line ? `${line.level} · ${line.subcategory} × ${line.quantity}` : 'Entrega confirmada';
     $('#mission-title').textContent = `ORDEN ${s.order.id.slice(0, 8)} · ${s.order.state}`;
     $('#mission-sequence').textContent = s.order.lines.map(l => `${l.level} ${l.delivered ? '✓' : l.picked ? '→ Despacho' : '○'}`).join(' · ');
   }
@@ -173,8 +175,8 @@ async function start() {
   try {
     [layoutInfo, current] = await Promise.all([api('layout'), api('state')]);
     $('#policy').value = current.policy;$('#orders').value = Math.min(2, current.orders);$('#blocked').checked = current.state.pasillo_bloqueado;$('#makeup').checked = current.makeup;seedInput.value = current.seed;
-    scene = new WarehouseScene(layoutInfo.layout, $('#world'), $('#stage'));
-    scene.onRackSelect = id => { selectedRack = id;rackSelect.value = id;renderRack(rackDetail, current.state, id); };
+    scene = new WarehouseScene(layoutInfo.layout, $('#world'), $('#stage'), layoutInfo.catalog);
+    scene.onRackSelect = id => { scene.selectedRack = id;scene.dirty = true;selectedRack = id;rackSelect.value = id;renderRack(rackDetail, current.state, id); };
     $('.minimap-caption > span:last-child').textContent = `${layoutInfo.layout.width} × ${layoutInfo.layout.height} m`;
     renderState(current, true);
     $('#scene-loading').hidden = true;

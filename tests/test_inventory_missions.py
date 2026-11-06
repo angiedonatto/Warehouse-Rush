@@ -72,7 +72,7 @@ def test_navigable_orders_capacity_and_observation_contract(seed, blocked):
     policy = HeuristicPolicy()
     while True:
         assert env.observation_space.contains(obs) and obs.shape == (22,)
-        assert env.state.carga is None or next(l for l in env.lines if l['sku'] == env.state.carga)['quantity'] <= env.capacity
+        assert sum(l['quantity'] for l in env.snapshot()['cargo_lines']) <= env.capacity
         obs, _, done, truncated, info = env.step(policy.action(obs, env))
         assert env.position not in env._obstacles[blocked]
         env.inventory.check()
@@ -141,3 +141,39 @@ def test_makeup_ansi_and_reset_after_invalid_cookie():
     assert 'E' in env.render()
     payload, token = CloudAPI('test-session-key-with-32-characters').handle('POST', 'reset', {'makeup': True}, 'invalid.cookie')
     assert payload['state']['tiempo'] == 0 and token
+
+
+def test_collects_shelf_products_before_dispatch_when_capacity_allows():
+    env = MakeupMissionEnv(blocked=True)
+    obs, info = env.reset(seed=42)
+    assert sum(l['quantity'] for l in env.lines) == 3
+    policy = HeuristicPolicy()
+    seen_targets = set()
+    while not env._done:
+        if env.state.etapa == 'recoger':
+            seen_targets.add(env.state.objetivo)
+        obs, _, _, _, info = env.step(policy.action(obs, env))
+        if env.carried_lines and env.state.etapa == 'recoger':
+            assert env.state.entregas == 0
+        for line in info['state']['order']['lines']:
+            assert env.inventory.total[line['sku']] == 5 - line['picked']
+    events = info['state']['order']['events']
+    pickups = [e['time'] for e in events if e['kind'].startswith('PICK:')]
+    deliveries = [e['time'] for e in events if e['kind'].startswith('DELIVER:')]
+    assert info['success'] and info['collisions'] == 0
+    assert seen_targets == {l['rack'] for l in env.lines}
+    assert max(pickups) < min(deliveries)
+    assert len(set(deliveries)) == 1  # Un único despacho de las tres líneas.
+    assert info['state']['cargo_lines'] == []
+
+
+def test_batches_split_without_exceeding_capacity():
+    env = MakeupMissionEnv(blocked=True)
+    seed = next(s for s in range(100) if sum(l['quantity'] for l in Inventory().generate(s)['lines']) > 3)
+    obs, _ = env.reset(seed=seed)
+    policy = HeuristicPolicy()
+    while not env._done:
+        obs, _, _, _, info = env.step(policy.action(obs, env))
+        assert sum(l['quantity'] for l in info['state']['cargo_lines']) <= 3
+    assert info['success']
+    assert len({e['time'] for e in info['state']['order']['events'] if e['kind'].startswith('DELIVER:')}) > 1

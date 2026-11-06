@@ -36,27 +36,47 @@ class MakeupMissionEnv(WarehouseRushEnv):
         self.state.objetivo = self.lines[0]['rack']
         return self._observation(), self._info()
 
+    @property
+    def carried_lines(self):
+        return [line for line in self.inventory.orders[self.order_id]['lines']
+                if line['picked'] > line['delivered']]
+
+    def _assign_next_target(self):
+        state = self.state
+        carried = sum(l['picked'] - l['delivered'] for l in self.carried_lines)
+        state.carga = self.carried_lines[0]['sku'] if carried else None
+        remaining = [(i, l) for i, l in enumerate(self.inventory.orders[self.order_id]['lines'])
+                     if not l['picked'] and l['quantity'] <= self.capacity - carried]
+        if remaining:
+            state.pedido_actual, line = remaining[0]
+            state.etapa, state.objetivo = 'recoger', line['rack']
+            self.inventory.orders[self.order_id]['state'] = 'PICKING'
+        elif carried:
+            state.etapa, state.objetivo = 'entregar', 'DELIVERY'
+            self.inventory.orders[self.order_id]['state'] = 'IN_TRANSIT'
+        else:
+            state.etapa, state.objetivo = 'completada', None
+
     def _interact(self):
         s = self.state
         if s.v != 0 or not self.facing_target():
             s.interacciones_invalidas += 1
             return False, False, True
-        line = self.lines[s.pedido_actual]
-        sku = line['sku']
-        if s.etapa == 'recoger' and s.carga is None:
-            if self.inventory.pick(self.order_id, sku, line['quantity'], s.tiempo):
-                self.picked_packages.add(sku)
-                s.carga, s.etapa, s.objetivo = sku, 'entregar', 'DELIVERY'
+        if s.etapa == 'recoger':
+            line = self.lines[s.pedido_actual]
+            used = sum(l['picked'] - l['delivered'] for l in self.carried_lines)
+            if used + line['quantity'] <= self.capacity and self.inventory.pick(
+                    self.order_id, line['sku'], line['quantity'], s.tiempo):
+                self.picked_packages.add(line['sku'])
+                self._assign_next_target()
                 return True, False, False
-        elif s.etapa == 'entregar' and s.carga == sku:
-            if self.inventory.deliver(self.order_id, sku, s.tiempo):
-                self.completed_packages.add(sku)
-                s.carga = None
-                s.entregas += 1
-                s.pedido_actual += 1
-                s.etapa = 'completada' if s.entregas == self.orders else 'recoger'
-                s.objetivo = None if s.entregas == self.orders else self.lines[s.pedido_actual]['rack']
-                return False, True, False
+        elif s.etapa == 'entregar' and self.carried_lines:
+            for line in self.carried_lines:
+                if self.inventory.deliver(self.order_id, line['sku'], s.tiempo):
+                    self.completed_packages.add(line['sku'])
+                    s.entregas += 1
+            self._assign_next_target()
+            return False, True, False
         s.interacciones_invalidas += 1
         return False, False, True
 
@@ -69,4 +89,6 @@ class MakeupMissionEnv(WarehouseRushEnv):
 
     def snapshot(self):
         return dict(**super().snapshot(), inventory=self.inventory.snapshot(),
-                    order=deepcopy(self.inventory.orders[self.order_id]), capacity=self.capacity)
+                    order=deepcopy(self.inventory.orders[self.order_id]), capacity=self.capacity,
+                    cargo_lines=[dict(sku=l['sku'], quantity=l['picked'] - l['delivered'],
+                                      level=l['level'], subcategory=l['subcategory']) for l in self.carried_lines])

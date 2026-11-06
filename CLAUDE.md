@@ -15,7 +15,7 @@ evaluarlos con su ambiente compatible. Más contexto: skill `warehouse-rush`.
 - web/        Vite + TypeScript + Three.js
 - manifests/  un JSON por modelo recuperable (schema.json)
 - docs/       ambiente-v0.1.md, decisiones.md, experimentos.md, resultados/
-- warehouse_rush/  prototipo Q-learning heredado (migrar a la estructura de arriba)
+- models/     pesos locales (DVC); models/experiment-001 es el snapshot versionado en Git
 
 ## Reglas de trabajo
 - La simulación en Python es la autoridad. Three.js solo representa el estado.
@@ -31,3 +31,6 @@ evaluarlos con su ambiente compatible. Más contexto: skill `warehouse-rush`.
 
 ## Comandos
 - Pruebas: python -m pytest tests -q
+- Entrenar: python -m pipelines.train --config configs/experiments/<archivo>.yaml
+- Visor 3D local: python -m pipelines.cli view
+- Modelo actual y reentrenamiento: docs/modelo-actual.md

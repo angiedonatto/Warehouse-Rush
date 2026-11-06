@@ -4,8 +4,8 @@ mlflow.db
 mlruns/
 .venv/
 __pycache__/
-qtable.npy
-/models
+/models/*
+!/models/experiment-001/
 
 # --- Warehouse Rush (Enunciado sec. 09 / guía de arranque) ---
 node_modules/
@@ -20,3 +20,18 @@ tmp/
 # test final reservado: fuera del repo público
 configs/suites/test-final*
 .pytest_cache/
+
+.venv-*/
+.env.*
+!.env.example
+*.egg-info/
+build/
+.DS_Store
+web/dist/
+web/test-results/
+web/playwright-report/
+.superdesign/tmp/
+.superdesign/project.json
+.vercel/
+.vercel
+.env*

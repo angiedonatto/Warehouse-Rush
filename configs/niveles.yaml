@@ -1,0 +1,15 @@
+# Perfiles por nivel (Enunciado sec. 06). Cada nivel conserva su ambiente accesible.
+# NOTA: la guía R2 propone 3 pedidos en N2; el ambiente v0.1 soporta 1 o 2 pedidos.
+# Hasta que R1 amplíe el ambiente, N2 = 2 pedidos (anotado en docs/decisiones.md).
+n1:
+  descripcion: Misión base, 1 pedido, pasillo abierto
+  orders: 1
+  blocked: false
+n2:
+  descripcion: Más decisiones, 2 pedidos, pasillo abierto
+  orders: 2
+  blocked: false
+n3:
+  descripcion: Operación exigente, 2 pedidos, pasillo cerrado (incidente)
+  orders: 2
+  blocked: true

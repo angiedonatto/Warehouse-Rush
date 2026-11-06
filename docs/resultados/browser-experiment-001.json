@@ -1,0 +1,613 @@
+{
+  "initial_run": {
+    "config": {
+      "argv": [
+        "/Users/AngieDonato/.nvm/versions/node/v24.17.0/bin/node",
+        "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/node_modules/.bin/playwright",
+        "test",
+        "--reporter=list,json"
+      ],
+      "configFile": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/playwright.config.js",
+      "rootDir": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/tests",
+      "failOnFlakyTests": false,
+      "forbidOnly": false,
+      "fullyParallel": false,
+      "globalSetup": null,
+      "globalTeardown": null,
+      "globalTimeout": 0,
+      "grep": {},
+      "grepInvert": null,
+      "maxFailures": 0,
+      "metadata": {
+        "actualWorkers": 1
+      },
+      "preserveOutput": "always",
+      "projects": [
+        {
+          "outputDir": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/test-results",
+          "repeatEach": 1,
+          "retries": 0,
+          "metadata": {
+            "actualWorkers": 1
+          },
+          "id": "",
+          "name": "",
+          "testDir": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/tests",
+          "testIgnore": [],
+          "testMatch": [
+            "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+          ],
+          "timeout": 90000
+        }
+      ],
+      "filteredProjects": [
+        {
+          "grep": {},
+          "grepInvert": null,
+          "outputDir": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/test-results",
+          "repeatEach": 1,
+          "retries": 0,
+          "metadata": {
+            "actualWorkers": 1
+          },
+          "name": "",
+          "testDir": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/tests",
+          "snapshotDir": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/tests",
+          "testIgnore": [],
+          "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+          "timeout": 90000,
+          "use": {
+            "baseURL": "http://127.0.0.1:8090",
+            "viewport": {
+              "width": 1440,
+              "height": 1040
+            },
+            "screenshot": "only-on-failure",
+            "launchOptions": {
+              "executablePath": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+              "args": [
+                "--enable-webgl",
+                "--enable-unsafe-swiftshader",
+                "--use-angle=swiftshader"
+              ]
+            }
+          },
+          "dependencies": [],
+          "ignoreSnapshots": false,
+          "__projectId": ""
+        }
+      ],
+      "quiet": false,
+      "reporter": [
+        [
+          "list"
+        ],
+        [
+          "json"
+        ]
+      ],
+      "reportSlowTests": {
+        "max": 5,
+        "threshold": 300000
+      },
+      "shard": null,
+      "tags": [],
+      "updateSnapshots": "default",
+      "updateSourceMethod": "patch",
+      "version": "1.64.1",
+      "workers": 1,
+      "webServer": null
+    },
+    "suites": [
+      {
+        "title": "viewer.spec.js",
+        "file": "viewer.spec.js",
+        "column": 0,
+        "line": 0,
+        "specs": [
+          {
+            "title": "real WebGL scene, six racks, same layout and no horizontal overflow",
+            "ok": true,
+            "tags": [],
+            "tests": [
+              {
+                "timeout": 90000,
+                "annotations": [],
+                "expectedStatus": "passed",
+                "projectId": "",
+                "projectName": "",
+                "results": [
+                  {
+                    "workerIndex": 0,
+                    "parallelIndex": 0,
+                    "status": "passed",
+                    "duration": 33873,
+                    "errors": [],
+                    "stdout": [],
+                    "stderr": [],
+                    "retry": 0,
+                    "startTime": "2026-10-24T02:47:56.146Z",
+                    "annotations": [],
+                    "attachments": []
+                  }
+                ],
+                "status": "expected"
+              }
+            ],
+            "id": "695fe90a60bc17262776-c625bb2341c6e4225c29",
+            "file": "viewer.spec.js",
+            "line": 17,
+            "column": 1
+          },
+          {
+            "title": "step, play, pause and reset change the real Python episode",
+            "ok": true,
+            "tags": [],
+            "tests": [
+              {
+                "timeout": 90000,
+                "annotations": [],
+                "expectedStatus": "passed",
+                "projectId": "",
+                "projectName": "",
+                "results": [
+                  {
+                    "workerIndex": 0,
+                    "parallelIndex": 0,
+                    "status": "passed",
+                    "duration": 34206,
+                    "errors": [],
+                    "stdout": [],
+                    "stderr": [],
+                    "retry": 0,
+                    "startTime": "2026-10-24T02:48:31.832Z",
+                    "annotations": [],
+                    "attachments": []
+                  }
+                ],
+                "status": "expected"
+              }
+            ],
+            "id": "695fe90a60bc17262776-95f3a9676dc2b72230e8",
+            "file": "viewer.spec.js",
+            "line": 28,
+            "column": 1
+          },
+          {
+            "title": "all four cameras, route, sensors and block switch work",
+            "ok": true,
+            "tags": [],
+            "tests": [
+              {
+                "timeout": 90000,
+                "annotations": [],
+                "expectedStatus": "passed",
+                "projectId": "",
+                "projectName": "",
+                "results": [
+                  {
+                    "workerIndex": 0,
+                    "parallelIndex": 0,
+                    "status": "passed",
+                    "duration": 23550,
+                    "errors": [],
+                    "stdout": [],
+                    "stderr": [],
+                    "retry": 0,
+                    "startTime": "2026-10-24T02:49:06.080Z",
+                    "annotations": [],
+                    "attachments": []
+                  }
+                ],
+                "status": "expected"
+              }
+            ],
+            "id": "695fe90a60bc17262776-f593d75526f48bd87a7b",
+            "file": "viewer.spec.js",
+            "line": 43,
+            "column": 1
+          },
+          {
+            "title": "manual actions and completed deliveries stay synchronized",
+            "ok": true,
+            "tags": [],
+            "tests": [
+              {
+                "timeout": 90000,
+                "annotations": [],
+                "expectedStatus": "passed",
+                "projectId": "",
+                "projectName": "",
+                "results": [
+                  {
+                    "workerIndex": 0,
+                    "parallelIndex": 0,
+                    "status": "passed",
+                    "duration": 67709,
+                    "errors": [],
+                    "stdout": [],
+                    "stderr": [],
+                    "retry": 0,
+                    "startTime": "2026-10-24T02:49:29.668Z",
+                    "annotations": [],
+                    "attachments": []
+                  }
+                ],
+                "status": "expected"
+              }
+            ],
+            "id": "695fe90a60bc17262776-ca66edec857821cf1917",
+            "file": "viewer.spec.js",
+            "line": 58,
+            "column": 1
+          },
+          {
+            "title": "mobile layout remains usable without horizontal scrolling",
+            "ok": true,
+            "tags": [],
+            "tests": [
+              {
+                "timeout": 90000,
+                "annotations": [],
+                "expectedStatus": "passed",
+                "projectId": "",
+                "projectName": "",
+                "results": [
+                  {
+                    "workerIndex": 0,
+                    "parallelIndex": 0,
+                    "status": "passed",
+                    "duration": 11057,
+                    "errors": [],
+                    "stdout": [],
+                    "stderr": [],
+                    "retry": 0,
+                    "startTime": "2026-10-24T02:50:37.406Z",
+                    "annotations": [],
+                    "attachments": []
+                  }
+                ],
+                "status": "expected"
+              }
+            ],
+            "id": "695fe90a60bc17262776-bb3c00079836b4692440",
+            "file": "viewer.spec.js",
+            "line": 80,
+            "column": 1
+          },
+          {
+            "title": "PPO and random selections execute their actual Python policies",
+            "ok": false,
+            "tags": [],
+            "tests": [
+              {
+                "timeout": 90000,
+                "annotations": [],
+                "expectedStatus": "passed",
+                "projectId": "",
+                "projectName": "",
+                "results": [
+                  {
+                    "workerIndex": 0,
+                    "parallelIndex": 0,
+                    "status": "failed",
+                    "duration": 35996,
+                    "error": {
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('#footer-detail')\nExpected substring: \u001b[32m\"PPO real\"\u001b[39m\nReceived string:    \u001b[31m\"1 paso = 1 s \u00b7 Semilla 10000 \u00b7 Baseline heur\u00edstico BFS\"\u001b[39m\nTimeout: 15000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" locator('#footer-detail') with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for locator('#footer-detail')\u001b[22m\n\u001b[2m    32 \u00d7 locator resolved to <span id=\"footer-detail\">1 paso = 1 s \u00b7 Semilla 10000 \u00b7 Baseline heur\u00edstic\u2026</span>\u001b[22m\n\u001b[2m       - unexpected value \"1 paso = 1 s \u00b7 Semilla 10000 \u00b7 Baseline heur\u00edstico BFS\"\u001b[22m\n",
+                      "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('#footer-detail')\nExpected substring: \u001b[32m\"PPO real\"\u001b[39m\nReceived string:    \u001b[31m\"1 paso = 1 s \u00b7 Semilla 10000 \u00b7 Baseline heur\u00edstico BFS\"\u001b[39m\nTimeout: 15000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" locator('#footer-detail') with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for locator('#footer-detail')\u001b[22m\n\u001b[2m    32 \u00d7 locator resolved to <span id=\"footer-detail\">1 paso = 1 s \u00b7 Semilla 10000 \u00b7 Baseline heur\u00edstic\u2026</span>\u001b[22m\n\u001b[2m       - unexpected value \"1 paso = 1 s \u00b7 Semilla 10000 \u00b7 Baseline heur\u00edstico BFS\"\u001b[22m\n\n    at /Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/tests/viewer.spec.js:99:48",
+                      "location": {
+                        "file": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/tests/viewer.spec.js",
+                        "column": 48,
+                        "line": 99
+                      },
+                      "snippet": "   97 |   await expect(page.locator('#policy option[value=\"ppo\"]')).toBeEnabled();\n   98 |   await page.locator('#policy').selectOption('ppo');\n>  99 |   await expect(page.locator('#footer-detail')).toContainText('PPO real');\n      |                                                ^\n  100 |   await page.locator('#step').click();\n  101 |   await expect(page.locator('#steps')).toHaveText('1');\n  102 |   let payload = await (await page.request.get('/api/state')).json();"
+                    },
+                    "errors": [
+                      {
+                        "location": {
+                          "file": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/tests/viewer.spec.js",
+                          "column": 48,
+                          "line": 99
+                        },
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('#footer-detail')\nExpected substring: \u001b[32m\"PPO real\"\u001b[39m\nReceived string:    \u001b[31m\"1 paso = 1 s \u00b7 Semilla 10000 \u00b7 Baseline heur\u00edstico BFS\"\u001b[39m\nTimeout: 15000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" locator('#footer-detail') with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for locator('#footer-detail')\u001b[22m\n\u001b[2m    32 \u00d7 locator resolved to <span id=\"footer-detail\">1 paso = 1 s \u00b7 Semilla 10000 \u00b7 Baseline heur\u00edstic\u2026</span>\u001b[22m\n\u001b[2m       - unexpected value \"1 paso = 1 s \u00b7 Semilla 10000 \u00b7 Baseline heur\u00edstico BFS\"\u001b[22m\n\n\n   97 |   await expect(page.locator('#policy option[value=\"ppo\"]')).toBeEnabled();\n   98 |   await page.locator('#policy').selectOption('ppo');\n>  99 |   await expect(page.locator('#footer-detail')).toContainText('PPO real');\n      |                                                ^\n  100 |   await page.locator('#step').click();\n  101 |   await expect(page.locator('#steps')).toHaveText('1');\n  102 |   let payload = await (await page.request.get('/api/state')).json();\n    at /Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/tests/viewer.spec.js:99:48"
+                      }
+                    ],
+                    "stdout": [],
+                    "stderr": [],
+                    "retry": 0,
+                    "startTime": "2026-10-24T02:50:48.479Z",
+                    "annotations": [],
+                    "attachments": [
+                      {
+                        "name": "screenshot",
+                        "contentType": "image/png",
+                        "path": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/test-results/viewer-PPO-and-random-sele-9dc47-heir-actual-Python-policies/test-failed-1.png"
+                      },
+                      {
+                        "name": "error-context",
+                        "contentType": "text/markdown",
+                        "path": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/test-results/viewer-PPO-and-random-sele-9dc47-heir-actual-Python-policies/error-context.md"
+                      }
+                    ],
+                    "errorLocation": {
+                      "file": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/tests/viewer.spec.js",
+                      "column": 48,
+                      "line": 99
+                    }
+                  }
+                ],
+                "status": "unexpected"
+              }
+            ],
+            "id": "695fe90a60bc17262776-c2aa413b33696ee6efff",
+            "file": "viewer.spec.js",
+            "line": 92,
+            "column": 1
+          },
+          {
+            "title": "published API isolates visitors and restores a session after reload",
+            "ok": false,
+            "tags": [],
+            "tests": [
+              {
+                "timeout": 90000,
+                "annotations": [],
+                "expectedStatus": "passed",
+                "projectId": "",
+                "projectName": "",
+                "results": [
+                  {
+                    "workerIndex": 1,
+                    "parallelIndex": 0,
+                    "status": "failed",
+                    "duration": 40448,
+                    "error": {
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeHidden\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('#scene-loading')\nExpected: hidden\nReceived: visible\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeHidden\" locator('#scene-loading') with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for locator('#scene-loading')\u001b[22m\n\u001b[2m    5 \u00d7 locator resolved to <div id=\"scene-loading\" class=\"scene-loading\">\u2026</div>\u001b[22m\n\u001b[2m      - unexpected value \"visible\"\u001b[22m\n",
+                      "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeHidden\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('#scene-loading')\nExpected: hidden\nReceived: visible\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeHidden\" locator('#scene-loading') with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for locator('#scene-loading')\u001b[22m\n\u001b[2m    5 \u00d7 locator resolved to <div id=\"scene-loading\" class=\"scene-loading\">\u2026</div>\u001b[22m\n\u001b[2m      - unexpected value \"visible\"\u001b[22m\n\n    at /Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/tests/viewer.spec.js:125:50",
+                      "location": {
+                        "file": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/tests/viewer.spec.js",
+                        "column": 50,
+                        "line": 125
+                      },
+                      "snippet": "  123 |     expect(fresh.state.tiempo).toBe(0);\n  124 |     await page.reload();\n> 125 |     await expect(page.locator('#scene-loading')).toBeHidden();\n      |                                                  ^\n  126 |     await expect(page.locator('#steps')).toHaveText('1');\n  127 |   } finally { await other.close(); }\n  128 | });"
+                    },
+                    "errors": [
+                      {
+                        "location": {
+                          "file": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/tests/viewer.spec.js",
+                          "column": 50,
+                          "line": 125
+                        },
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeHidden\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('#scene-loading')\nExpected: hidden\nReceived: visible\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeHidden\" locator('#scene-loading') with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for locator('#scene-loading')\u001b[22m\n\u001b[2m    5 \u00d7 locator resolved to <div id=\"scene-loading\" class=\"scene-loading\">\u2026</div>\u001b[22m\n\u001b[2m      - unexpected value \"visible\"\u001b[22m\n\n\n  123 |     expect(fresh.state.tiempo).toBe(0);\n  124 |     await page.reload();\n> 125 |     await expect(page.locator('#scene-loading')).toBeHidden();\n      |                                                  ^\n  126 |     await expect(page.locator('#steps')).toHaveText('1');\n  127 |   } finally { await other.close(); }\n  128 | });\n    at /Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/tests/viewer.spec.js:125:50"
+                      }
+                    ],
+                    "stdout": [],
+                    "stderr": [],
+                    "retry": 0,
+                    "startTime": "2026-10-24T02:51:27.867Z",
+                    "annotations": [],
+                    "attachments": [
+                      {
+                        "name": "error-context",
+                        "contentType": "text/markdown",
+                        "path": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/test-results/viewer-published-API-isola-a9030-ores-a-session-after-reload/error-context.md"
+                      }
+                    ],
+                    "errorLocation": {
+                      "file": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/tests/viewer.spec.js",
+                      "column": 50,
+                      "line": 125
+                    }
+                  }
+                ],
+                "status": "unexpected"
+              }
+            ],
+            "id": "695fe90a60bc17262776-28bc4ed777cd3a855553",
+            "file": "viewer.spec.js",
+            "line": 114,
+            "column": 1
+          }
+        ]
+      }
+    ],
+    "errors": [],
+    "stats": {
+      "startTime": "2026-10-24T02:47:54.523Z",
+      "duration": 257086.047,
+      "expected": 5,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    }
+  },
+  "cold_start_wait_recheck": {
+    "config": {
+      "argv": [
+        "/Users/AngieDonato/.nvm/versions/node/v24.17.0/bin/node",
+        "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/node_modules/.bin/playwright",
+        "test",
+        "--grep",
+        "PPO and random|published API",
+        "--reporter=list,json"
+      ],
+      "configFile": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/playwright.config.js",
+      "rootDir": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/tests",
+      "failOnFlakyTests": false,
+      "forbidOnly": false,
+      "fullyParallel": false,
+      "globalSetup": null,
+      "globalTeardown": null,
+      "globalTimeout": 0,
+      "grep": {},
+      "grepInvert": null,
+      "maxFailures": 0,
+      "metadata": {
+        "actualWorkers": 1
+      },
+      "preserveOutput": "always",
+      "projects": [
+        {
+          "outputDir": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/test-results",
+          "repeatEach": 1,
+          "retries": 0,
+          "metadata": {
+            "actualWorkers": 1
+          },
+          "id": "",
+          "name": "",
+          "testDir": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/tests",
+          "testIgnore": [],
+          "testMatch": [
+            "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+          ],
+          "timeout": 90000
+        }
+      ],
+      "filteredProjects": [
+        {
+          "grep": {},
+          "grepInvert": null,
+          "outputDir": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/test-results",
+          "repeatEach": 1,
+          "retries": 0,
+          "metadata": {
+            "actualWorkers": 1
+          },
+          "name": "",
+          "testDir": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/tests",
+          "snapshotDir": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/tests",
+          "testIgnore": [],
+          "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+          "timeout": 90000,
+          "use": {
+            "baseURL": "http://127.0.0.1:8090",
+            "viewport": {
+              "width": 1440,
+              "height": 1040
+            },
+            "screenshot": "only-on-failure",
+            "launchOptions": {
+              "executablePath": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+              "args": [
+                "--enable-webgl",
+                "--enable-unsafe-swiftshader",
+                "--use-angle=swiftshader"
+              ]
+            }
+          },
+          "dependencies": [],
+          "ignoreSnapshots": false,
+          "__projectId": ""
+        }
+      ],
+      "quiet": false,
+      "reporter": [
+        [
+          "list"
+        ],
+        [
+          "json"
+        ]
+      ],
+      "reportSlowTests": {
+        "max": 5,
+        "threshold": 300000
+      },
+      "shard": null,
+      "tags": [],
+      "updateSnapshots": "default",
+      "updateSourceMethod": "patch",
+      "version": "1.64.1",
+      "workers": 1,
+      "webServer": null
+    },
+    "suites": [
+      {
+        "title": "viewer.spec.js",
+        "file": "viewer.spec.js",
+        "column": 0,
+        "line": 0,
+        "specs": [
+          {
+            "title": "PPO and random selections execute their actual Python policies",
+            "ok": true,
+            "tags": [],
+            "tests": [
+              {
+                "timeout": 90000,
+                "annotations": [],
+                "expectedStatus": "passed",
+                "projectId": "",
+                "projectName": "",
+                "results": [
+                  {
+                    "workerIndex": 0,
+                    "parallelIndex": 0,
+                    "status": "passed",
+                    "duration": 26359,
+                    "errors": [],
+                    "stdout": [],
+                    "stderr": [],
+                    "retry": 0,
+                    "startTime": "2026-10-24T02:52:50.792Z",
+                    "annotations": [],
+                    "attachments": []
+                  }
+                ],
+                "status": "expected"
+              }
+            ],
+            "id": "695fe90a60bc17262776-c2aa413b33696ee6efff",
+            "file": "viewer.spec.js",
+            "line": 92,
+            "column": 1
+          },
+          {
+            "title": "published API isolates visitors and restores a session after reload",
+            "ok": true,
+            "tags": [],
+            "tests": [
+              {
+                "timeout": 90000,
+                "annotations": [],
+                "expectedStatus": "passed",
+                "projectId": "",
+                "projectName": "",
+                "results": [
+                  {
+                    "workerIndex": 0,
+                    "parallelIndex": 0,
+                    "status": "passed",
+                    "duration": 31815,
+                    "errors": [],
+                    "stdout": [],
+                    "stderr": [],
+                    "retry": 0,
+                    "startTime": "2026-10-24T02:53:18.871Z",
+                    "annotations": [],
+                    "attachments": []
+                  }
+                ],
+                "status": "expected"
+              }
+            ],
+            "id": "695fe90a60bc17262776-28bc4ed777cd3a855553",
+            "file": "viewer.spec.js",
+            "line": 114,
+            "column": 1
+          }
+        ]
+      }
+    ],
+    "errors": [],
+    "stats": {
+      "startTime": "2026-10-24T02:52:46.437Z",
+      "duration": 65901.14600000001,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    }
+  }
+}

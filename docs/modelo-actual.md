@@ -1,0 +1,46 @@
+# Modelo actual, reentrenamiento e hiperparámetros
+
+## Qué es el modelo (experimento 001, `models/experiment-001/ppo-orders1-seed42.zip`)
+- **Algoritmo:** PPO de Stable-Baselines3 2.4.1, `MlpPolicy`, CPU, PyTorch 2.2.2. Actor y crítico separados, ambos `[64, 64]`.
+- **Observación:** `Box(22,)` float32 en [0,1] (dos componentes relativas en [-1,1]): 8 rayos, objetivo relativo (dx, dy), orientación one-hot, velocidad, batería, carga, etapa, tiempo restante. Ver `docs/ambiente-v0.1.md` §4.
+- **Acción:** `Discrete(5)`: AVANZAR, GIRAR_IZQUIERDA, GIRAR_DERECHA, FRENAR, INTERACTUAR.
+- **Entrenado en:** N1 (1 pedido, pasillo abierto), semilla 42, 20 000 pasos, 118 s.
+- **Resultado:** 0% de éxito; el modelo aprendió a frenar siempre en BASE (retorno -25.5). El heurístico BFS logra 100% y el aleatorio 0%. Es el baseline de partida, no un modelo útil.
+- **Entorno:** `ENV_VERSION = "warehouse-v1"` (ficha v0.1.0), mapa `configs/layout_v0.1.json`, `max_steps=250`, batería 100.
+
+## Recompensa (`envs/rewards.py`, `RewardConfig`)
+recogida +10, entrega +30, misión completa +50, progreso +0.3 por celda de acercamiento al objetivo, tiempo -0.1/paso, batería -0.02 por unidad, choque -5, interacción inválida -2. Los hitos se pagan una vez; las validaciones impiden ciclos rentables.
+
+## Hiperparámetros
+| Parámetro | Experimento 001 | Plan (C0, `configs/experiments/`) | Para qué sirve |
+|---|---|---|---|
+| learning_rate | 3e-4 | 3e-4 | tamaño del paso del optimizador |
+| n_steps × n_envs | 500 × 1 | 2048 × 4 | experiencia recogida antes de cada actualización |
+| batch_size | 100 | 64 | tamaño del minibatch (debe dividir n_steps × n_envs) |
+| n_epochs | 10 | 10 | pasadas por lote |
+| gamma | 0.99 | 0.99 (C2: 0.995) | horizonte: cuánto valen recompensas lejanas |
+| gae_lambda | 0.95 | 0.95 | sesgo/varianza de la ventaja |
+| clip_range | 0.2 | 0.2 | cuánto puede cambiar la política por actualización |
+| ent_coef | 0.01 | 0.0 (C1: 0.01) | exploración |
+| vf_coef / max_grad_norm | 0.5 / 0.5 | 0.5 / 0.5 | peso del crítico / recorte de gradiente |
+| net_arch | [64, 64] | [64, 64] | tamaño de la red |
+| presupuesto | 20 000 | 200 000 (N1), 1 000 000 (N2), +300 000 (N3) | pasos de ambiente |
+
+Dado que 20 000 pasos no bastaron, lo primero a probar es el presupuesto del plan (200 000 en N1), `ent_coef` 0.01 (C1) y, si no despega, la recompensa de progreso. El PPO se queda quieto porque con 250 pasos el castigo por tiempo domina: documentar cualquier cambio de recompensa como nueva versión del ambiente (`warehouse-v2`).
+
+## Cómo lanzar un reentrenamiento
+```bash
+source .venv/bin/activate
+python -m pipelines.train --config configs/experiments/c0_baseline_n1.yaml      # entrena y registra en MLflow
+python -m pipelines.train --config configs/experiments/c1_entropia_n1.yaml
+dvc repro train_c0                                                             # lo mismo, con DVC
+python -m pipelines.train --config <yaml> --timesteps 8192                     # solo prueba de humo
+```
+- Cada YAML en `configs/experiments/` es un run: cambia **una** dimensión y trae su hipótesis escrita antes de entrenar. Nombre del run: `<nivel>-<id>-seed<semilla>`; para otra semilla copia el YAML con otro `seed`.
+- Se registra en MLflow (experimento `warehouse-n1/n2/n3`): params, tags (`git_commit`, `environment_version`, `config_sha256`, `nivel`, `hipotesis`, `parent_run_id`, `tipo`, `estado`), `config.json`, modelo + `model_sha256`, curvas y estado `fallido`/`interrumpido` si algo falla. URI: variable `MLFLOW_TRACKING_URI` (por defecto `sqlite:///mlflow.db`, local).
+- **Continuar desde un checkpoint (C3, C4):** poner en `parent_run_id` el nombre del run padre (p. ej. `n1-c0-seed0`); carga `models/<parent>/model.zip`. El contador de pasos es acumulado (padre + nuevos).
+- Salidas: `models/<run>/model.zip` (+ `best/`, `checkpoints/`), `docs/resultados/training/<run>/` (metadata, curva, métricas). No se sobrescribe: si el run existe, falla.
+- Referencias y evaluación hoy: `python -m pipelines.cli evaluate --policy ppo|random|heuristic --episodes 50 --seed-start 10000`. Pendiente (R2): que `evaluate.py` lea las suites de `configs/suites/` y escriba `evaluacion.json` por run.
+
+## Aún no hecho (según el plan)
+`pipelines/compare.py` y `callbacks.py` (R2); tracking completo, registro de modelos, manifiestos con SHA-256 para cada run, Prefect, API FastAPI (R3); remotos de MLflow y DVC por acordar.

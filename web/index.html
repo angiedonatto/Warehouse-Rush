@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#081521" />
+    <meta name="description" content="Warehouse Rush: visualización Three.js del simulador de recogida y entrega." />
+    <title>Warehouse Rush · Simulación 3D</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b1b28'/%3E%3Cpath d='M5 10l11-6 11 6v13l-11 6-11-6zM5 10l11 6 11-6M16 16v13' fill='none' stroke='%2342ddf5' stroke-width='2'/%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <canvas id="world" aria-label="Escena tridimensional de la bodega"></canvas>
+    <main class="dashboard">
+      <section class="workspace" aria-label="Visualización y controles">
+        <header class="masthead">
+          <div><div class="eyebrow"><span class="live-dot"></span> LABORATORIO DE NAVEGACIÓN AUTÓNOMA</div><h1>WAREHOUSE RUSH<span class="version">3D</span></h1><p>VISUALIZACIÓN 3D <span>—</span> DEL ENTORNO A LA ACCIÓN</p></div>
+          <div class="connection"><span class="live-dot" id="connection-dot"></span><span id="connection-label">Conectando…</span><span class="local-tag">LOCAL</span></div>
+        </header>
+
+        <div class="toolbar">
+          <div class="playback"><button id="play" class="button primary" disabled><svg viewBox="0 0 20 20"><path d="m6 3 11 7-11 7z"/></svg><span>Iniciar</span></button><button id="step" class="button" title="Ejecutar una transición"><svg viewBox="0 0 20 20"><path d="m4 4 9 6-9 6zM15 4v12"/></svg><span>Un paso</span></button><button id="reset" class="icon-button" aria-label="Reiniciar misión" title="Reiniciar misión"><svg viewBox="0 0 20 20"><path d="M4 7a7 7 0 1 1 0 7M4 2v5h5"/></svg></button></div>
+          <div class="toolbar-divider"></div>
+          <label class="field">AGENTE<select id="policy"><option value="heuristic">Heurístico · BFS</option><option value="random">Aleatorio</option><option value="ppo">PPO entrenado</option><option value="manual">Control manual</option></select></label>
+          <label class="field compact">MISIÓN<select id="orders"><option value="1">1 pedido</option><option value="2" selected>2 pedidos</option></select></label>
+          <label class="field speed-field">VELOCIDAD<select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+          <label class="switch-label"><input id="blocked" type="checkbox" checked/><span class="switch"></span><span>Bloquear pasillo</span></label>
+        </div>
+
+        <div class="stage" id="stage" tabindex="0" aria-label="Vista 3D. Arrastra para orbitar y usa la rueda para acercar.">
+          <div class="scene-top"><div class="view-chip"><span class="crosshair">⌖</span><span id="camera-label">VISTA ISOMÉTRICA</span><span class="chip-dot"></span><span class="muted">EN VIVO</span></div><div class="scene-toggles"><button id="toggle-route" class="toggle active" aria-pressed="true">Ruta BFS</button><button id="toggle-sensors" class="toggle" aria-pressed="false">Sensores</button><button id="home-camera" class="small-icon" aria-label="Restaurar cámara" title="Restaurar cámara">⌂</button></div></div>
+          <div id="station-labels" aria-hidden="true"></div>
+          <div class="scene-bottom"><span class="mouse-hint"><svg viewBox="0 0 16 20"><rect x="2" y="1" width="12" height="18" rx="6"/><path d="M8 1v7"/></svg> Arrastra para orbitar <b>·</b> Scroll para zoom</span><span class="scale-hint"><i></i>1 celda = 1 m</span></div>
+          <div id="scene-loading" class="scene-loading"><span class="loading-orbit"></span><b>Preparando la bodega</b><span>Cargando escena y estado del simulador…</span></div>
+          <div id="mission-banner" class="mission-banner" hidden></div>
+        </div>
+
+        <section class="camera-strip" aria-label="Seleccionar cámara">
+          <button class="camera-card selected" data-camera="iso" aria-pressed="true"><span class="camera-heading">VISTA ISOMÉTRICA <span>01</span></span><span class="preview" id="preview-iso"></span><span class="camera-caption">Perspectiva general <span>↗</span></span></button>
+          <button class="camera-card" data-camera="fpv" aria-pressed="false"><span class="camera-heading">PRIMERA PERSONA <span>02</span></span><span class="preview" id="preview-fpv"></span><span class="camera-caption">A bordo del robot <span>↗</span></span></button>
+          <button class="camera-card" data-camera="side" aria-pressed="false"><span class="camera-heading">VISTA LATERAL <span>03</span></span><span class="preview" id="preview-side"></span><span class="camera-caption">Seguimiento del AMR <span>↗</span></span></button>
+          <button class="camera-card" data-camera="station" aria-pressed="false"><span class="camera-heading">DETALLE DE ESTACIÓN <span>04</span></span><span class="preview" id="preview-station"></span><span class="camera-caption">Objetivo de la misión <span>↗</span></span></button>
+        </section>
+
+        <div class="mission-bar"><div class="mission-label"><span class="tiny-cube"></span><span id="mission-title">P1 → ENTREGA → P2 → ENTREGA</span></div><div class="mission-sequence" id="mission-sequence"><span>P1</span><i></i><span>D</span><i></i><span>P2</span><i></i><span>D</span></div><span id="mission-status">Esperando inicio</span></div>
+        <div class="manual-controls" id="manual-controls" hidden><span>CONTROL MANUAL</span><button data-action="1">↶ Girar izq. <kbd>A</kbd></button><button data-action="0">↑ Avanzar <kbd>W</kbd></button><button data-action="2">↷ Girar der. <kbd>D</kbd></button><button data-action="3">■ Frenar <kbd>S</kbd></button><button data-action="4">◇ Interactuar <kbd>E</kbd></button></div>
+        <footer class="workspace-footer"><span><span class="footer-dot"></span> GYMNASIUM <b>×</b> THREE.JS</span><span id="footer-detail">Simulación discreta · 1 paso = 1 s</span><span>WAREHOUSE RUSH <b>/</b> v0.2</span></footer>
+      </section>
+
+      <aside class="sidebar" aria-label="Telemetría del simulador">
+        <section class="panel robot-panel"><div class="panel-title"><h2>ESTADO DEL ROBOT</h2><span class="panel-badge" id="robot-mode">EN BASE</span></div><div class="robot-summary"><div class="robot-portrait" id="robot-portrait"><span>AMR–01</span></div><div class="robot-identity"><span class="eyebrow">ROBOT AUTÓNOMO MÓVIL</span><h3>AMR–01</h3><span id="robot-activity" class="activity">Listo para comenzar</span><div class="battery-heading"><span>BATERÍA</span><strong id="battery-value">100<span>%</span></strong></div><div class="battery-track" role="progressbar" aria-label="Batería" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><span id="battery-fill"></span></div></div></div>
+          <dl class="telemetry"><div><dt>Posición</dt><dd id="position">(2, 11) <span>m</span></dd></div><div><dt>Orientación</dt><dd id="orientation">0° · Norte</dd></div><div><dt>Velocidad</dt><dd id="velocity">0.0 <span>m/s</span></dd></div><div><dt>Carga</dt><dd id="cargo"><span class="empty-cargo">Sin paquete</span></dd></div><div><dt>Objetivo</dt><dd id="target" class="cyan-text">Recogida 1 (P1)</dd></div><div><dt>Pasos</dt><dd><span id="steps">0</span><span> / </span><span id="max-steps">250</span></dd></div></dl><div class="progress-track"><span id="step-progress"></span></div><div class="robot-counters"><div><span>ENTREGAS</span><strong id="deliveries">0 <small>/ 2</small></strong></div><div><span>COLISIONES</span><strong id="collisions">0</strong></div><div><span>RECOMPENSA</span><strong id="reward">0.00</strong></div></div>
+        </section>
+
+        <section class="panel legend-panel"><div class="panel-title"><h2>LEYENDA</h2><span class="subtle-label">ELEMENTOS DEL ENTORNO</span></div><ul class="legend"><li><span class="legend-symbol robot-symbol"></span><span>Robot autónomo <small>(AMR)</small></span></li><li><span class="legend-symbol route-symbol"></span><span>Ruta BFS <small>· referencia</small></span></li><li><span class="legend-symbol base-symbol"></span><span>Base / Inicio</span><kbd>B</kbd></li><li><span class="legend-symbol pickup-symbol"></span><span>Recogida 1</span><kbd>P1</kbd></li><li><span class="legend-symbol pickup-symbol"></span><span>Recogida 2</span><kbd>P2</kbd></li><li><span class="legend-symbol delivery-symbol"></span><span>Entrega</span><kbd>D</kbd></li><li><span class="legend-symbol rack-symbol"></span><span>Estantería <small>· obstáculo</small></span></li><li><span class="legend-symbol blocked-symbol"></span><span>Pasillo bloqueado</span></li><li><span class="legend-symbol wall-symbol"></span><span>Pared</span></li></ul></section>
+
+        <section class="panel minimap-panel"><div class="panel-title"><h2>VISTA SUPERIOR <span>(MINIMAPA)</span></h2><span class="north-arrow">N ↑</span></div><div class="minimap-wrap"><canvas id="minimap" aria-label="Minimapa sincronizado con la posición del robot"></canvas></div><div class="minimap-caption"><span><i class="cyan-dot"></i> Posición en tiempo real</span><span>17 × 13 m</span></div></section>
+        <section class="event-panel"><span class="event-indicator"></span><p id="last-event" role="status" aria-live="polite">Misión preparada. Robot en BASE.</p><span id="event-step">00:00</span></section>
+      </aside>
+    </main>
+    <div id="toast" class="toast" role="alert" hidden></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,39 @@
+{
+  "experiment": "001",
+  "url": "https://warehouse-rush-experiment-001.vercel.app",
+  "target": "production",
+  "status": "READY",
+  "project_id": "prj_sotyYqLCu7PPQGLQHRtThryAL1tw",
+  "team": "angiedonato2-7290s-projects",
+  "deployment_id": "dpl_FDbZTR5SYCFBvCyC495V6ncVCwhE",
+  "runtime_commit": "184f5d66b696f3adc9d8f6a36de71133ecd078dc",
+  "framework": "Vite / Three.js + Python 3.12",
+  "build_seconds": 26,
+  "health": {
+    "status": "ok",
+    "experiment": "001",
+    "environment_version": "0.1.0",
+    "session_mode": "signed-per-visitor",
+    "commit": "184f5d66b696f3adc9d8f6a36de71133ecd078dc"
+  },
+  "python_tests": {
+    "passed": 73,
+    "warnings": 14,
+    "duration_seconds": 68.27
+  },
+  "observability": {
+    "runtime_errors_returned": 0,
+    "window_minutes": 5,
+    "drains": "not inspected",
+    "monitoring": "Vercel runtime logs"
+  },
+  "git_automatic_deployments": false,
+  "browser_verification": {
+    "unique_flows_verified": 7,
+    "initial_passed": 6,
+    "initial_mission_timeout_seconds": 90,
+    "mission_recheck_passed": 1,
+    "mission_timeout_seconds": 180,
+    "report": "browser-production-experiment-001.json"
+  }
+}

@@ -19,3 +19,4 @@ tmp/
 *.pth
 # test final reservado: fuera del repo público
 configs/suites/test-final*
+.pytest_cache/

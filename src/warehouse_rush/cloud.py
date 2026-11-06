@@ -16,9 +16,12 @@ import logging
 import os
 from pathlib import Path
 import time
+import zlib
 from urllib.parse import parse_qs, urlsplit
 
 from warehouse_rush.env import WorldState
+from warehouse_rush.missions import MakeupMissionEnv
+from warehouse_rush.inventory import Inventory
 from warehouse_rush.policies import make_policy
 from warehouse_rush.viewer import ViewerSession, WEB_ROOT
 
@@ -52,8 +55,13 @@ class SignedSessions:
             "last_action": session.last_action, "last_reward": session.last_reward,
             "trail": session.trail[-64:], "events": session.events[-8:],
         }
+        if isinstance(session.env, MakeupMissionEnv):
+            record['makeup'] = True
+            record['inventory'] = dict(initial=session.inventory.initial, total=session.inventory.total, orders=session.inventory.orders)
+            record['order_id'] = session.env.order_id
+            record['orders'] = 1  # Parámetro legacy constructor; líneas se restauran aparte.
         raw = json.dumps(record, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode()
-        encoded = urlsafe_b64encode(raw).decode().rstrip("=")
+        encoded = urlsafe_b64encode(zlib.compress(raw) if record.get("makeup") else raw).decode().rstrip("=")
         signature = hmac.new(self.key, encoded.encode(), sha256).hexdigest()
         token = f"{encoded}.{signature}"
         if len(token) > 3800:
@@ -70,12 +78,25 @@ class SignedSessions:
         if not hmac.compare_digest(signature, expected):
             raise ValueError("Firma de sesión inválida; reinicia la misión")
         try:
-            record = json.loads(urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4)))
+            raw = urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4))
+            if not raw.startswith(b'{'):
+                raw = zlib.decompress(raw)
+            record = json.loads(raw)
             if record["v"] != 1 or record["expires"] < time.time():
                 raise ValueError("Sesión expirada; reinicia la misión")
             session = ViewerSession(policy_factory=cloud_policy,
                                     settings={"orders": record["orders"], "blocked": record["state"]["pasillo_bloqueado"],
-                                              "policy": record["policy"], "seed": record["seed"]})
+                                              "policy": record["policy"], "seed": record["seed"], "makeup": record.get("makeup", False)})
+            if record.get('makeup'):
+                saved = record['inventory']
+                inventory = Inventory(saved['initial'])
+                inventory.total, inventory.orders = saved['total'], saved['orders']
+                inventory.check()
+                session.inventory = session.env.inventory = inventory
+                session.env.order_id = record['order_id']
+                session.env.lines = inventory.orders[record['order_id']]['lines']
+                session.env.orders = len(session.env.lines)
+                session.env.packages = tuple(l['sku'] for l in session.env.lines)
             session.env.state = WorldState(**record["state"])
             session.env.picked_packages = set(record["picked"])
             session.env.completed_packages = set(record["completed"])
@@ -115,7 +136,14 @@ class CloudAPI:
             except ValueError:
                 session = self.sessions.load(None)
         elif method == "POST" and endpoint == "reset":
-            session = ViewerSession(policy_factory=cloud_policy, settings=body or {})
+            if token:
+                try:
+                    session = self.sessions.load(token)
+                except ValueError:
+                    session = ViewerSession(policy_factory=cloud_policy)
+                session.reset(body or {})
+            else:
+                session = ViewerSession(policy_factory=cloud_policy, settings=body or {})
         elif method == "POST" and endpoint == "step":
             session = self.sessions.load(token)
             session.step((body or {}).get("action"))

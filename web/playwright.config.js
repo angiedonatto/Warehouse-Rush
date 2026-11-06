@@ -13,7 +13,7 @@ export default defineConfig({
     viewport: { width: 1440, height: 1040 },
     screenshot: 'only-on-failure',
     launchOptions: {
-      ...(existsSync(macChrome) ? { executablePath: macChrome } : {}),
+      ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : existsSync(macChrome) ? { executablePath: macChrome } : {}),
       args: ['--enable-webgl', '--enable-unsafe-swiftshader', '--use-angle=swiftshader'],
     },
   },

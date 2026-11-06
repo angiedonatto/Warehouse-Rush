@@ -133,7 +133,7 @@ class Layout:
         for x, y in self.racks:
             grid[y][x] = "R"
         for name, (x, y) in self.stations.items():
-            grid[y][x] = {"P1": "1", "P2": "2", "DELIVERY": "D"}[name]
+            grid[y][x] = {"P1": "1", "P2": "2", "DELIVERY": "D"}.get(name, "E")
         x, y = self.base
         grid[y][x] = "B"
         for x, y in map(tuple, self.data["blockable_cells"]):

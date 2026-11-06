@@ -1,9 +1,23 @@
 import './style.css';
+import { renderOrderSheet, renderRack } from './order-sheet.js';
 import { WarehouseScene } from './warehouse.js';
 
 const $ = selector => document.querySelector(selector);
 let scene, current, layoutInfo, running = false, busy = false, changing = false, timer = null;
 let toastTimer;
+let selectedRack = 'E01';
+const sheet = document.createElement('section');sheet.id = 'order-sheet';sheet.className = 'order-sheet';sheet.setAttribute('aria-live', 'polite');document.querySelector('.sidebar').prepend(sheet);
+const inventoryPanel = document.createElement('section');inventoryPanel.className = 'order-sheet';
+const rackSelect = document.createElement('select');rackSelect.setAttribute('aria-label', 'Seleccionar estantería');
+for (let i = 1; i <= 6; i++) { const id = `E${String(i).padStart(2, '0')}`;rackSelect.add(new Option(id, id)); }
+const rackDetail = document.createElement('div');rackDetail.id = 'rack-detail';inventoryPanel.append(rackSelect, rackDetail);sheet.after(inventoryPanel);
+rackSelect.addEventListener('change', () => { selectedRack = rackSelect.value;renderRack(rackDetail, current.state, selectedRack); });
+const makeupLabel = document.createElement('label');makeupLabel.className = 'makeup-control';
+makeupLabel.innerHTML = '<input id="makeup" type="checkbox"> Pedidos de maquillaje';
+const seedInput = document.createElement('input');seedInput.id = 'order-seed';seedInput.type = 'number';seedInput.min = '0';seedInput.max = '4294967295';seedInput.value = '10000';seedInput.setAttribute('aria-label', 'Semilla del pedido');
+const newOrder = document.createElement('button');newOrder.textContent = 'Generar pedido';newOrder.className = 'button';newOrder.addEventListener('click', () => { $('#makeup').checked = true;reset(); });
+document.querySelector('.toolbar').append(makeupLabel, seedInput, newOrder);
+$('#makeup').addEventListener('change', reset);
 const names = { iso: 'VISTA ISOMÉTRICA', fpv: 'PRIMERA PERSONA', side: 'VISTA LATERAL', station: 'DETALLE DE ESTACIÓN' };
 const actionNames = { AVANZAR: 'Navegando al objetivo', GIRAR_IZQUIERDA: 'Girando a la izquierda', GIRAR_DERECHA: 'Girando a la derecha', FRENAR: 'Robot detenido', INTERACTUAR: 'Interactuando con estación' };
 const speed = () => Number($('#speed').value);
@@ -23,6 +37,7 @@ async function api(path, body) {
 
 function controls() {
   const manual = current?.policy === 'manual';
+  $('#orders').closest('label').hidden = Boolean(current?.makeup);
   $('#play').disabled = !current || current.done || manual || changing;
   $('#step').disabled = !current || current.done || running || manual || changing;
   $('#reset').disabled = changing;
@@ -71,6 +86,15 @@ function renderState(payload, instant = false) {
     banner.textContent = payload.info.success ? `✓ Misión completada · ${s.entregas} entregas · ${s.tiempo} pasos` : `Episodio finalizado · ${{ time_limit: 'Límite de tiempo', battery_depleted: 'Batería agotada', unreachable_target: 'Objetivo inaccesible' }[payload.info.end_reason] || payload.info.end_reason}`;
     pause();
   }
+  renderOrderSheet(sheet, s);
+  inventoryPanel.hidden = !s.inventory;
+  if (s.inventory) renderRack(rackDetail, s, selectedRack);
+  if (s.order) {
+    const line = s.order.lines[s.pedido_actual];
+    $('#target').textContent = s.objetivo === 'DELIVERY' ? 'Despacho' : line ? `${line.level} · ${line.subcategory} × ${line.quantity}` : 'Entrega confirmada';
+    $('#mission-title').textContent = `ORDEN ${s.order.id.slice(0, 8)} · ${s.order.state}`;
+    $('#mission-sequence').textContent = s.order.lines.map(l => `${l.level} ${l.delivered ? '✓' : l.picked ? '→ Despacho' : '○'}`).join(' · ');
+  }
   controls();
 }
 
@@ -104,12 +128,12 @@ async function reset() {
     while (busy) await new Promise(resolve => setTimeout(resolve, 20));
     const ppoUnavailable = $('#policy').value === 'ppo' && !layoutInfo.available_ppo[$('#orders').value];
     if (ppoUnavailable) { $('#policy').value = 'heuristic';toast('Esta misión no tiene modelo PPO guardado. Se seleccionó el heurístico.'); }
-    const result = await api('reset', { orders: Number($('#orders').value), policy: $('#policy').value, blocked: $('#blocked').checked, seed: 10000 });
+    const result = await api('reset', { orders: Number($('#orders').value), policy: $('#policy').value, blocked: $('#blocked').checked, seed: Number(seedInput.value), makeup: $('#makeup').checked });
     renderState(result, true);
     if (result.policy === 'ppo') toast('El PPO de 20 000 pasos obtuvo 0% de éxito. Se muestra su comportamiento real.');
   } catch (error) {
     toast(error.message);
-    if (current) { $('#orders').value = current.orders;$('#policy').value = current.policy;$('#blocked').checked = current.state.pasillo_bloqueado; }
+    if (current) { $('#orders').value = Math.min(2, current.orders);$('#policy').value = current.policy;$('#blocked').checked = current.state.pasillo_bloqueado; }
   } finally { changing = false;controls(); }
 }
 
@@ -148,8 +172,9 @@ window.addEventListener('pagehide', () => { pause();scene?.dispose(); });
 async function start() {
   try {
     [layoutInfo, current] = await Promise.all([api('layout'), api('state')]);
-    $('#policy').value = current.policy;$('#orders').value = current.orders;$('#blocked').checked = current.state.pasillo_bloqueado;
+    $('#policy').value = current.policy;$('#orders').value = Math.min(2, current.orders);$('#blocked').checked = current.state.pasillo_bloqueado;$('#makeup').checked = current.makeup;seedInput.value = current.seed;
     scene = new WarehouseScene(layoutInfo.layout, $('#world'), $('#stage'));
+    scene.onRackSelect = id => { selectedRack = id;rackSelect.value = id;renderRack(rackDetail, current.state, id); };
     $('.minimap-caption > span:last-child').textContent = `${layoutInfo.layout.width} × ${layoutInfo.layout.height} m`;
     renderState(current, true);
     $('#scene-loading').hidden = true;

@@ -1,4 +1,6 @@
-# Misiones de maquillaje — dev/angie
+# Misiones de maquillaje — base de dev/angie
+
+> En `dev/naomi`, el catálogo provisional descrito aquí se sustituye por los 27 productos del PDF. Ver [entrega Naomi](entrega-naomi.md) para categorías, SKU y assets vigentes.
 
 El visor local (`warehouse-rush view --no-open`) inicia pedidos automáticos de 1–3 SKUs temporales. «Generar pedido» crea y reserva otro pedido usando la semilla visible y el stock disponible; no repone inventario. Las seis estanterías conservan posición, geometría y colisiones. Seleccionar una etiqueta E01–E06 o el selector muestra los tres niveles y sus existencias. El checklist consume cantidades confirmadas por Python; no permite marcar manualmente las líneas.
 

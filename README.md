@@ -143,3 +143,14 @@ sin bloqueo (47 y 63 pasos para un pedido); Random obtuvo 0%. Son 20 episodios p
 combinación con semillas 10000–10019. El ciclo completo funciona; el modelo corto
 todavía no aprende la misión. El informe explica también por qué una recompensa
 mayor bajo bloqueo no implica una ruta más eficiente.
+
+
+## Catálogo y estética de Trendy — dev/naomi
+
+Esta rama integra los **27 productos del PDF de Naomi**, organizados en seis
+categorías, con modelos Three.js, assets GLB descargables y una bodega en tonos
+rosa y lavanda. «Explorar los 27 productos» abre el catálogo 3D con búsqueda y filtros.
+Las misiones conservan Gymnasium y el inventario real por sesión.
+
+Ver [entrega Naomi](docs/entrega-naomi.md) para el catálogo completo, referencias,
+ubicaciones, regeneración de assets y verificaciones.

@@ -7,13 +7,13 @@ from warehouse_rush.policies import HeuristicPolicy
 from warehouse_rush.env import SimulationConfig
 from warehouse_rush.viewer import ViewerSession
 
-SKU = 'TMP-E01-L3'
+SKU = 'TRD-01-04'
 
 
 def test_catalog_and_seed():
-    assert len(CATALOG) == 18
+    assert len(CATALOG) == 27
     for i in range(1, 7):
-        assert {p['level'] for p in CATALOG.values() if p['rack'] == f'E{i:02d}'} == {f'E{i:02d}-L{j}' for j in range(1, 4)}
+        assert all(p['level'] in {f'E{i:02d}-L{j}' for j in range(1, 4)} for p in CATALOG.values() if p['rack'] == f'E{i:02d}')
     a, b = Inventory().generate(42), Inventory().generate(42)
     assert a['lines'] == b['lines']
     assert 1 <= len(a['lines']) <= 3
@@ -23,8 +23,8 @@ def test_catalog_and_seed():
 
 
 def test_atomic_reservation_and_concurrent_overselling():
-    inv = Inventory({SKU: 5, 'TMP-E01-L1': 1})
-    order = inv.reserve({SKU: 4, 'TMP-E01-L1': 2})
+    inv = Inventory({SKU: 5, 'TRD-01-01': 1})
+    order = inv.reserve({SKU: 4, 'TRD-01-01': 2})
     assert order['state'] == 'REJECTED' and inv.available(SKU) == 5
     with ThreadPoolExecutor(2) as pool:
         orders = list(pool.map(lambda _: inv.reserve({SKU: 4}), range(2)))

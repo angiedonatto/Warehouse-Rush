@@ -1,3 +1,4 @@
+import { setupCatalog } from './catalog.js';
 import './style.css';
 import { renderOrderSheet, renderRack } from './order-sheet.js';
 import { WarehouseScene } from './warehouse.js';
@@ -91,7 +92,7 @@ function renderState(payload, instant = false) {
   if (s.inventory) renderRack(rackDetail, s, selectedRack);
   if (s.order) {
     const line = s.order.lines[s.pedido_actual];
-    $('#target').textContent = s.objetivo === 'DELIVERY' ? 'Despacho' : line ? `${line.level} · ${line.subcategory} × ${line.quantity}` : 'Entrega confirmada';
+    $('#target').textContent = s.objetivo === 'DELIVERY' ? 'Despacho' : line ? `${line.level} · ${line.name || line.subcategory} × ${line.quantity}` : 'Entrega confirmada';
     $('#mission-title').textContent = `ORDEN ${s.order.id.slice(0, 8)} · ${s.order.state}`;
     $('#mission-sequence').textContent = s.order.lines.map(l => `${l.level} ${l.delivered ? '✓' : l.picked ? '→ Despacho' : '○'}`).join(' · ');
   }
@@ -185,4 +186,5 @@ async function start() {
     $('#connection-label').textContent = 'Sin conexión';$('#connection-dot').style.background = '#ff6767';toast(error.message);console.error(error);
   }
 }
+setupCatalog();
 start();

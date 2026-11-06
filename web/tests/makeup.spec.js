@@ -9,7 +9,7 @@ test('order checklist follows real pickup, delivery and stock; rack details and 
   expect(await page.locator('#order-sheet input:checked').count()).toBe(0);
   await page.getByLabel('Seleccionar estantería').selectOption('E06');
   await expect(page.locator('#rack-detail')).toContainText('Toy Story');
-  await expect(page.locator('#rack-detail')).toContainText('TMP-E06-L3');
+  await expect(page.locator('#rack-detail')).toContainText('TRD-06-03');
   await page.locator('#speed').selectOption('4');
   await page.locator('#play').click();
   await expect(page.locator('#order-sheet li.picked').first()).toBeVisible({ timeout: 45000 });

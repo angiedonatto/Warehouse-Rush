@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#081521" />
+    <meta name="theme-color" content="#fce8f2" />
     <meta name="description" content="Warehouse Rush: visualización Three.js del simulador de recogida y entrega." />
-    <title>Warehouse Rush · Simulación 3D</title>
+    <title>Warehouse Rush · Bodega Trendy</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b1b28'/%3E%3Cpath d='M5 10l11-6 11 6v13l-11 6-11-6zM5 10l11 6 11-6M16 16v13' fill='none' stroke='%2342ddf5' stroke-width='2'/%3E%3C/svg%3E" />
   </head>
   <body>
@@ -13,10 +13,11 @@
     <main class="dashboard">
       <section class="workspace" aria-label="Visualización y controles">
         <header class="masthead">
-          <div><div class="eyebrow"><span class="live-dot"></span> LABORATORIO DE NAVEGACIÓN AUTÓNOMA</div><h1>WAREHOUSE RUSH<span class="version">3D</span></h1><p>VISUALIZACIÓN 3D <span>—</span> DEL ENTORNO A LA ACCIÓN</p></div>
+          <div><div class="eyebrow"><span class="live-dot"></span> TRENDY · BEAUTY WAREHOUSE</div><h1>WAREHOUSE RUSH<span class="version">3D</span></h1><p>VISUALIZACIÓN 3D <span>—</span> 27 PRODUCTOS · 6 CATEGORÍAS</p></div>
           <div class="connection"><span class="live-dot" id="connection-dot"></span><span id="connection-label">Conectando…</span><span class="local-tag">LOCAL</span></div>
         </header>
 
+        <div class="brand-intro"><span>Beauty, organized.</span><p>Una bodega inspirada en Trendy. Del estante a tu pedido.</p><button id="open-catalog" class="button">Explorar los 27 productos ↗</button></div>
         <div class="toolbar">
           <div class="playback"><button id="play" class="button primary" disabled><svg viewBox="0 0 20 20"><path d="m6 3 11 7-11 7z"/></svg><span>Iniciar</span></button><button id="step" class="button" title="Ejecutar una transición"><svg viewBox="0 0 20 20"><path d="m4 4 9 6-9 6zM15 4v12"/></svg><span>Un paso</span></button><button id="reset" class="icon-button" aria-label="Reiniciar misión" title="Reiniciar misión"><svg viewBox="0 0 20 20"><path d="M4 7a7 7 0 1 1 0 7M4 2v5h5"/></svg></button></div>
           <div class="toolbar-divider"></div>

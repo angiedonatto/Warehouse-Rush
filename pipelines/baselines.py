@@ -52,6 +52,17 @@ class PPOPolicy:
         return int(action)
 
 
+class DQNPolicy:
+    def __init__(self, model_path):
+        from stable_baselines3 import DQN
+
+        self.model = DQN.load(model_path, device="cpu")
+
+    def action(self, observation, env: WarehouseRushEnv) -> int:
+        action, _ = self.model.predict(observation, deterministic=True)
+        return int(action)
+
+
 def make_policy(name: str, seed: int = 0, model_path=None):
     if name == "random":
         return RandomPolicy(seed)
@@ -61,4 +72,8 @@ def make_policy(name: str, seed: int = 0, model_path=None):
         if model_path is None or not Path(model_path).is_file():
             raise FileNotFoundError("Modelo PPO ausente; ejecuta train o indica --model")
         return PPOPolicy(model_path)
+    if name == "dqn":
+        if model_path is None or not Path(model_path).is_file():
+            raise FileNotFoundError("Modelo DQN ausente; ejecuta train o indica --model")
+        return DQNPolicy(model_path)
     raise ValueError(f"Política desconocida: {name}")

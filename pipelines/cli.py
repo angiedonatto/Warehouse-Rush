@@ -49,13 +49,13 @@ def parser():
         if name == "demo-transitions":
             command.add_argument("--steps", type=int, default=5)
         if name == "play":
-            command.add_argument("--policy", choices=("random", "heuristic", "ppo"), default="heuristic")
+            command.add_argument("--policy", choices=("random", "heuristic", "ppo", "dqn"), default="heuristic")
             command.add_argument("--seed", type=int, default=10_000)
             command.add_argument("--model", type=Path)
             command.add_argument("--delay", type=float, default=0.1, help="Segundos por transición")
             command.add_argument("--no-render", action="store_true")
         if name == "train":
-            command.add_argument("--algo", choices=("ppo",), default="ppo")
+            command.add_argument("--algo", choices=("ppo", "dqn"), default="ppo")
             command.add_argument("--timesteps", type=int, default=20_000)
             command.add_argument("--seed", type=int, default=42)
             command.add_argument("--n-steps", type=int, default=500)
@@ -67,9 +67,9 @@ def parser():
             command.add_argument("--model", type=Path)
             command.add_argument("--output", type=Path, default=Path("docs/resultados"))
             if name == "evaluate":
-                command.add_argument("--policy", choices=("random", "heuristic", "ppo"), default="ppo")
+                command.add_argument("--policy", choices=("random", "heuristic", "ppo", "dqn"), default="ppo")
             else:
-                command.add_argument("--policies", nargs="+", choices=("random", "heuristic", "ppo"),
+                command.add_argument("--policies", nargs="+", choices=("random", "heuristic", "ppo", "dqn"),
                                      default=["random", "heuristic", "ppo"])
     return root
 
@@ -125,8 +125,8 @@ def main(argv=None):
         env.close()
     elif args.command == "train":
         result = train_ppo(timesteps=args.timesteps, seed=args.seed, orders=args.orders,
-                           blocked=args.blocked, layout_path=args.layout, n_steps=args.n_steps,
-                           batch_size=args.batch_size, run_name=args.run_name)
+                           blocked=args.blocked, layout_path=args.layout, n_steps=args.n_steps if args.algo == "ppo" else None,
+                           batch_size=args.batch_size if args.algo == "ppo" else None, run_name=args.run_name, algo=args.algo)
         print(json.dumps({key: result[key] for key in ("status", "effective_timesteps", "duration_seconds", "model_path", "model_alias")}, indent=2))
     else:
         from pipelines.evaluate import evaluate, summary_table

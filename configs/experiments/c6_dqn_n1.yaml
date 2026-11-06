@@ -1,0 +1,32 @@
+id: c6
+algoritmo: dqn
+hipotesis: >
+  Cambiar PPO por DQN (mismo ambiente warehouse-v1 y misma recompensa): la exploración epsilon-greedy
+  se mantiene aunque el valor aprendido favorezca quedarse quieto y el replay buffer reutiliza las pocas
+  recogidas observadas; esto evita el colapso a política quieta de PPO (C0-C1c, 0% éxito) y sube el
+  éxito en N1 con el mismo presupuesto. Justificación del algoritmo (enunciado sec. 03): acciones Discrete(5),
+  compatible con DQN de Stable-Baselines3.
+nivel: n1
+environment_version: warehouse-v1
+parent_run_id: null
+seed: 0
+presupuesto_pasos: 200000
+dqn:
+  learning_rate: 5.0e-4
+  buffer_size: 100000
+  learning_starts: 5000
+  batch_size: 64
+  tau: 1.0
+  gamma: 0.99
+  train_freq: 4
+  gradient_steps: 1
+  target_update_interval: 1000
+  exploration_fraction: 0.5
+  exploration_initial_eps: 1.0
+  exploration_final_eps: 0.05
+  max_grad_norm: 10.0
+  net_arch: [64, 64]
+evaluacion:
+  intermedia: dev-n1-v1
+  cada_pasos: 20000
+  final: suite-n1-v1

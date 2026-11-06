@@ -39,7 +39,7 @@ def evaluate(*, policies=("random", "heuristic", "ppo"), orders=1, episodes=20,
                      "ppo_deterministic": True, "reward_std_ddof": 0}
     probe.close()
     training = None
-    if "ppo" in policies and model_path.is_file():
+    if any(p in policies for p in ("ppo", "dqn")) and model_path.is_file():
         configuration["model_path"] = str(model_path)
         configuration["model_sha256"] = sha256(model_path.read_bytes()).hexdigest()
         metadata_path = model_path.with_suffix(".json")
@@ -144,7 +144,7 @@ def report(result: dict) -> str:
              f"Mapa SHA-256: `{config['layout_sha256']}`. Mismo JSON, acciones, recompensas, "
              "batería y límite de tiempo en todas las políticas. El bloqueo se fija al iniciar el episodio.", ""]
     if training:
-        lines += [f"PPO: semilla {training['seed']}, {training['effective_timesteps']} pasos efectivos "
+        lines += [f"{training.get('algorithm', 'PPO')}: semilla {training['seed']}, {training['effective_timesteps']} pasos efectivos "
                   f"({training['requested_timesteps']} solicitados), "
                   f"{training['duration_seconds']:.2f} s reales; entrenado con bloqueo={training['blocked']}. "
                   f"Modelo final: `{config['model_path']}`. SHA-256: `{config['model_sha256']}`. "
@@ -170,8 +170,8 @@ def report(result: dict) -> str:
                   f"{metrics['last_10_episode_mean_reward']:.3f}. Mejor retorno por sí solo no acredita "
                   "haber aprendido a recoger y entregar.", ""]
     for row in result["summary"]:
-        if row["policy"] == "ppo":
-            lines.append(f"- PPO en {row['scenario']}: éxito **{100 * row['success_rate']:.0f}%**, "
+        if row["policy"] in ("ppo", "dqn"):
+            lines.append(f"- {row['policy'].upper()} en {row['scenario']}: éxito **{100 * row['success_rate']:.0f}%**, "
                          f"{row['mean_pickups']:.2f} recogidas medias, finales {row['end_reasons']}, "
                          f"conteos de acciones 0–4: {row['action_counts']}.")
             if row["action_counts"].get("3", 0) == row["episodes"] * config["simulation"]["max_steps"]:
@@ -180,7 +180,7 @@ def report(result: dict) -> str:
                              "observado en esta evaluación determinista.")
             heuristic = next((r for r in result["summary"] if r["policy"] == "heuristic" and r["scenario"] == row["scenario"]), None)
             if heuristic and heuristic["success_rate"] > row["success_rate"]:
-                lines.append(f"- En {row['scenario']}, el heurístico funciona mejor que PPO en tasa de éxito.")
+                lines.append(f"- En {row['scenario']}, el heurístico funciona mejor que {row['policy'].upper()} en tasa de éxito.")
             if row["success_rate"] == 0:
                 lines.append("- El entrenamiento ejecutado no resolvió la misión. Las señales densas de "
                              "distancia no garantizan descubrir la secuencia detenerse–orientarse–interactuar; "

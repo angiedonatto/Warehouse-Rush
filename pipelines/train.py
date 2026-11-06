@@ -14,8 +14,8 @@ from envs import ENV_VERSION, __version__
 from envs.env import WarehouseRushEnv
 
 
-def default_model(orders=1, seed=42) -> Path:
-    return Path(f"models/ppo_orders{orders}_seed{seed}.zip")
+def default_model(orders=1, seed=42, algo="ppo") -> Path:
+    return Path(f"models/{algo}_orders{orders}_seed{seed}.zip")
 
 
 def write_json(path: Path, data) -> None:
@@ -30,23 +30,38 @@ DEFAULT_PPO = dict(learning_rate=3e-4, n_steps=500, batch_size=100, n_epochs=10,
                    net_arch=[64, 64])
 
 
+# DQN (alternativa a PPO, misma recompensa y ambiente): acciones Discrete(5), replay buffer y
+# exploración epsilon-greedy que no colapsa a una política determinista como PPO en C0-C1c.
+DEFAULT_DQN = dict(learning_rate=5e-4, buffer_size=100_000, learning_starts=5_000, batch_size=64,
+                   tau=1.0, gamma=0.99, train_freq=4, gradient_steps=1, target_update_interval=1_000,
+                   exploration_fraction=0.5, exploration_initial_eps=1.0, exploration_final_eps=0.05,
+                   max_grad_norm=10.0, net_arch=[64, 64])
+
+
 def train_ppo(*, timesteps=20_000, seed=42, orders=1, blocked=False, layout_path=None,
               n_steps=None, batch_size=None, run_name=None, ppo=None, n_envs=1,
-              eval_every=5_000, eval_episodes=5, parent_model=None) -> dict:
+              eval_every=5_000, eval_episodes=5, parent_model=None, algo="ppo") -> dict:
+    """Entrena PPO (referencia del plan) o DQN con el mismo ambiente, recompensa y trazabilidad."""
     import torch
-    from stable_baselines3 import PPO
+    from stable_baselines3 import DQN, PPO
     from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
     from stable_baselines3.common.logger import configure
     from stable_baselines3.common.monitor import Monitor
 
-    params = {**DEFAULT_PPO, **(ppo or {})}
-    if n_steps is not None:
-        params["n_steps"] = n_steps
+    if algo not in ("ppo", "dqn"):
+        raise ValueError("algo debe ser ppo o dqn")
+    params = {**(DEFAULT_PPO if algo == "ppo" else DEFAULT_DQN), **(ppo or {})}
     if batch_size is not None:
         params["batch_size"] = batch_size
-    n_steps, batch_size = params["n_steps"], params["batch_size"]
-    if timesteps < 1 or n_envs < 1 or n_steps < 2 or batch_size < 2 or (n_steps * n_envs) % batch_size:
-        raise ValueError("timesteps > 0; batch_size >= 2 debe dividir n_steps * n_envs")
+    batch_size = params["batch_size"]
+    if algo == "ppo":
+        if n_steps is not None:
+            params["n_steps"] = n_steps
+        n_steps = params["n_steps"]
+        if timesteps < 1 or n_envs < 1 or n_steps < 2 or batch_size < 2 or (n_steps * n_envs) % batch_size:
+            raise ValueError("timesteps > 0; batch_size >= 2 debe dividir n_steps * n_envs")
+    elif timesteps < 1 or n_envs < 1 or batch_size < 2:
+        raise ValueError("timesteps > 0, n_envs >= 1 y batch_size >= 2")
     torch.set_num_threads(1)
     torch.use_deterministic_algorithms(True)
     name = run_name or f"ppo_o{orders}_s{seed}_{datetime.now(timezone.utc):%Y%m%dT%H%M%S%fZ}"
@@ -60,11 +75,12 @@ def train_ppo(*, timesteps=20_000, seed=42, orders=1, blocked=False, layout_path
     eval_env = Monitor(WarehouseRushEnv(orders, blocked, layout_path))
     eval_env.reset(seed=20_000)
     net_arch = params.pop("net_arch")
-    hyperparameters = {**params, "policy_kwargs": {"net_arch": {"pi": list(net_arch), "vf": list(net_arch)}}}
+    arch = {"pi": list(net_arch), "vf": list(net_arch)} if algo == "ppo" else list(net_arch)
+    hyperparameters = {**params, "policy_kwargs": {"net_arch": arch}}
     revision = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True)
     dirty = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
     metadata = {
-        "status": "running", "algorithm": "PPO", "policy": "MlpPolicy",
+        "status": "running", "algorithm": algo.upper(), "policy": "MlpPolicy",
         "environment_version": ENV_VERSION, "environment_sheet_version": __version__, "seed": seed, "orders": orders,
         "blocked": blocked, "requested_timesteps": timesteps,
         "hyperparameters": hyperparameters, "n_envs": n_envs, "parent_model": str(parent_model) if parent_model else None, "device": "cpu", "torch_threads": 1,
@@ -84,7 +100,11 @@ def train_ppo(*, timesteps=20_000, seed=42, orders=1, blocked=False, layout_path
                          info_keywords=("success", "deliveries", "collisions", "end_reason"))
     started = time.perf_counter()
     try:
-        if parent_model:  # continuar desde un checkpoint compatible (parent_run_id)
+        if algo == "dqn":
+            if parent_model:
+                raise ValueError("DQN no admite parent_run_id (el replay buffer no se hereda)")
+            model = DQN("MlpPolicy", monitor, seed=seed, device="cpu", verbose=0, **hyperparameters)
+        elif parent_model:  # continuar desde un checkpoint compatible (parent_run_id)
             model = PPO.load(str(parent_model), env=monitor, device="cpu", seed=seed)
             from stable_baselines3.common.utils import get_schedule_fn
 
@@ -107,7 +127,7 @@ def train_ppo(*, timesteps=20_000, seed=42, orders=1, blocked=False, layout_path
         duration = time.perf_counter() - started
         final_path = model_dir / "model.zip"
         model.save(final_path)
-        alias = default_model(orders, seed)
+        alias = default_model(orders, seed, algo)
         shutil.copy2(final_path, alias)
         metadata.update(status="completed", effective_timesteps=model.num_timesteps,
                         duration_seconds=duration, model_path=str(final_path), model_alias=str(alias),
@@ -187,7 +207,10 @@ def load_config(path) -> dict:
     import yaml
 
     config = yaml.safe_load(Path(path).read_text())
-    for key in ("id", "hipotesis", "nivel", "environment_version", "seed", "presupuesto_pasos", "ppo"):
+    algo = config.get("algoritmo", "ppo")
+    if algo not in ("ppo", "dqn"):
+        raise ValueError(f"{path}: algoritmo desconocido '{algo}'")
+    for key in ("id", "hipotesis", "nivel", "environment_version", "seed", "presupuesto_pasos", algo):
         if key not in config:
             raise ValueError(f"{path}: falta la clave obligatoria '{key}'")
     if config["environment_version"] != ENV_VERSION:
@@ -217,7 +240,8 @@ def train_from_config(path, *, tipo="candidato", timesteps=None) -> dict:
     budget = timesteps or config["presupuesto_pasos"]
     config_hash = sha256_config(config)
     name = run_name_for(config)
-    ppo = dict(config["ppo"])
+    algo = config.get("algoritmo", "ppo")
+    ppo = dict(config[algo])
     n_envs = ppo.pop("n_envs", 1)
     evaluation = config.get("evaluacion", {})
     parent = config.get("parent_run_id")
@@ -227,14 +251,14 @@ def train_from_config(path, *, tipo="candidato", timesteps=None) -> dict:
         if not parent_model.is_file():
             raise FileNotFoundError(f"parent_run_id {parent}: no existe {parent_model}")
     tags = {"nivel": config["nivel"], "hipotesis": config["hipotesis"].strip(), "tipo": tipo,
-            "estado": "candidato", "environment_version": ENV_VERSION, "config_sha256": config_hash,
+            "estado": "candidato", "algoritmo": algo, "environment_version": ENV_VERSION, "config_sha256": config_hash,
             "parent_run_id": parent or "none", "config_id": config["id"], "seed": config["seed"],
             "suite_final": evaluation.get("final", "")}
     with mlflow_run(experiment=f"warehouse-{config['nivel']}", run_name=name,
                     config={**config, "presupuesto_efectivo": budget}, tags=tags):
         meta = train_ppo(timesteps=budget, seed=config["seed"], orders=level["orders"],
                          blocked=level["blocked"], run_name=name, ppo=ppo, n_envs=n_envs,
-                         eval_every=evaluation.get("cada_pasos", 5_000), parent_model=parent_model)
+                         eval_every=evaluation.get("cada_pasos", 5_000), parent_model=parent_model, algo=algo)
         model_path = Path(meta["model_path"])
         mlflow.log_artifact(str(model_path), artifact_path="modelo")
         mlflow.set_tags({"model_sha256": sha256_file(model_path), "pasos_reales": meta["effective_timesteps"]})

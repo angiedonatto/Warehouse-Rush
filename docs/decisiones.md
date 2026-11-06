@@ -13,3 +13,4 @@
 | 2026-11-06 | lis | Niveles en configs/niveles.yaml: N1 = 1 pedido, N2 = 2 pedidos, N3 = 2 pedidos con pasillo cerrado | La guía R2 propone 3 pedidos en N2, pero el ambiente v0.1 soporta 1 o 2; pendiente con R1 |
 | 2026-11-06 | lis | train.py acepta --config (YAML de configs/experiments/) y registra en MLflow con los tags del plan; pipelines/tracking.py mínimo (R3 lo extiende) | El plan: sin hiperparámetros a mano, config SHA-256, un experimento MLflow por nivel |
 | 2026-11-06 | lis | El snapshot models/experiment-001/*.zip (170 KiB) se versiona en Git por excepción | El despliegue en Vercel necesita el modelo y no ejecuta dvc pull |
+| 2026-11-06 | lis | Se agrega DQN (SB3) como segundo tipo de modelo, seleccionable con `algoritmo: dqn` en el YAML; PPO sigue siendo la referencia | El enunciado admite otros algoritmos si son compatibles con las acciones (Discrete(5)) y se justifican; el resultado (0% de éxito) está en docs/experimentos.md |

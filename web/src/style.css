@@ -26,3 +26,5 @@ h1{font-family:'Barlow',Arial,sans-serif;font-size:42px;font-weight:800;letter-s
 .order-sheet input[type=checkbox]{appearance:none;border:1.5px solid #d68aaa;border-radius:4px;background:#fff8fc;display:grid;place-content:center;margin:2px 0}.order-sheet input[type=checkbox]:checked{background:#d68aaa}.order-sheet input[type=checkbox]:checked::after{content:'✓';color:white;font-size:13px;font-weight:700;line-height:1}
 
 .legend li[hidden]{display:none}.rack-level-label{font-size:9px;background:#102534e8;color:#f6dce8;pointer-events:none;border-color:#a7758e}#cargo{overflow-wrap:anywhere;font-size:11px}.makeup-control{color:#d5e2ec}
+
+.handling-status{margin:12px;padding:10px;border:1px solid #597381;border-radius:8px;background:#102534;color:#e6c7d9;font-size:11px;line-height:1.7}.handling-status[hidden]{display:none}

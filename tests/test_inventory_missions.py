@@ -84,11 +84,13 @@ def test_navigable_orders_capacity_and_observation_contract(seed, blocked):
 
 
 def test_failure_with_cargo_remains_traceable():
-    env = MakeupMissionEnv(simulation=SimulationConfig(max_steps=20))
+    env = MakeupMissionEnv()
     obs, _ = env.reset(seed=3)
     policy = HeuristicPolicy()
-    while not env._done:
+    while not env.carried_lines:
         obs, _, _, _, info = env.step(policy.action(obs, env))
+    env.state.bateria = .01  # Fallo de batería después de una recogida real.
+    obs, _, _, _, info = env.step(3)
     assert info['state']['order']['state'] == 'FAILED'
     assert sum(l['pending_return'] for l in info['state']['order']['lines']) > 0
     env.inventory.check()

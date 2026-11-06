@@ -5,6 +5,7 @@ import { WarehouseScene } from './warehouse.js';
 const $ = selector => document.querySelector(selector);
 let scene, current, layoutInfo, running = false, busy = false, changing = false, timer = null;
 let toastTimer;
+const handling = document.createElement('div');handling.id='handling-status';handling.className='handling-status';handling.setAttribute('aria-live','polite');document.querySelector('.robot-panel .panel-title').after(handling);
 let selectedRack = 'E01';
 const sheet = document.createElement('section');sheet.id = 'order-sheet';sheet.className = 'order-sheet';sheet.setAttribute('aria-live', 'polite');document.querySelector('.sidebar').prepend(sheet);
 const inventoryPanel = document.createElement('section');inventoryPanel.className = 'order-sheet';
@@ -83,15 +84,22 @@ function renderState(payload, instant = false) {
   const banner = $('#mission-banner');banner.hidden = !payload.done;
   if (payload.done) {
     banner.classList.toggle('warning', !payload.info.success);
-    banner.textContent = payload.info.success ? `✓ Misión completada · ${s.entregas} ${payload.makeup ? 'líneas entregadas' : 'entregas'} · ${s.tiempo} pasos` : `Episodio finalizado · ${{ time_limit: 'Límite de tiempo', battery_depleted: 'Batería agotada', unreachable_target: 'Objetivo inaccesible' }[payload.info.end_reason] || payload.info.end_reason}`;
+    banner.textContent = payload.info.success ? `✓ Misión completada · ${s.entregas} ${payload.makeup ? 'líneas entregadas' : 'entregas'} · ${s.tiempo} pasos` : `Episodio finalizado · ${{ time_limit: 'Límite de tiempo', battery_depleted: 'Batería agotada', unreachable_target: 'Objetivo inaccesible', insufficient_budget: 'Batería o tiempo insuficientes para recoger y volver' }[payload.info.end_reason] || payload.info.end_reason}`;
     pause();
   }
   document.querySelectorAll('.legend li').forEach(el => { if (['P1', 'P2'].includes(el.querySelector('kbd')?.textContent)) el.hidden = Boolean(payload.makeup); });
+  handling.hidden = !s.lift;
   renderOrderSheet(sheet, s);
   inventoryPanel.hidden = !s.inventory;
   if (s.inventory) renderRack(rackDetail, s, selectedRack);
   if (s.order) {
     const line = s.order.lines[s.pedido_actual];
+    if (s.lift) {
+      const phases={idle:'Plataforma baja · puede desplazarse',raising:'Elevando · desplazamiento bloqueado',ready:'Altura alcanzada · listo para transferir',lowering:'Bajando carga · desplazamiento bloqueado'};
+      const reasons={nearby_product:'Siguiente producto cercano que cabe en la carga',capacity:'Volver a despacho: capacidad completa',battery_or_time:'Volver a despacho: reservar batería y tiempo',all_picked:'Pedido recogido: ir a despacho',complete:'Pedido entregado',insufficient_budget:'No iniciar: presupuesto insuficiente para volver'};
+      handling.textContent=`${phases[s.lift.phase]} · ${s.lift.height.toFixed(2)} m / ${s.lift.target.toFixed(2)} m · ${reasons[s.lift.plan.reason] || ''} · Viajes a despacho: ${s.lift.dispatch_visits}`;
+      if (s.lift.phase !== 'idle' && !payload.done) $('#robot-activity').textContent=phases[s.lift.phase];
+    }
     $('#cargo').textContent = s.cargo_lines?.length ? s.cargo_lines.map(l => `${l.subcategory} × ${l.quantity}`).join(' · ') : 'Sin productos';
     $('#target').textContent = !s.objetivo ? 'Entrega confirmada' : s.objetivo === 'DELIVERY' ? 'Despacho' : line ? `${line.level} · ${line.subcategory} × ${line.quantity}` : 'Entrega confirmada';
     $('#mission-title').textContent = `ORDEN ${s.order.id.slice(0, 8)} · ${s.order.state}`;

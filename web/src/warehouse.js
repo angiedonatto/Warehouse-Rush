@@ -409,7 +409,7 @@ export class WarehouseScene {
       const el = document.createElement('div');el.className = 'station-label rack-level-label';
       el.textContent = `${product.level} · ${product.subcategory}`;el.dataset.level = product.level;container.append(el);
       this.labels.push({name: `LEVEL:${product.level}`, rack: product.rack, el,
-        position: this.world((bounds[0] + bounds[2]) / 2, bounds[3] + .6, .45 + (Number(product.level.slice(-1)) - 1) * .8)});
+        position: this.world((bounds[0] + bounds[2]) / 2, bounds[3] + .6, (product.height_m ?? .99) + .12)});
     }
   }
 
@@ -561,10 +561,11 @@ export class WarehouseScene {
     this.frame = requestAnimationFrame(this.animate);
     const dt = Math.min(this.clock.getDelta(), .08);
     this.elapsed += dt;
+    this.stockVisuals.animate(dt);
     if (this.renderer.domElement.width === 0) return;
     this.robot.position.lerp(this.targetPosition, 1 - Math.exp(-dt * (this.motionSpeed || 9)));
     const angle = Math.atan2(Math.sin(this.targetYaw - this.robot.rotation.y), Math.cos(this.targetYaw - this.robot.rotation.y));
-    const moving = this.robot.position.distanceToSquared(this.targetPosition) > .00001 || Math.abs(angle) > .001;
+    const moving = Math.abs(this.stockVisuals.lift.height - this.stockVisuals.lift.target) > .001 || this.robot.position.distanceToSquared(this.targetPosition) > .00001 || Math.abs(angle) > .001;
     this.robot.rotation.y += angle * (1 - Math.exp(-dt * 12));
     if (this.payload?.state.v) this.wheels.forEach(wheel => { wheel.rotation.x += dt * 4; });
     this.barrierGlow.intensity = 2.7 + Math.sin(this.elapsed * 5) * .5;

@@ -14,7 +14,7 @@ export function renderOrderSheet(container, state) {
     if (previous.has(line.sku) && previous.get(line.sku) !== item.className) item.classList.add('line-updated');
     const check = document.createElement('input');check.type = 'checkbox';check.disabled = true;check.checked = line.picked === line.quantity;check.setAttribute('aria-label', `${line.subcategory} recogido`);
     const text = document.createElement('span');text.textContent = `${line.subcategory} · ${line.sku}`;
-    const detail = document.createElement('small');detail.textContent = `${line.level} · Solicitadas ${line.quantity} · Recogidas ${line.picked} · Entregadas ${line.delivered}${line.pending_return ? ` · Devolución pendiente ${line.pending_return}` : ''}`;
+    const detail = document.createElement('small');detail.textContent = `${line.level} · ${line.height_m?.toFixed(2) || '?'} m · Solicitadas ${line.quantity} · Recogidas ${line.picked} · Entregadas ${line.delivered}${line.pending_return ? ` · Devolución pendiente ${line.pending_return}` : ''}`;
     text.append(detail);item.append(check, text);list.append(item);
   }
   container.append(list);
@@ -27,7 +27,7 @@ export function renderRack(container, state, rack) {
   const products = state.inventory?.products.filter(p => p.rack === rack) || [];
   const heading = document.createElement('h3');heading.textContent = `${rack} · ${products[0]?.category || ''}`;container.append(heading);
   for (const p of products) {
-    const line = document.createElement('p');line.textContent = `${p.level} · ${p.subcategory}`;
+    const line = document.createElement('p');line.textContent = `${p.level} · ${p.subcategory} · ${p.height_m?.toFixed(2) || '?'} m`;
     const detail = document.createElement('small');detail.textContent = `${p.sku} (temporal) · Total ${p.stock_total} · Reservado ${p.stock_reserved} · Disponible ${p.stock_available}`;line.append(detail);container.append(line);
   }
 }

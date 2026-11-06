@@ -3,6 +3,7 @@ from copy import deepcopy
 from random import Random
 from threading import RLock
 from uuid import uuid4
+from warehouse_rush.handling import LEVEL_HEIGHTS
 
 CATEGORIES = [
     ('Maquillaje', ['Ojos', 'Rostro', 'Labios']),
@@ -13,7 +14,7 @@ CATEGORIES = [
     ('Disney', ['Princesas', 'Villanos', 'Toy Story']),
 ]
 CATALOG = {f'TMP-E{i:02d}-L{j}': dict(sku=f'TMP-E{i:02d}-L{j}', rack=f'E{i:02d}',
-           level=f'E{i:02d}-L{j}', category=category, subcategory=sub, temporary=True)
+           level=f'E{i:02d}-L{j}', height_m=LEVEL_HEIGHTS[j - 1], category=category, subcategory=sub, temporary=True)
            for i, (category, subs) in enumerate(CATEGORIES, 1) for j, sub in enumerate(subs, 1)}
 
 

@@ -19,6 +19,8 @@ class RandomPolicy:
 
 class HeuristicPolicy:
     def action(self, observation, env: WarehouseRushEnv) -> int:
+        if getattr(env, 'lift_phase', None) in ('raising', 'lowering'):
+            return int(Action.FRENAR)
         if env.facing_target():
             return int(Action.FRENAR if env.state.v else Action.INTERACTUAR)
         target = env.layout.stations[env.state.objetivo]

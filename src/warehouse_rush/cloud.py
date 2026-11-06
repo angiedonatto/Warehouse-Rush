@@ -21,7 +21,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from warehouse_rush.env import WorldState
 from warehouse_rush.missions import MakeupMissionEnv
-from warehouse_rush.inventory import Inventory
+from warehouse_rush.inventory import CATALOG, Inventory
 from warehouse_rush.policies import make_policy
 from warehouse_rush.viewer import ViewerSession, WEB_ROOT
 
@@ -59,6 +59,7 @@ class SignedSessions:
             record['makeup'] = True
             record['inventory'] = dict(initial=session.inventory.initial, total=session.inventory.total, orders=session.inventory.orders)
             record['order_id'] = session.env.order_id
+            record['mechanism'] = session.env.mechanism_snapshot()
             record['orders'] = 1  # Parámetro legacy constructor; líneas se restauran aparte.
         raw = json.dumps(record, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode()
         encoded = urlsafe_b64encode(zlib.compress(raw) if record.get("makeup") else raw).decode().rstrip("=")
@@ -91,6 +92,9 @@ class SignedSessions:
                 saved = record['inventory']
                 inventory = Inventory(saved['initial'])
                 inventory.total, inventory.orders = saved['total'], saved['orders']
+                for order in inventory.orders.values():
+                    for line in order['lines']:
+                        line.setdefault('height_m', CATALOG[line['sku']]['height_m'])
                 inventory.check()
                 session.inventory = session.env.inventory = inventory
                 session.env.order_id = record['order_id']
@@ -98,6 +102,8 @@ class SignedSessions:
                 session.env.orders = len(session.env.lines)
                 session.env.packages = tuple(l['sku'] for l in session.env.lines)
             session.env.state = WorldState(**record["state"])
+            if record.get('makeup'):
+                session.env.restore_mechanism(record.get('mechanism'))
             session.env.picked_packages = set(record["picked"])
             session.env.completed_packages = set(record["completed"])
             session.env._done = session.done = record["done"]

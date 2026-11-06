@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { LiftVisuals } from './lift-visuals.js';
 
 // Marcas de SKU temporales, sin modelos ni imágenes de productos comerciales.
 // Una instancia representa una unidad física; reserva no elimina unidades.
@@ -15,6 +16,7 @@ export class StockVisuals {
     this.dispatched.position.copy(view.world(...view.layout.stations.DELIVERY, .08));
     view.scene.add(this.dispatched);
     this.products = new Map();
+    this.lift = new LiftVisuals(view);
   }
 
   mesh(sku, quantity, parent, material) {
@@ -38,8 +40,14 @@ export class StockVisuals {
     mesh.instanceMatrix.needsUpdate = true;
   }
 
+  animate(dt) {
+    this.lift.animate(dt);
+    this.cargo.position.y=this.avatarCargo.position.y=this.lift.height-.55;
+  }
+
   update(state, enabled) {
     for (const group of [this.shelves, this.cargo, this.avatarCargo, this.dispatched]) group.visible = enabled;
+    this.lift.update(state, enabled);
     if (!enabled) return;
     const lines = state.order.lines;
     const carried = state.cargo_lines || [];
@@ -62,7 +70,7 @@ export class StockVisuals {
         this.products.set(product.sku, meshes);
       }
       meshes.shelf.userData.level = product.level;
-      this.place(meshes.shelf, product.stock_total, this.view.world((x0 + x1) / 2, (y0 + y1) / 2, .32 + layer * .8));
+      this.place(meshes.shelf, product.stock_total, this.view.world((x0 + x1) / 2, (y0 + y1) / 2, (product.height_m ?? (.99 + layer * .8)) + .13));
       const quantity = carried.find(l => l.sku === product.sku)?.quantity || 0;
       // Distintos SKUs ocupan posiciones diferentes en la plataforma del robot.
       for (const mesh of [meshes.cargo, meshes.avatar]) {

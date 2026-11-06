@@ -1,0 +1,23 @@
+id: c2
+hipotesis: >
+  gamma 0.99 -> 0.995: episodios de 3 pedidos necesitan valorar recompensas lejanas; menos episodios truncados.
+nivel: n2
+environment_version: warehouse-v1
+parent_run_id: null
+seed: 0
+presupuesto_pasos: 1000000
+ppo:
+  learning_rate: 3.0e-4
+  n_steps: 2048
+  n_envs: 4
+  batch_size: 64
+  n_epochs: 10
+  gamma: 0.995
+  gae_lambda: 0.95
+  clip_range: 0.2
+  ent_coef: 0.0
+  net_arch: [64, 64]
+evaluacion:
+  intermedia: dev-n2-v1
+  cada_pasos: 50000
+  final: suite-n2-v1

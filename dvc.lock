@@ -1,0 +1,39 @@
+schema: '2.0'
+stages:
+  train:
+    cmd: python -m warehouse_rush train --quiet
+    deps:
+    - path: warehouse_rush
+      hash: md5
+      md5: 4b31caa6d6981ade741d33ea23d3b0f3.dir
+      size: 45296
+      nfiles: 12
+    params:
+      params.yaml:
+        early_stopping:
+          eval_every: 500
+          eval_layouts: 200
+          patience: 10
+          min_delta: 0.005
+          min_episodes: 30000
+        env:
+          size: 8
+          n_obstacles: 10
+        train:
+          seed: 0
+          max_episodes: 60000
+          alpha: 0.2
+          gamma: 0.97
+          eps_start: 1.0
+          eps_end: 0.05
+          eps_decay_fraction: 0.4
+    outs:
+    - path: metrics.json
+      hash: md5
+      md5: a2f2c546e2297241db9637dbd07ed017
+      size: 109
+    - path: models
+      hash: md5
+      md5: 5543ef132fa0a4f510a00b96a211c20f.dir
+      size: 525755
+      nfiles: 3

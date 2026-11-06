@@ -1,0 +1,5 @@
+id: dev-n3-v1
+uso: evaluacion intermedia durante el entrenamiento
+nivel: n3
+episodios: 10
+semillas: [1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009]

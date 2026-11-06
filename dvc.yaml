@@ -1,0 +1,14 @@
+stages:
+  train:
+    cmd: python -m warehouse_rush train --quiet
+    deps:
+      - warehouse_rush
+    params:
+      - env
+      - train
+      - early_stopping
+    outs:
+      - models
+    metrics:
+      - metrics.json:
+          cache: false

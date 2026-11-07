@@ -4,7 +4,7 @@ import math
 from warehouse_rush.env import Action, WarehouseRushEnv
 from warehouse_rush.handling import LiftConfig
 from warehouse_rush.inventory import Inventory
-from warehouse_rush.layout import Layout, WIDE_LAYOUT
+from warehouse_rush.layout import Layout, PACKING_LAYOUT
 
 
 class MakeupMissionEnv(WarehouseRushEnv):
@@ -12,7 +12,7 @@ class MakeupMissionEnv(WarehouseRushEnv):
                  rewards=None, render_mode=None, *, capacity=3, inventory=None):
         if type(capacity) is not int or capacity < 1:
             raise ValueError('Capacidad inválida')
-        super().__init__(orders, blocked, layout_path or WIDE_LAYOUT,
+        super().__init__(orders, blocked, layout_path or PACKING_LAYOUT,
                          simulation=simulation, rewards=rewards, render_mode=render_mode)
         self.capacity = capacity
         self.lift_config = LiftConfig()
@@ -146,6 +146,11 @@ class MakeupMissionEnv(WarehouseRushEnv):
                 self._lift_event('LIFT_ABORT')
             return False
         return super()._move(action)
+
+    def facing_target(self):
+        if self.state.objetivo == 'DELIVERY' and self.position not in self.layout.approaches('DELIVERY', self.state.pasillo_bloqueado):
+            return False
+        return super().facing_target()
 
     def _interact(self):
         s = self.state

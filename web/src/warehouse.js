@@ -78,8 +78,11 @@ export class WarehouseScene {
       const rect = this.stage.getBoundingClientRect();
       const pointer = new THREE.Vector2((event.clientX - rect.left) / rect.width * 2 - 1, -(event.clientY - rect.top) / rect.height * 2 + 1);
       this.raycaster.setFromCamera(pointer, this.camera);
-      const hit = this.raycaster.intersectObjects(this.rackSigns.map(sign => sign.pick))[0];
-      if (hit) this.onRackSelect?.(hit.object.userData.rackId);
+      const picks=this.rackSigns.map(sign=>sign.pick);
+      if (this.stockVisuals.packing.group.visible) picks.push(this.stockVisuals.packing.pick);
+      const hit = this.raycaster.intersectObjects(picks)[0];
+      if (hit?.object.userData.station === 'DELIVERY') this.onDispatchSelect?.();
+      else if (hit) this.onRackSelect?.(hit.object.userData.rackId);
     };
     stage.addEventListener('pointerdown', this.pointerDown);stage.addEventListener('pointerup', this.pointerUp);
     this.resize = () => {
@@ -278,6 +281,7 @@ export class WarehouseScene {
   }
 
   buildStation(name, coordinate, target = this.scene) {
+    if (name === 'DELIVERY' && this.layout.dispatch_area) return;
     const p = this.world(...coordinate), color = name === 'BASE' ? C.green : name === 'DELIVERY' ? C.yellow : C.cyan;
     const pad = this.material(`pad-${name}`, color, { transparent: true, opacity: .17, emissive: color, emissiveIntensity: .9, depthWrite: false });
     this.box([.96, .018, .96], p.clone().setY(.02), pad);
@@ -423,7 +427,7 @@ export class WarehouseScene {
     if (instant) { this.robot.position.copy(this.targetPosition);this.robot.rotation.y = this.targetYaw; }
     this.cargo.visible = this.avatarCargo.visible = !payload.makeup && Boolean(s.carga);
     this.legacyStations.visible = !payload.makeup;
-    this.stockVisuals.update(s, Boolean(payload.makeup));
+    this.stockVisuals.update(s, Boolean(payload.makeup), instant);
     this.barrier.visible = s.pasillo_bloqueado;
     const route = payload.route;
     let count = 0;
@@ -470,13 +474,15 @@ export class WarehouseScene {
     this.cameras.fpv.lookAt(p.clone().addScaledVector(forward, 5).add(new THREE.Vector3(0, .85, 0)));
     this.cameras.side.position.copy(p).add(new THREE.Vector3(-2.7, 1.35, 2.5));
     this.cameras.side.lookAt(p.clone().setY(.45));
-    const target = this.selectedRack || this.payload?.state.objetivo;
+    const target = this.inspectedStation || this.selectedRack || this.payload?.state.objetivo;
     const rack = target?.startsWith('E') ? this.layout.racks[Number(target.slice(1)) - 1] : null;
     const station = rack ? this.world((rack.bounds[0] + rack.bounds[2]) / 2, (rack.bounds[1] + rack.bounds[3]) / 2)
       : target ? this.world(...this.layout.stations[target]) : this.world(...this.layout.stations.DELIVERY);
+    if (target === 'DELIVERY' && this.layout.dispatch_area) station.x += .5;
+    const packing = target === 'DELIVERY' && this.payload?.makeup;
     const side = target === 'DELIVERY' ? -1 : 1;
-    this.cameras.station.position.copy(station).add(new THREE.Vector3(rack ? -2.8 : -2 * side, rack ? 3.7 : 2.15, rack ? 4.6 : 2.35));
-    this.cameras.station.lookAt(station.clone().setY(rack ? 1.65 : .3));
+    this.cameras.station.position.copy(station).add(new THREE.Vector3(packing ? -3.2 : rack ? -2.8 : -2 * side, packing ? 2.6 : rack ? 3.7 : 2.15, packing ? 3.4 : rack ? 4.6 : 2.35));
+    this.cameras.station.lookAt(station.clone().setY(packing ? .70 : rack ? 1.65 : .3));
     if (this.view !== 'iso') {
       this.camera.position.copy(this.cameras[this.view].position);
       this.camera.quaternion.copy(this.cameras[this.view].quaternion);
@@ -502,7 +508,7 @@ export class WarehouseScene {
     for (const { name, rack, el, position } of this.labels) {
       const v = position.clone().project(this.camera);
       const x = (v.x * .5 + .5) * w, y = (-v.y * .5 + .5) * h;
-      const visible = v.z > -1 && v.z < 1 && x > 20 && x < w - 20 && y > 45 && y < h - 25 && (name !== 'BLOCK' || this.barrier.visible) && (!name.startsWith('P') || !this.payload?.makeup) && (!name.startsWith('E') || this.payload?.makeup) && (!rack || (this.payload?.makeup && rack === (this.selectedRack || this.payload?.state.objetivo)));
+      const visible = v.z > -1 && v.z < 1 && x > 20 && x < w - 20 && y > 45 && y < h - 25 && (name !== 'BLOCK' || this.barrier.visible) && (name !== 'DELIVERY' || !this.payload?.makeup) && (!name.startsWith('P') || !this.payload?.makeup) && (!name.startsWith('E') || this.payload?.makeup) && (!rack || (this.payload?.makeup && rack === (this.selectedRack || this.payload?.state.objetivo)));
       el.style.display = visible ? 'flex' : 'none';el.style.left = `${x}px`;el.style.top = `${y}px`;
     }
   }
@@ -569,7 +575,7 @@ export class WarehouseScene {
     if (this.renderer.domElement.width === 0) return;
     this.robot.position.lerp(this.targetPosition, 1 - Math.exp(-dt * (this.motionSpeed || 9)));
     const angle = Math.atan2(Math.sin(this.targetYaw - this.robot.rotation.y), Math.cos(this.targetYaw - this.robot.rotation.y));
-    const moving = Math.abs(this.stockVisuals.lift.height - this.stockVisuals.lift.target) > .001 || this.robot.position.distanceToSquared(this.targetPosition) > .00001 || Math.abs(angle) > .001;
+    const moving = this.stockVisuals.packing.isAnimating || Math.abs(this.stockVisuals.lift.height - this.stockVisuals.lift.target) > .001 || this.robot.position.distanceToSquared(this.targetPosition) > .00001 || Math.abs(angle) > .001;
     this.robot.rotation.y += angle * (1 - Math.exp(-dt * 12));
     if (this.payload?.state.v) this.wheels.forEach(wheel => { wheel.rotation.x += dt * 4; });
     this.barrierGlow.intensity = 2.7 + Math.sin(this.elapsed * 5) * .5;

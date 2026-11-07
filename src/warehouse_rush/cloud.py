@@ -20,7 +20,7 @@ import zlib
 from urllib.parse import parse_qs, urlsplit
 
 from warehouse_rush.env import WorldState
-from warehouse_rush.layout import DEFAULT_LAYOUT, WIDE_LAYOUT
+from warehouse_rush.layout import DEFAULT_LAYOUT, WIDE_LAYOUT, PACKING_LAYOUT
 from warehouse_rush.missions import MakeupMissionEnv
 from warehouse_rush.inventory import CATALOG, Inventory
 from warehouse_rush.policies import make_policy
@@ -88,9 +88,10 @@ class SignedSessions:
             if record["v"] != 1 or record["expires"] < time.time():
                 raise ValueError("Sesión expirada; reinicia la misión")
             version = record.get('layout_version', '0.1.0')
-            if version not in ('0.1.0', '0.3.0'):
+            layouts = {'0.1.0': DEFAULT_LAYOUT, '0.3.0': WIDE_LAYOUT, '0.4.0': PACKING_LAYOUT}
+            if version not in layouts:
                 raise ValueError('Versión de mapa no compatible')
-            session = ViewerSession(layout_path=DEFAULT_LAYOUT if version == '0.1.0' else WIDE_LAYOUT,
+            session = ViewerSession(layout_path=layouts[version],
                                     policy_factory=cloud_policy,
                                     settings={"orders": record["orders"], "blocked": record["state"]["pasillo_bloqueado"],
                                               "policy": record["policy"], "seed": record["seed"], "makeup": record.get("makeup", False)})

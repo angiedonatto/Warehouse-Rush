@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { LiftVisuals } from './lift-visuals.js';
+import { PackingStation } from './packing-station.js';
 
 // Marcas de SKU temporales, sin modelos ni imágenes de productos comerciales.
 // Una instancia representa una unidad física; reserva no elimina unidades.
@@ -12,9 +13,8 @@ export class StockVisuals {
     this.shelves = new THREE.Group();view.scene.add(this.shelves);
     this.cargo = new THREE.Group();view.robot.add(this.cargo);
     this.avatarCargo = new THREE.Group();view.avatar.add(this.avatarCargo);
-    this.dispatched = new THREE.Group();
-    this.dispatched.position.copy(view.world(...view.layout.stations.DELIVERY, .08));
-    view.scene.add(this.dispatched);
+    this.packing = new PackingStation(view);
+    this.dispatched = this.packing.productRoot;
     this.products = new Map();
     this.lift = new LiftVisuals(view);
   }
@@ -42,16 +42,29 @@ export class StockVisuals {
 
   animate(dt) {
     this.lift.animate(dt);
+    this.packing.animate(dt);
+    this.updateDeliveredPoses();
     this.cargo.position.y=this.avatarCargo.position.y=this.lift.height-.55;
   }
 
-  update(state, enabled) {
+  updateDeliveredPoses() {
+    for (const [sku, meshes] of this.products) {
+      for (let i=0;i<meshes.delivered.count;i++) {
+        transform.position.copy(this.packing.positionFor(sku,i));transform.rotation.set(0,0,0);transform.scale.set(1,1,1);transform.updateMatrix();
+        meshes.delivered.setMatrixAt(i,transform.matrix);
+      }
+      meshes.delivered.instanceMatrix.needsUpdate=true;
+    }
+  }
+
+  update(state, enabled, instant = false) {
     for (const group of [this.shelves, this.cargo, this.avatarCargo, this.dispatched]) group.visible = enabled;
     this.lift.update(state, enabled);
+    this.packing.update(state, enabled, instant);
     if (!enabled) return;
     const lines = state.order.lines;
     const carried = state.cargo_lines || [];
-    let cargoOffset = 0, deliveredOffset = 0;
+    let cargoOffset = 0;
     for (const product of state.inventory.products) {
       const index = Number(product.rack.slice(1)) - 1;
       const rack = this.view.layout.racks[index];
@@ -85,12 +98,7 @@ export class StockVisuals {
       cargoOffset += quantity;
       const delivered = lines.find(l => l.sku === product.sku)?.delivered || 0;
       meshes.delivered.count = delivered;
-      for (let i = 0; i < delivered; i++) {
-        const slot = deliveredOffset + i;
-        transform.position.set((slot % 3 - 1) * .24, .13 + Math.floor(slot / 9) * .27, (Math.floor(slot / 3) % 3 - 1) * .24);
-        transform.scale.set(1, 1, 1);transform.updateMatrix();meshes.delivered.setMatrixAt(i, transform.matrix);
-      }
-      meshes.delivered.instanceMatrix.needsUpdate = true;deliveredOffset += delivered;
     }
+    this.updateDeliveredPoses();
   }
 }

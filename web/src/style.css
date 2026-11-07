@@ -30,3 +30,5 @@ h1{font-family:'Barlow',Arial,sans-serif;font-size:42px;font-weight:800;letter-s
 .handling-status{margin:12px;padding:10px;border:1px solid #597381;border-radius:8px;background:#102534;color:#e6c7d9;font-size:11px;line-height:1.7}.handling-status[hidden]{display:none}
 
 .station-label{font-size:8px;padding:4px 6px;box-shadow:none;opacity:.88;letter-spacing:.5px}.station-label .station-icon{display:none}
+
+.dispatch-panel{padding:15px 18px;border:1px solid #b286a0;border-radius:14px;background:#182635;color:#f4d9e6}.dispatch-panel p{font-size:12px;line-height:1.6;margin:9px 0 12px}.dispatch-panel .eyebrow{color:#e6b8cd}.dispatch-panel .button{background:#e9bfd3;color:#563849;border-color:#e9bfd3}.dispatch-panel[data-phase=ready]{border-color:#b8d5c4}.dispatch-panel[hidden]{display:none}@media(max-width:760px){.dispatch-panel{grid-column:1/-1}}

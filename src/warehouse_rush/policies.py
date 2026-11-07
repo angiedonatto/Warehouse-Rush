@@ -24,13 +24,14 @@ class HeuristicPolicy:
         if env.facing_target():
             return int(Action.FRENAR if env.state.v else Action.INTERACTUAR)
         target = env.layout.stations[env.state.objetivo]
+        approaches = env.layout.approaches(env.state.objetivo, env.state.pasillo_bloqueado)
         start = (*env.position, env.state.theta)
         queue = deque([(start, None)])
         seen = {start}
         while queue:
             (x, y, theta), first = queue.popleft()
             dx, dy = DIRECTIONS[theta]
-            if (x + dx, y + dy) == target:
+            if (x + dx, y + dy) == target and (x, y) in approaches:
                 return int(first)
             successors = [((x, y, (theta - 1) % 4), Action.GIRAR_IZQUIERDA),
                           ((x, y, (theta + 1) % 4), Action.GIRAR_DERECHA)]

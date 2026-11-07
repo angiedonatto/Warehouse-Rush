@@ -8,11 +8,13 @@ let toastTimer;
 const handling = document.createElement('div');handling.id='handling-status';handling.className='handling-status';handling.setAttribute('aria-live','polite');document.querySelector('.robot-panel .panel-title').after(handling);
 let selectedRack = 'E01';
 const sheet = document.createElement('section');sheet.id = 'order-sheet';sheet.className = 'order-sheet';sheet.setAttribute('aria-live', 'polite');document.querySelector('.sidebar').prepend(sheet);
+const packingPanel=document.createElement('section');packingPanel.className='dispatch-panel';packingPanel.innerHTML='<span class="eyebrow">DESPACHO · EMPAQUE</span><p id="packing-status">Esperando productos</p><button id="inspect-dispatch" class="button">Ver despacho</button>';
+sheet.after(packingPanel);
 const inventoryPanel = document.createElement('section');inventoryPanel.className = 'order-sheet';
 const rackSelect = document.createElement('select');rackSelect.setAttribute('aria-label', 'Seleccionar estantería');
 for (let i = 1; i <= 6; i++) { const id = `E${String(i).padStart(2, '0')}`;rackSelect.add(new Option(id, id)); }
-const rackDetail = document.createElement('div');rackDetail.id = 'rack-detail';inventoryPanel.append(rackSelect, rackDetail);sheet.after(inventoryPanel);
-rackSelect.addEventListener('change', () => { selectedRack = rackSelect.value;if (scene) { scene.selectedRack = selectedRack;scene.dirty = true; }renderRack(rackDetail, current.state, selectedRack); });
+const rackDetail = document.createElement('div');rackDetail.id = 'rack-detail';inventoryPanel.append(rackSelect, rackDetail);packingPanel.after(inventoryPanel);
+rackSelect.addEventListener('change', () => { selectedRack = rackSelect.value;if (scene) { scene.selectedRack = selectedRack;scene.inspectedStation = null;scene.dirty = true; }renderRack(rackDetail, current.state, selectedRack); });
 const makeupLabel = document.createElement('label');makeupLabel.className = 'makeup-control';
 makeupLabel.innerHTML = '<input id="makeup" type="checkbox"> Pedidos de maquillaje';
 const seedInput = document.createElement('input');seedInput.id = 'order-seed';seedInput.type = 'number';seedInput.min = '0';seedInput.max = '4294967295';seedInput.value = '10000';seedInput.setAttribute('aria-label', 'Semilla del pedido');
@@ -56,7 +58,13 @@ function mountScene() {
   scene?.dispose();
   $('#station-labels').replaceChildren();
   scene = new WarehouseScene(layoutInfo.layout, $('#world'), $('#stage'), layoutInfo.catalog);
-  scene.onRackSelect = id => { scene.selectedRack = id;scene.dirty = true;selectedRack = id;rackSelect.value = id;renderRack(rackDetail, current.state, id); };
+  scene.onDispatchSelect = inspectDispatch;
+  scene.onPackingChange = status => {
+    const phases={waiting:'Esperando productos',conveying:'Cinta en marcha · llevando productos a la caja',closing:'Cerrando la caja',partial:'Productos en caja · esperando el resto',ready:'♡ Caja preparada'};
+    $('#packing-status').textContent=`${phases[status.phase]} · ${status.packed}/${status.requested} unidades encajadas`;
+    packingPanel.dataset.phase=status.phase;
+  };
+  scene.onRackSelect = id => { scene.selectedRack = id;scene.inspectedStation = null;scene.dirty = true;selectedRack = id;rackSelect.value = id;renderRack(rackDetail, current.state, id); };
   $('.minimap-caption > span:last-child').textContent = `${layoutInfo.layout.width} × ${layoutInfo.layout.height} m`;
 }
 
@@ -100,6 +108,7 @@ function renderState(payload, instant = false) {
   handling.hidden = !s.lift;
   renderOrderSheet(sheet, s);
   inventoryPanel.hidden = !s.inventory;
+  packingPanel.hidden = !payload.makeup;
   if (s.inventory) renderRack(rackDetail, s, selectedRack);
   if (s.order) {
     const line = s.order.lines[s.pedido_actual];
@@ -179,6 +188,11 @@ function selectCamera(name) {
 }
 document.querySelectorAll('[data-camera]').forEach(button => button.addEventListener('click', () => selectCamera(button.dataset.camera)));
 $('#home-camera').addEventListener('click', () => selectCamera('iso'));
+function inspectDispatch() {
+  if (!scene) return;
+  scene.inspectedStation='DELIVERY';selectCamera('station');$('#camera-label').textContent='DETALLE DE DESPACHO';
+}
+$('#inspect-dispatch').addEventListener('click',inspectDispatch);
 // OrbitControls captura punteros en el escenario; los controles superpuestos
 // deben conservar su click en lugar de iniciar una órbita de cámara.
 $('.scene-toggles').addEventListener('pointerdown', event => event.stopPropagation());

@@ -4,14 +4,16 @@ import math
 from warehouse_rush.env import Action, WarehouseRushEnv
 from warehouse_rush.handling import LiftConfig
 from warehouse_rush.inventory import Inventory
-from warehouse_rush.layout import Layout
+from warehouse_rush.layout import Layout, WIDE_LAYOUT
 
 
 class MakeupMissionEnv(WarehouseRushEnv):
-    def __init__(self, *args, capacity=3, inventory=None, **kwargs):
+    def __init__(self, orders=1, blocked=False, layout_path=None, simulation=None,
+                 rewards=None, render_mode=None, *, capacity=3, inventory=None):
         if type(capacity) is not int or capacity < 1:
             raise ValueError('Capacidad inválida')
-        super().__init__(*args, **kwargs)
+        super().__init__(orders, blocked, layout_path or WIDE_LAYOUT,
+                         simulation=simulation, rewards=rewards, render_mode=render_mode)
         self.capacity = capacity
         self.lift_config = LiftConfig()
         self.inventory = inventory or Inventory()

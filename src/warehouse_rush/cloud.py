@@ -20,6 +20,7 @@ import zlib
 from urllib.parse import parse_qs, urlsplit
 
 from warehouse_rush.env import WorldState
+from warehouse_rush.layout import DEFAULT_LAYOUT, WIDE_LAYOUT
 from warehouse_rush.missions import MakeupMissionEnv
 from warehouse_rush.inventory import CATALOG, Inventory
 from warehouse_rush.policies import make_policy
@@ -46,6 +47,7 @@ class SignedSessions:
 
     def dump(self, session):
         record = {
+            "layout_version": session.env.layout.data["version"],
             "v": 1, "expires": int(time.time()) + MAX_AGE,
             "orders": session.env.orders, "policy": session.policy_name, "seed": session.seed,
             "state": asdict(session.env.state), "picked": sorted(session.env.picked_packages),
@@ -85,7 +87,11 @@ class SignedSessions:
             record = json.loads(raw)
             if record["v"] != 1 or record["expires"] < time.time():
                 raise ValueError("Sesión expirada; reinicia la misión")
-            session = ViewerSession(policy_factory=cloud_policy,
+            version = record.get('layout_version', '0.1.0')
+            if version not in ('0.1.0', '0.3.0'):
+                raise ValueError('Versión de mapa no compatible')
+            session = ViewerSession(layout_path=DEFAULT_LAYOUT if version == '0.1.0' else WIDE_LAYOUT,
+                                    policy_factory=cloud_policy,
                                     settings={"orders": record["orders"], "blocked": record["state"]["pasillo_bloqueado"],
                                               "policy": record["policy"], "seed": record["seed"], "makeup": record.get("makeup", False)})
             if record.get('makeup'):
@@ -116,6 +122,7 @@ class SignedSessions:
             if session.policy_name == "random":
                 # Random elige una acción por segundo. Restituir la misma secuencia.
                 session.policy.rng.integers(5, size=session.env.state.tiempo)
+            session.layout_path = None  # Los pedidos nuevos usan el mapa actual.
             return session
         except (KeyError, TypeError, json.JSONDecodeError) as exc:
             raise ValueError("Snapshot inválido; reinicia la misión") from exc
@@ -131,7 +138,11 @@ class CloudAPI:
                     "session_mode": "signed-per-visitor",
                     "commit": os.getenv("VERCEL_GIT_COMMIT_SHA", "local")}, None
         if method == "GET" and endpoint == "layout":
-            return ViewerSession(policy_factory=cloud_policy).layout_payload(), None
+            try:
+                session = self.sessions.load(token)
+            except ValueError:
+                session = self.sessions.load(None)
+            return session.layout_payload(), None
         if method == "GET" and endpoint == "state":
             try:
                 session = self.sessions.load(token)

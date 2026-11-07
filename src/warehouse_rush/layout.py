@@ -14,6 +14,8 @@ DEFAULT_LAYOUT = Path(__file__).resolve().parents[2] / "configs/layout_v0.1.json
 if not DEFAULT_LAYOUT.is_file():  # Instalaciones wheel: un enlace al JSON canónico se empaqueta.
     DEFAULT_LAYOUT = Path(__file__).parent / "configs/layout_v0.1.json"
 
+WIDE_LAYOUT = DEFAULT_LAYOUT.with_name("layout_v0.3.json")
+
 
 @dataclass(frozen=True)
 class Layout:

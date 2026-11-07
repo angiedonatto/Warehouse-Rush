@@ -52,8 +52,17 @@ function controls() {
   ppoOption.textContent = ppoOption.disabled ? 'PPO · sin modelo para esta misión' : 'PPO entrenado';
 }
 
+function mountScene() {
+  scene?.dispose();
+  $('#station-labels').replaceChildren();
+  scene = new WarehouseScene(layoutInfo.layout, $('#world'), $('#stage'), layoutInfo.catalog);
+  scene.onRackSelect = id => { scene.selectedRack = id;scene.dirty = true;selectedRack = id;rackSelect.value = id;renderRack(rackDetail, current.state, id); };
+  $('.minimap-caption > span:last-child').textContent = `${layoutInfo.layout.width} × ${layoutInfo.layout.height} m`;
+}
+
 function renderState(payload, instant = false) {
   current = payload;
+  scene.selectedRack = payload.makeup ? selectedRack : null;
   scene.setState(payload, instant);
   const s = payload.state, config = layoutInfo.layout.simulation;
   $('#position').innerHTML = `(${s.x}, ${s.y}) <span>m</span>`;
@@ -139,6 +148,10 @@ async function reset() {
     const ppoUnavailable = $('#policy').value === 'ppo' && !layoutInfo.available_ppo[$('#orders').value];
     if (ppoUnavailable) { $('#policy').value = 'heuristic';toast('Esta misión no tiene modelo PPO guardado. Se seleccionó el heurístico.'); }
     const result = await api('reset', { orders: Number($('#orders').value), policy: $('#policy').value, blocked: $('#blocked').checked, seed: Number(seedInput.value), makeup: $('#makeup').checked });
+    if (layoutInfo.layout_sha256 !== result.info.layout_sha256) {
+      layoutInfo = await api('layout');
+      mountScene();
+    }
     renderState(result, true);
     if (result.policy === 'ppo') toast('El PPO de 20 000 pasos obtuvo 0% de éxito. Se muestra su comportamiento real.');
   } catch (error) {
@@ -183,9 +196,7 @@ async function start() {
   try {
     [layoutInfo, current] = await Promise.all([api('layout'), api('state')]);
     $('#policy').value = current.policy;$('#orders').value = Math.min(2, current.orders);$('#blocked').checked = current.state.pasillo_bloqueado;$('#makeup').checked = current.makeup;seedInput.value = current.seed;
-    scene = new WarehouseScene(layoutInfo.layout, $('#world'), $('#stage'), layoutInfo.catalog);
-    scene.onRackSelect = id => { scene.selectedRack = id;scene.dirty = true;selectedRack = id;rackSelect.value = id;renderRack(rackDetail, current.state, id); };
-    $('.minimap-caption > span:last-child').textContent = `${layoutInfo.layout.width} × ${layoutInfo.layout.height} m`;
+    mountScene();
     renderState(current, true);
     $('#scene-loading').hidden = true;
     // Diagnóstico de la integración sin exponer acciones privilegiadas al modelo.

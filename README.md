@@ -1,5 +1,7 @@
 # Warehouse Rush v0.2 — visor 3D y ambiente v0.1
 
+> **Antes de modificar el proyecto:** lee [AGENTS.md](AGENTS.md). Incluye el relevo de Naomi, el alcance visual, las funcionalidades que deben conservarse y cómo actualizarse desde GitHub y comprobar producción antes de subir cambios.
+
 Demo del experimento 001: **https://warehouse-rush-experiment-001.vercel.app**
 
 Un robot recoge y entrega paquetes en una bodega 2D mediante un entorno

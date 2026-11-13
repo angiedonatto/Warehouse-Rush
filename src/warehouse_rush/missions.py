@@ -217,4 +217,4 @@ class MakeupMissionEnv(WarehouseRushEnv):
                     order=deepcopy(self.inventory.orders[self.order_id]), capacity=self.capacity,
                     lift=self.mechanism_snapshot(),
                     cargo_lines=[dict(sku=l['sku'], quantity=l['picked'] - l['delivered'],
-                                      level=l['level'], subcategory=l['subcategory']) for l in self.carried_lines])
+                                      level=l['level'], subcategory=l['subcategory'], name=l.get('name', l['subcategory'])) for l in self.carried_lines])

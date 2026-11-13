@@ -12,7 +12,7 @@ test('wide warehouse has mounted signs, no floating rack labels and selectable r
   });
   expect([signs.width,signs.height]).toEqual([25,19]);
   expect(signs.racks).toHaveLength(6);
-  expect(signs.racks[0]).toEqual({category:'Maquillaje',header:'Mesh',levels:['Ojos','Rostro','Labios'],depth:.04});
+  expect(signs.racks[0]).toEqual({category:'Maquillaje',header:'Mesh',levels:['Rostro','Labios','Cejas / Ojos'],depth:.04});
   expect(signs.racks.reduce((n,r)=>n+r.levels.length,0)).toBe(18);
   const point=await page.evaluate(()=>{
     const s=window.warehouseViewer.scene,rect=s.stage.getBoundingClientRect();

@@ -169,3 +169,17 @@ los 27 assets. Ver [integración y alcance](docs/integracion-rosa.md).
 Esta rama desactiva sus despliegues automáticos de Vercel en `vercel.json`.
 Para verla en el Mac: actualizar `dev/naomi`, compilar con `npm run build --prefix web`
 y ejecutar `python -m warehouse_rush.cli view --no-open` desde el entorno Python.
+
+
+## Catálogo operativo de 27 productos
+
+Las sesiones nuevas ya generan pedidos con los 27 productos definitivos del PDF.
+Cada producto tiene nombre, SKU TRD, estante/nivel, modelo y stock inicial fijo entre
+5 y 10 unidades: **202 unidades** en total. Cada kit se cuenta como una unidad.
+La distribución, los stocks exactos y la compatibilidad con sesiones TMP anteriores
+se documentan en [catálogo operativo](docs/catalogo-operativo.md).
+
+Después de actualizar el repositorio en el Mac, recompilar y reiniciar el servidor
+para crear un inventario local con el nuevo catálogo. Las sesiones antiguas firmadas
+conservan sus productos y cantidades; una sesión nueva/privada utiliza TRD. Generar
+otro pedido no repone stock ni convierte productos antiguos automáticamente.

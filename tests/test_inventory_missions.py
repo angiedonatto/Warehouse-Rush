@@ -1,7 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
-from warehouse_rush.inventory import CATALOG, Inventory
+from warehouse_rush.inventory import CATALOG, LEGACY_CATALOG, Inventory
 from warehouse_rush.missions import MakeupMissionEnv
 from warehouse_rush.policies import HeuristicPolicy
 from warehouse_rush.env import SimulationConfig
@@ -11,9 +11,10 @@ SKU = 'TMP-E01-L3'
 
 
 def test_catalog_and_seed():
-    assert len(CATALOG) == 18
+    assert len(CATALOG) == 27
+    assert len(LEGACY_CATALOG) == 18
     for i in range(1, 7):
-        assert {p['level'] for p in CATALOG.values() if p['rack'] == f'E{i:02d}'} == {f'E{i:02d}-L{j}' for j in range(1, 4)}
+        assert {p['level'] for p in CATALOG.values() if p['rack'] == f'E{i:02d}'} == {f'E{i:02d}-L{j}' for j in range(1, 3 if i == 3 else 4)}
     a, b = Inventory().generate(42), Inventory().generate(42)
     assert a['lines'] == b['lines']
     assert 1 <= len(a['lines']) <= 3
@@ -147,7 +148,7 @@ def test_makeup_ansi_and_reset_after_invalid_cookie():
 
 def test_collects_shelf_products_before_dispatch_when_capacity_allows():
     env = MakeupMissionEnv(blocked=True)
-    obs, info = env.reset(seed=42)
+    obs, info = env.reset(seed=24)
     assert sum(l['quantity'] for l in env.lines) == 3
     policy = HeuristicPolicy()
     seen_targets = set()
@@ -158,7 +159,7 @@ def test_collects_shelf_products_before_dispatch_when_capacity_allows():
         if env.carried_lines and env.state.etapa == 'recoger':
             assert env.state.entregas == 0
         for line in info['state']['order']['lines']:
-            assert env.inventory.total[line['sku']] == 5 - line['picked']
+            assert env.inventory.total[line['sku']] == env.inventory.initial[line['sku']] - line['picked']
     events = info['state']['order']['events']
     pickups = [e['time'] for e in events if e['kind'].startswith('PICK:')]
     deliveries = [e['time'] for e in events if e['kind'].startswith('DELIVER:')]

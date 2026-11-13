@@ -22,7 +22,7 @@ from urllib.parse import parse_qs, urlsplit
 from warehouse_rush.env import WorldState
 from warehouse_rush.layout import DEFAULT_LAYOUT, WIDE_LAYOUT, PACKING_LAYOUT
 from warehouse_rush.missions import MakeupMissionEnv
-from warehouse_rush.inventory import CATALOG, Inventory
+from warehouse_rush.inventory import ALL_CATALOG, Inventory
 from warehouse_rush.policies import make_policy
 from warehouse_rush.viewer import ViewerSession, WEB_ROOT
 
@@ -91,17 +91,18 @@ class SignedSessions:
             layouts = {'0.1.0': DEFAULT_LAYOUT, '0.3.0': WIDE_LAYOUT, '0.4.0': PACKING_LAYOUT}
             if version not in layouts:
                 raise ValueError('Versión de mapa no compatible')
-            session = ViewerSession(layout_path=layouts[version],
+            saved_inventory = Inventory(record['inventory']['initial']) if record.get('makeup') else None
+            session = ViewerSession(layout_path=layouts[version], inventory=saved_inventory,
                                     policy_factory=cloud_policy,
                                     settings={"orders": record["orders"], "blocked": record["state"]["pasillo_bloqueado"],
                                               "policy": record["policy"], "seed": record["seed"], "makeup": record.get("makeup", False)})
             if record.get('makeup'):
                 saved = record['inventory']
-                inventory = Inventory(saved['initial'])
+                inventory = saved_inventory
                 inventory.total, inventory.orders = saved['total'], saved['orders']
                 for order in inventory.orders.values():
                     for line in order['lines']:
-                        line.setdefault('height_m', CATALOG[line['sku']]['height_m'])
+                        line.setdefault('height_m', ALL_CATALOG[line['sku']]['height_m'])
                 inventory.check()
                 session.inventory = session.env.inventory = inventory
                 session.env.order_id = record['order_id']

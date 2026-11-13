@@ -12,7 +12,7 @@ for(const product of PRODUCTS){
  assert(gltf.scene.children.length>0);
  await readFile(new URL(`../public/assets/products/${product.sku}.png`,import.meta.url));
 }
-for(const sku of Object.keys(VISUAL_MAPPING)){
+for(const sku of [...PRODUCTS.map(p=>p.sku), ...Object.keys(VISUAL_MAPPING)]){
  const appearance=createStockAppearance(sku);assert(appearance);assert(PRODUCTS.some(p=>p.sku===appearance.assetSku));
  appearance.geometry.computeBoundingBox();const b=appearance.geometry.boundingBox;
  assert(Math.abs(b.min.y+.13)<1e-6,`${sku}: apoyo`);
@@ -21,4 +21,4 @@ for(const sku of Object.keys(VISUAL_MAPPING)){
  appearance.geometry.dispose();
 }
 assert.equal(createStockAppearance('TMP-E02-L3'),null);
-console.log('27 GLB y miniaturas válidos; 12 asociaciones con pivotes y envolventes conservados; fallback válido.');
+console.log('27 GLB y miniaturas válidos; 27 productos operativos y 12 asociaciones anteriores con pivotes y envolventes conservados; fallback válido.');

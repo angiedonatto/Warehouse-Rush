@@ -11,5 +11,5 @@ for(const product of PRODUCTS){
  const result=await exporter.parseAsync(createProduct(product),{binary:true});
  await writeFile(new URL(`${product.sku}.glb`,directory),Buffer.from(result));
 }
-await writeFile(new URL('manifest.json',directory),JSON.stringify(PRODUCTS.map(p=>({sku:p.sku,name:p.name,model:p.model,file:`${p.sku}.glb`,source_page:p.source_page})),null,2)+'\n');
+await writeFile(new URL('manifest.json',directory),JSON.stringify(PRODUCTS.map(p=>({sku:p.sku,name:p.name,model:p.model,file:`${p.sku}.glb`,source_page:p.source_page,level:p.level,height_m:p.height_m,initial_stock:p.initial_stock,unit:p.unit})),null,2)+'\n');
 console.log(`Exportados ${PRODUCTS.length} assets GLB.`);

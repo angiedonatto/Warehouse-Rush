@@ -1,3 +1,5 @@
+> Catálogo operativo autorizado por Naomi tras el visto bueno de Angie: las sesiones nuevas utilizan los 27 SKU TRD de `configs/products.json`, con la distribución acordada y stock fijo de 5–10 unidades. Los libros TMP antiguos se conservan sin conversión ni reposición. Esta actualización sustituye las referencias históricas a 18 productos provisionales. Ver [catálogo operativo](docs/catalogo-operativo.md). Trabajar y subir únicamente en `dev/naomi`, sin desplegar en producción.
+
 # Warehouse Rush — guía de trabajo y relevo de Naomi
 
 > Actualización de `dev/naomi`: Naomi autorizó expresamente integrar y subir aquí su interfaz rosa y el catálogo visual de 27 productos, conservando los mecanismos de Angie. En esta rama, esa autorización sustituye las referencias históricas a trabajar sólo en `dev/angie` y a conservar fondo oscuro. Los 18 SKU operativos TMP y sus transacciones permanecen estables; los TRD identifican assets y propuestas visuales. Ver [integración rosa](docs/integracion-rosa.md). No publicar automáticamente en Vercel desde esta rama.

@@ -5,12 +5,15 @@
     "category": "Maquillaje",
     "subcategory": "Cejas",
     "rack": "E01",
-    "level": "E01-L1",
+    "level": "E01-L3",
     "model": "pencil",
     "color": "#f5c9b6",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 1
+    "source_page": 1,
+    "height_m": 2.6,
+    "initial_stock": 8,
+    "unit": "unidad"
   },
   {
     "sku": "TRD-01-02",
@@ -18,12 +21,15 @@
     "category": "Maquillaje",
     "subcategory": "Cejas",
     "rack": "E01",
-    "level": "E01-L1",
+    "level": "E01-L3",
     "model": "tube",
     "color": "#b7a6e8",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 1
+    "source_page": 1,
+    "height_m": 2.6,
+    "initial_stock": 6,
+    "unit": "unidad"
   },
   {
     "sku": "TRD-01-03",
@@ -31,12 +37,15 @@
     "category": "Maquillaje",
     "subcategory": "Cejas",
     "rack": "E01",
-    "level": "E01-L1",
+    "level": "E01-L3",
     "model": "brow-kit",
     "color": "#f1c4aa",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 1
+    "source_page": 1,
+    "height_m": 2.6,
+    "initial_stock": 5,
+    "unit": "kit"
   },
   {
     "sku": "TRD-01-04",
@@ -44,12 +53,15 @@
     "category": "Maquillaje",
     "subcategory": "Labios",
     "rack": "E01",
-    "level": "E01-L1",
+    "level": "E01-L2",
     "model": "lip-kit",
     "color": "#e687ab",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 1
+    "source_page": 1,
+    "height_m": 1.79,
+    "initial_stock": 5,
+    "unit": "kit"
   },
   {
     "sku": "TRD-01-05",
@@ -62,7 +74,10 @@
     "color": "#ff82b9",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 2
+    "source_page": 2,
+    "height_m": 1.79,
+    "initial_stock": 7,
+    "unit": "kit"
   },
   {
     "sku": "TRD-01-06",
@@ -75,7 +90,10 @@
     "color": "#f5a6b9",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 2
+    "source_page": 2,
+    "height_m": 1.79,
+    "initial_stock": 10,
+    "unit": "unidad"
   },
   {
     "sku": "TRD-01-07",
@@ -83,12 +101,15 @@
     "category": "Maquillaje",
     "subcategory": "Ojos",
     "rack": "E01",
-    "level": "E01-L2",
+    "level": "E01-L3",
     "model": "pencil",
     "color": "#28202d",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 2
+    "source_page": 2,
+    "height_m": 2.6,
+    "initial_stock": 9,
+    "unit": "unidad"
   },
   {
     "sku": "TRD-01-08",
@@ -96,12 +117,15 @@
     "category": "Maquillaje",
     "subcategory": "Ojos",
     "rack": "E01",
-    "level": "E01-L2",
+    "level": "E01-L3",
     "model": "mascara-kit",
     "color": "#c69c67",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 2
+    "source_page": 2,
+    "height_m": 2.6,
+    "initial_stock": 5,
+    "unit": "kit"
   },
   {
     "sku": "TRD-01-09",
@@ -114,7 +138,10 @@
     "color": "#ed8197",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 2
+    "source_page": 2,
+    "height_m": 2.6,
+    "initial_stock": 6,
+    "unit": "unidad"
   },
   {
     "sku": "TRD-01-10",
@@ -122,12 +149,15 @@
     "category": "Maquillaje",
     "subcategory": "Rostro",
     "rack": "E01",
-    "level": "E01-L3",
+    "level": "E01-L1",
     "model": "bottle",
     "color": "#d3a17d",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 3
+    "source_page": 3,
+    "height_m": 0.99,
+    "initial_stock": 7,
+    "unit": "unidad"
   },
   {
     "sku": "TRD-01-11",
@@ -135,12 +165,15 @@
     "category": "Maquillaje",
     "subcategory": "Rostro",
     "rack": "E01",
-    "level": "E01-L3",
+    "level": "E01-L1",
     "model": "tube",
     "color": "#8c9ccf",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 3
+    "source_page": 3,
+    "height_m": 0.99,
+    "initial_stock": 8,
+    "unit": "unidad"
   },
   {
     "sku": "TRD-01-12",
@@ -148,12 +181,15 @@
     "category": "Maquillaje",
     "subcategory": "Rostro",
     "rack": "E01",
-    "level": "E01-L3",
+    "level": "E01-L1",
     "model": "compact",
     "color": "#b8a4dc",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 3
+    "source_page": 3,
+    "height_m": 0.99,
+    "initial_stock": 9,
+    "unit": "unidad"
   },
   {
     "sku": "TRD-02-01",
@@ -166,7 +202,10 @@
     "color": "#f596bd",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 3
+    "source_page": 3,
+    "height_m": 0.99,
+    "initial_stock": 8,
+    "unit": "unidad"
   },
   {
     "sku": "TRD-02-02",
@@ -174,12 +213,15 @@
     "category": "Cuidado de la piel",
     "subcategory": "Corporal",
     "rack": "E02",
-    "level": "E02-L2",
+    "level": "E02-L1",
     "model": "jar",
     "color": "#d5a58f",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 4
+    "source_page": 4,
+    "height_m": 0.99,
+    "initial_stock": 6,
+    "unit": "unidad"
   },
   {
     "sku": "TRD-02-03",
@@ -187,12 +229,15 @@
     "category": "Cuidado de la piel",
     "subcategory": "Corporal",
     "rack": "E02",
-    "level": "E02-L3",
+    "level": "E02-L2",
     "model": "spray",
     "color": "#f5b4d4",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 4
+    "source_page": 4,
+    "height_m": 1.79,
+    "initial_stock": 7,
+    "unit": "unidad"
   },
   {
     "sku": "TRD-02-04",
@@ -205,7 +250,10 @@
     "color": "#d1a2e7",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 4
+    "source_page": 4,
+    "height_m": 2.6,
+    "initial_stock": 10,
+    "unit": "unidad"
   },
   {
     "sku": "TRD-03-01",
@@ -218,7 +266,10 @@
     "color": "#b88b78",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 4
+    "source_page": 4,
+    "height_m": 0.99,
+    "initial_stock": 8,
+    "unit": "unidad"
   },
   {
     "sku": "TRD-03-02",
@@ -231,7 +282,10 @@
     "color": "#39353d",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 5
+    "source_page": 5,
+    "height_m": 1.79,
+    "initial_stock": 10,
+    "unit": "unidad"
   },
   {
     "sku": "TRD-04-01",
@@ -239,12 +293,15 @@
     "category": "Accesorios",
     "subcategory": "Bolsos y monederos",
     "rack": "E04",
-    "level": "E04-L1",
+    "level": "E04-L2",
     "model": "wallet",
     "color": "#e7bda8",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 5
+    "source_page": 5,
+    "height_m": 1.79,
+    "initial_stock": 7,
+    "unit": "unidad"
   },
   {
     "sku": "TRD-04-02",
@@ -252,12 +309,15 @@
     "category": "Accesorios",
     "subcategory": "Cosmetiqueras",
     "rack": "E04",
-    "level": "E04-L2",
+    "level": "E04-L1",
     "model": "bag",
     "color": "#edc7d8",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 5
+    "source_page": 5,
+    "height_m": 0.99,
+    "initial_stock": 6,
+    "unit": "unidad"
   },
   {
     "sku": "TRD-04-03",
@@ -270,7 +330,10 @@
     "color": "#8ad5cc",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 5
+    "source_page": 5,
+    "height_m": 2.6,
+    "initial_stock": 9,
+    "unit": "unidad"
   },
   {
     "sku": "TRD-05-01",
@@ -278,12 +341,15 @@
     "category": "Capilar",
     "subcategory": "Accesorios para el cabello",
     "rack": "E05",
-    "level": "E05-L1",
+    "level": "E05-L2",
     "model": "pins",
     "color": "#cfb8a7",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 6
+    "source_page": 6,
+    "height_m": 1.79,
+    "initial_stock": 10,
+    "unit": "unidad"
   },
   {
     "sku": "TRD-05-02",
@@ -291,12 +357,15 @@
     "category": "Capilar",
     "subcategory": "Accesorios para el cabello",
     "rack": "E05",
-    "level": "E05-L2",
+    "level": "E05-L1",
     "model": "comb-kit",
     "color": "#f2cbb5",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 6
+    "source_page": 6,
+    "height_m": 0.99,
+    "initial_stock": 7,
+    "unit": "kit"
   },
   {
     "sku": "TRD-05-03",
@@ -309,7 +378,10 @@
     "color": "#eeacaa",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 6
+    "source_page": 6,
+    "height_m": 2.6,
+    "initial_stock": 5,
+    "unit": "unidad"
   },
   {
     "sku": "TRD-06-01",
@@ -322,7 +394,10 @@
     "color": "#ec4c91",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 6
+    "source_page": 6,
+    "height_m": 0.99,
+    "initial_stock": 8,
+    "unit": "unidad"
   },
   {
     "sku": "TRD-06-02",
@@ -335,7 +410,10 @@
     "color": "#72b7dc",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 7
+    "source_page": 7,
+    "height_m": 1.79,
+    "initial_stock": 6,
+    "unit": "unidad"
   },
   {
     "sku": "TRD-06-03",
@@ -348,6 +426,9 @@
     "color": "#ffa34c",
     "temporary": false,
     "source": "pdf-naomi",
-    "source_page": 7
+    "source_page": 7,
+    "height_m": 2.6,
+    "initial_stock": 10,
+    "unit": "unidad"
   }
 ]

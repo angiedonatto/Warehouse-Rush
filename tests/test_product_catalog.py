@@ -3,14 +3,14 @@ from collections import Counter
 import json
 from pathlib import Path
 
-PRODUCTS = json.loads((Path(__file__).resolve().parents[1] / "configs/products.json").read_text())
-
 import pytest
 from gymnasium.utils.env_checker import check_env
 from warehouse_rush.inventory import CATALOG, Inventory
 from warehouse_rush.missions import MakeupMissionEnv
 from warehouse_rush.env import SimulationConfig, WarehouseRushEnv
 from warehouse_rush.policies import HeuristicPolicy
+
+PRODUCTS = json.loads((Path(__file__).resolve().parents[1] / "configs/products.json").read_text())
 
 
 def test_pdf_selection_and_gymnasium_contract():
@@ -25,7 +25,7 @@ def test_pdf_selection_and_gymnasium_contract():
 @pytest.mark.parametrize('sku', list(CATALOG))
 @pytest.mark.parametrize('blocked', [False, True])
 def test_each_operational_sku_can_be_picked_and_delivered(sku, blocked):
-    inventory = Inventory({sku: 5})
+    inventory = Inventory({sku: CATALOG[sku]['initial_stock']})
     env = MakeupMissionEnv(inventory=inventory, blocked=blocked,
                           simulation=SimulationConfig(battery_capacity=300, max_steps=600))
     obs, _ = env.reset(seed=42)
@@ -36,5 +36,6 @@ def test_each_operational_sku_can_be_picked_and_delivered(sku, blocked):
     line = info['state']['order']['lines'][0]
     assert line['level'] == CATALOG[sku]['level']
     assert line['delivered'] == line['quantity']
-    assert inventory.total[sku] == 5 - line['quantity']
+    assert inventory.total[sku] == CATALOG[sku]['initial_stock'] - line['quantity']
+    assert line['name'] == CATALOG[sku]['name']
     assert info['collisions'] == 0

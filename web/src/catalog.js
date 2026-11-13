@@ -22,7 +22,7 @@ export function setupCatalog() {
       resizeObserver=new ResizeObserver(resize);resizeObserver.observe(renderer.domElement);
     }
     if(model)scene.remove(model);model=createProduct(product);scene.add(model);
-    $('#product-name').textContent=product.name;$('#product-info').textContent=`${product.category} / ${product.subcategory} · ${product.level} · ${product.sku}`;
+    $('#product-name').textContent=product.name;$('#product-info').textContent=`${product.category} / ${product.subcategory} · ${product.level} · ${product.sku} · Stock inicial: ${product.initial_stock} ${product.unit === 'kit' ? 'kits' : 'unidades'}`;
     $('#product-download').href=`/assets/products/${product.sku}.glb`;
     grid.querySelectorAll('button').forEach(button=>button.setAttribute('aria-pressed',button.dataset.sku===product.sku?'true':'false'));
     resize();

@@ -17,7 +17,7 @@ import webbrowser
 from warehouse_rush.env import Action, WarehouseRushEnv
 from warehouse_rush.policies import make_policy
 from warehouse_rush.missions import MakeupMissionEnv
-from warehouse_rush.inventory import Inventory, CATALOG
+from warehouse_rush.inventory import Inventory
 from warehouse_rush.train import default_model
 
 WEB_ROOT = Path(__file__).resolve().parents[2] / "web"
@@ -33,12 +33,12 @@ def viewer_model(orders):
 
 
 class ViewerSession:
-    def __init__(self, layout_path=None, policy_factory=make_policy, settings=None):
+    def __init__(self, layout_path=None, policy_factory=make_policy, settings=None, inventory=None):
         self.lock = RLock()
         self.layout_path = layout_path
         self.policy_factory = policy_factory
         self.env = None
-        self.inventory = Inventory()
+        self.inventory = inventory if inventory is not None else Inventory()
         self.reset(settings or {"orders": 2, "blocked": True, "policy": "heuristic", "seed": 10000})
 
     def reset(self, settings):
@@ -137,7 +137,7 @@ class ViewerSession:
             return self.payload()
 
     def layout_payload(self):
-        return {"layout": self.env.layout.data, "catalog": list(CATALOG.values()), "layout_sha256": self.env.layout.digest,
+        return {"layout": self.env.layout.data, "catalog": list(self.inventory.catalog.values()), "catalog_version": self.inventory.catalog_version, "layout_sha256": self.env.layout.digest,
                 "available_ppo": {str(order): viewer_model(order).is_file() for order in (1, 2)},
                 "environment_version": self.env.layout.data["version"]}
 

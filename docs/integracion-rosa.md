@@ -1,3 +1,5 @@
+> Historial de la integración visual `1913910`. El catálogo operativo actual ya usa los 27 productos TRD en sesiones nuevas; consultar [catálogo operativo](catalogo-operativo.md). Las referencias a 18 SKU describen el estado anterior y la compatibilidad de sesiones antiguas.
+
 # Integración rosa en dev/naomi
 
 Naomi autorizó integrar su commit `df7c28b` con `e4fea61` y subir el resultado a

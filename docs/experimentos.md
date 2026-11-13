@@ -181,7 +181,30 @@ Retornos solo comparables entre runs con los mismos coeficientes; se compara éx
 ### Presupuesto real por run (barrido de choques)
 | Run | Nivel | Pasos | Minutos | Estado |
 |---|---|---|---|---|
-| m1-r4-seed0 | m1 | (pendiente) | (pendiente) | en curso |
-| m1-r5-seed0 | m1 | (pendiente) | (pendiente) | en curso |
-| m1-r6-seed0 | m1 | (pendiente) | (pendiente) | en curso |
-| m1-r7-seed0 | m1 | (pendiente) | (pendiente) | en curso |
+| m1-r4-seed0 | m1 | 204 800 | 10.0 (4 runs en paralelo, ~550 pasos/s cada uno) | rechazado |
+| m1-r5-seed0 | m1 | 204 800 | 10.1 (4 runs en paralelo, ~550 pasos/s cada uno) | rechazado |
+| m1-r6-seed0 | m1 | 204 800 | 10.1 (4 runs en paralelo, ~550 pasos/s cada uno) | rechazado |
+| m1-r7-seed0 | m1 | 204 800 | 10.0 (4 runs en paralelo, ~550 pasos/s cada uno) | rechazado |
+
+### Resultados del barrido de choques (2026-11-13, semilla 0, `suite-m1-v1`, 50 episodios, semillas 10000–10049, acciones deterministas)
+Código: commit `423a014`. `git_dirty` figura `true` en r6 y r7 (y en `m1-r2`, del barrido anterior) solo por carpetas de salida de runs hermanos sin versionar; ningún archivo versionado cambió.
+Todos con `invalid_interaction` = −0.2. Control: `m1-r2` (`collision` −5).
+
+| Run | `collision` | Éxito | Retorno medio | Retorno medio de los primeros 10 episodios de entrenamiento | FRENAR en la evaluación | Choques / episodio (evaluación) | Éxitos en entrenamiento | Estado |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| m1-r2-seed0 (control) | −5 | 0% | −40.2 | −141.6 | 99.2% | 0.0 | 0 / 512 | rechazado (barrido anterior) |
+| m1-r4-seed0 | −2 | 0% | −38.4 | −105.6 | 97.3% | 0.0 | 0 / 512 | **rechazado** |
+| m1-r5-seed0 | −1 | 0% | −39.3 | −93.6 | 98.2% | 0.0 | 0 / 512 | **rechazado** |
+| m1-r6-seed0 | −0.5 | 0% | −40.0 | −87.6 | 84.6% | 4.0 | 0 / 512 | **rechazado** |
+| m1-r7-seed0 | −0.1 | 0% | −38.8 | −82.8 | 94.4% | 9.6 | 0 / 512 | **rechazado** |
+
+**Decisión:** ningún run supera al control en ≥ 5 pp de éxito (todos 0 pp); r4–r7 se **rechazan** según `configs/criterios.yaml` y se conservan con su evidencia. **La hipótesis «bajar la penalización por choque (con inválidas en −0.2) permite descubrir la tarea» se rechaza** en el rango −2 a −0.1 con 200 000 pasos y una semilla.
+
+**Hechos medidos:**
+- Bajar el castigo de choques redujo el costo inicial de explorar de forma monótona: retorno medio de los primeros 10 episodios −141.6 → −105.6 → −93.6 → −87.6 → −82.8, como predecían las cuentas previas (≈ −160 a ≈ −83). Seguían por debajo de quedarse quieto (≈ −41), como se advirtió.
+- Con choques baratos la política **se mueve más** (FRENAR baja a 84.6% en r6) pero sin rumbo: **0 recogidas y 0 entregas en todos los runs**, 0 éxitos en 512 episodios de entrenamiento cada uno, y ninguna acción de CARGAR, DESCARGAR, SUBIR o BAJAR en la evaluación.
+- **Efecto secundario:** con −0.5 y −0.1, en la semilla de evaluación 10033 la política quedó atascada contra un muro (199 y 219 choques) hasta agotar la batería (`battery_depleted`, 329 y 230 pasos). Un choque casi gratis no es rentable (el retorno sigue siendo negativo) pero es una trampa de comportamiento y termina el episodio como fallo.
+
+**Lectura (hipótesis de diagnóstico):** tras dos barridos de penalizaciones (inválidas y choques), 8 runs con castigos menores dieron 0% de éxito. El costo de explorar ya no es el cuello de botella; falta una **señal positiva** accesible antes de la primera entrega. Quedan dos caminos: bonos por sub-pasos pagados una vez por línea (llegar de frente al estante, alcanzar la altura correcta, bajar tras cargar), y clonación de comportamiento desde la heurística (opción A). No se recomienda seguir bajando penalizaciones: con −0.1 aparece el atasco contra muros.
+
+**Limitaciones:** una semilla por configuración; presupuesto de 200 000 pasos; solo pasillo abierto.

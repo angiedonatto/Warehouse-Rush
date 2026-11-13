@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "run_id": "m1-r4-seed0",
+  "level_id": "m1",
+  "environment_version": "warehouse-v3",
+  "git_commit": "423a014d7dc4be3c9184043704f63121984d8ed2",
+  "config_sha256": "76ce3923433142621062c2ca5bbaf69f48d6a27e6bdbfbdf607ca0271c2c46eb",
+  "model_uri": "models/m1-r4-seed0/model.zip",
+  "model_sha256": "0512eef6e72270829575789f8953601f228d03515dde5b5baa527f9ec9967e87",
+  "normalization_uri": null,
+  "runtime_ref": "env/warehouse-v3",
+  "evaluation_suite_id": "suite-m1-v1",
+  "seed": 0,
+  "parent_run_id": null,
+  "estado": "rechazado",
+  "created_at": "2026-11-13T22:00:59.924718+00:00",
+  "author": "lis",
+  "algorithm": "PPO",
+  "policy": "MlpPolicy",
+  "budget_steps": 204800,
+  "budget_minutes": 10.03,
+  "mlflow_run_id": "6bb29d6f8c5e44839eb51dbf472be237",
+  "mlflow_experiment": "warehouse-m1",
+  "config_uri": "configs/experiments/m1_r4_choque_2.yaml",
+  "obs_spec": "envs/CONTRATO.md@env/warehouse-v3 (Box(27), todo en [0,1], sin VecNormalize)",
+  "action_spec": "envs/CONTRATO.md@env/warehouse-v3 (Discrete(8): AVANZAR, GIRAR_I, GIRAR_D, FRENAR, CARGAR, DESCARGAR, SUBIR, BAJAR)",
+  "rules_ref": "docs/ambiente-v0.3.md",
+  "reward": {
+    "pickup": 10.0,
+    "delivery": 30.0,
+    "completion": 50.0,
+    "progress": 0.3,
+    "time": -0.1,
+    "battery": -0.02,
+    "collision": -2.0,
+    "invalid_interaction": -0.2
+  },
+  "reward_overrides": {
+    "invalid_interaction": -0.2,
+    "collision": -2.0
+  },
+  "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
+  "results_uri": "docs/resultados/eval/m1-r4-seed0/evaluation.json",
+  "training_metadata_uri": "docs/resultados/training/m1-r4-seed0/metadata.json",
+  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "evaluation": {
+    "suite": "suite-m1-v1",
+    "episodes": 50,
+    "seeds": "10000-10049",
+    "scenario": "pasillo abierto",
+    "deterministic": true,
+    "policies": {
+      "heuristic": {
+        "success_rate": 1.0,
+        "mean_total_reward": 115.85822079999998,
+        "mean_steps": 79.92,
+        "mean_battery_used": 49.68896000000024,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 3.0,
+        "mean_pickups": 3.0,
+        "end_reasons": {
+          "success": 50
+        },
+        "action_counts": {
+          "0": 2474,
+          "1": 308,
+          "2": 278,
+          "3": 186,
+          "4": 150,
+          "5": 50,
+          "6": 275,
+          "7": 275
+        }
+      },
+      "ppo": {
+        "success_rate": 0.0,
+        "mean_total_reward": -38.44871999999988,
+        "mean_steps": 400.0,
+        "mean_battery_used": 46.035999999997856,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 0.0,
+        "mean_pickups": 0.0,
+        "end_reasons": {
+          "time_limit": 50
+        },
+        "action_counts": {
+          "0": 412,
+          "1": 50,
+          "2": 84,
+          "3": 19454,
+          "4": 0,
+          "5": 0,
+          "6": 0,
+          "7": 0
+        }
+      }
+    }
+  },
+  "decision": "rechazado",
+  "decision_reason": "No supera al control m1-r2 (invalid -0.2, collision -5) en >=5 pp de éxito (0 pp). FRENAR en 97.3% de los pasos; 0 entregas. Se conserva la evidencia."
+}

@@ -88,6 +88,7 @@ def train_ppo(*, timesteps=20_000, seed=42, orders=1, blocked=False, layout_path
         "scenario": env.layout.data, "layout_sha256": env.layout.digest,
         "simulation": asdict(env.config), "rewards": asdict(env.reward_config),
         "reward_overrides": dict(reward_overrides or {}),
+        "layout_path": str(layout_path) if layout_path else None,
         "python": platform.python_version(), "platform": platform.platform(),
         "versions": {p: version(p) for p in ("numpy", "gymnasium", "torch", "stable-baselines3", "matplotlib")},
         "git_revision": revision.stdout.strip(), "git_dirty": bool(dirty.stdout.strip()),
@@ -259,13 +260,14 @@ def train_from_config(path, *, tipo="candidato", timesteps=None) -> dict:
             "estado": "candidato", "algoritmo": algo, "environment_version": ENV_VERSION, "config_sha256": config_hash,
             "parent_run_id": parent or "none", "config_id": config["id"], "seed": config["seed"],
             "suite_final": evaluation.get("final", ""), "runtime_ref": f"env/{ENV_VERSION}",
-            "recompensa": json.dumps(config.get("recompensa") or {}, sort_keys=True)}
+            "recompensa": json.dumps(config.get("recompensa") or {}, sort_keys=True),
+            "layout": str(config.get("layout") or "default")}
     with mlflow_run(experiment=f"warehouse-{config['nivel']}", run_name=name,
                     config={**config, "presupuesto_efectivo": budget}, tags=tags):
         meta = train_ppo(timesteps=budget, seed=config["seed"], orders=level["orders"],
                          blocked=level["blocked"], run_name=name, ppo=ppo, n_envs=n_envs,
                          eval_every=evaluation.get("cada_pasos", 5_000), parent_model=parent_model, algo=algo,
-                         reward_overrides=config.get("recompensa"))
+                         reward_overrides=config.get("recompensa"), layout_path=config.get("layout"))
         model_path = Path(meta["model_path"])
         mlflow.log_artifact(str(model_path), artifact_path="modelo")
         mlflow.set_tags({"model_sha256": sha256_file(model_path), "pasos_reales": meta["effective_timesteps"]})

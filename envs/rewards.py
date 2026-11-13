@@ -14,19 +14,20 @@ class RewardConfig:
     battery: float = -0.02
     collision: float = -5.0
     invalid_interaction: float = -2.0
+    distance: float = 0.0   # por celda de distancia Manhattan al objetivo, por paso (<= 0; 0 = sin término)
 
     def __post_init__(self):
         if not all(math.isfinite(value) for value in self.__dict__.values()):
             raise ValueError("Las recompensas deben ser finitas")
         if min(self.pickup, self.delivery, self.completion, self.progress) < 0:
             raise ValueError("Los premios/progreso deben ser no negativos")
-        if self.time >= 0 or max(self.battery, self.collision, self.invalid_interaction) > 0:
+        if self.time >= 0 or max(self.battery, self.collision, self.invalid_interaction, self.distance) > 0:
             raise ValueError("Tiempo negativo y penalizaciones no positivas previenen ciclos rentables")
 
 
 def reward_components(config: RewardConfig, *, distance_delta: float, battery_used: float,
                       pickup: bool, delivery: bool, completion: bool,
-                      collision: bool, invalid: bool) -> dict[str, float]:
+                      collision: bool, invalid: bool, target_distance: float = 0.0) -> dict[str, float]:
     return {
         "pickup": config.pickup if pickup else 0.0,
         "delivery": config.delivery if delivery else 0.0,
@@ -36,4 +37,5 @@ def reward_components(config: RewardConfig, *, distance_delta: float, battery_us
         "battery": config.battery * battery_used,
         "collision": config.collision if collision else 0.0,
         "invalid_interaction": config.invalid_interaction if invalid else 0.0,
+        "distance": config.distance * target_distance,
     }

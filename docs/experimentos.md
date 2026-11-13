@@ -208,3 +208,43 @@ Todos con `invalid_interaction` = −0.2. Control: `m1-r2` (`collision` −5).
 **Lectura (hipótesis de diagnóstico):** tras dos barridos de penalizaciones (inválidas y choques), 8 runs con castigos menores dieron 0% de éxito. El costo de explorar ya no es el cuello de botella; falta una **señal positiva** accesible antes de la primera entrega. Quedan dos caminos: bonos por sub-pasos pagados una vez por línea (llegar de frente al estante, alcanzar la altura correcta, bajar tras cargar), y clonación de comportamiento desde la heurística (opción A). No se recomienda seguir bajando penalizaciones: con −0.1 aparece el atasco contra muros.
 
 **Limitaciones:** una semilla por configuración; presupuesto de 200 000 pasos; solo pasillo abierto.
+
+
+## Barrido de penalización por distancia Manhattan en mapa abierto (escrito antes de entrenar, 2026-11-13)
+**Contexto:** ocho runs con penalizaciones menores (inválidas y choques) dieron 0% de éxito; el costo de explorar dejó de ser el cuello de botella y falta una señal que premie acercarse al
+destino. Instrucción del equipo: dejar `collision` en **−1**, mantener `invalid_interaction` en **−0.2**, añadir una **penalización por la distancia Manhattan** al destino por paso
+(mayor cuanto más lejos) y probarla en un **mapa sin muros interiores ni pasos estrechos**.
+
+**Hipótesis (una dimensión respecto del control `m1o-c0`):** penalizar la distancia Manhattan al objetivo hace que quedarse quieto o vagar lejos cueste más que acercarse al estante, y esa señal permite
+descubrir la secuencia hasta la primera recogida y la entrega.
+**Qué la refutaría:** que ningún run con término de distancia supere a `m1o-c0` en ≥ 5 pp de éxito en `suite-m1o-v1`.
+**Retornos de referencia medidos antes de entrenar** (20 episodios, semillas 10000–10019, mapa abierto, `invalid` −0.2, `collision` −1; no son resultados del modelo):
+
+| `distance` | quieto (FRENAR) | aleatoria | heurística BFS |
+|---:|---:|---:|---:|
+| 0 (control) | −40.8 | −89.3 | +114.9 |
+| −0.005 | −62.5 | −109.6 | +112.7 |
+| −0.01 | −84.2 | −129.9 | +110.5 |
+| −0.02 | −127.6 | −170.5 | +106.0 |
+
+La heurística sigue siendo la mejor política con los tres coeficientes (100% de éxito). El término hace quedarse quieto en la base 22–87 puntos peor que en el control, mientras que llegar al estante lo
+reduce (≈ −0.02 × 10 celdas por paso ahorrados). Quedan por debajo de la aleatoria en el mismo orden de magnitud, de modo que **no se garantiza** que el término baste: la recogida sigue exigiendo
+detenerse, SUBIR 1–3 veces y CARGAR sin señal intermedia propia, y al cambiar de objetivo la penalización por estado salta.
+
+| Run | `invalid_interaction` | `collision` | `distance` | Config |
+|---|---:|---:|---:|---|
+| m1o-c0-seed0 (control) | −0.2 | −1 | 0 | `m1o_c0_control.yaml` |
+| m1o-d1-seed0 | −0.2 | −1 | −0.005 | `m1o_d1_distancia_0005.yaml` |
+| m1o-d2-seed0 | −0.2 | −1 | −0.01 | `m1o_d2_distancia_001.yaml` |
+| m1o-d3-seed0 | −0.2 | −1 | −0.02 | `m1o_d3_distancia_002.yaml` |
+
+Igual en todos: PPO, hiperparámetros de C0, 200 000 pasos, semilla 0, 3 productos aleatorios, mapa `configs/layout_v0.5.json`, código `env/warehouse-v4`, `suite-m1o-v1` (50 episodios, semillas 10000–10049).
+Retornos solo comparables entre runs con los mismos coeficientes; se compara éxito, pasos, batería, choques e inválidas.
+
+### Presupuesto real por run (barrido de distancia)
+| Run | Nivel | Pasos | Minutos | Estado |
+|---|---|---|---|---|
+| m1o-c0-seed0 | m1o | (pendiente) | (pendiente) | en curso |
+| m1o-d1-seed0 | m1o | (pendiente) | (pendiente) | en curso |
+| m1o-d2-seed0 | m1o | (pendiente) | (pendiente) | en curso |
+| m1o-d3-seed0 | m1o | (pendiente) | (pendiente) | en curso |

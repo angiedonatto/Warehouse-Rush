@@ -14,6 +14,7 @@ DEFAULT_LAYOUT = Path(__file__).resolve().parents[1] / "configs/layout_v0.1.json
 
 WIDE_LAYOUT = DEFAULT_LAYOUT.with_name("layout_v0.3.json")
 PACKING_LAYOUT = DEFAULT_LAYOUT.with_name("layout_v0.4.json")
+OPEN_LAYOUT = DEFAULT_LAYOUT.with_name("layout_v0.5.json")   # v0.4 sin muro interior ni pasos estrechos
 
 
 @dataclass(frozen=True)
@@ -147,7 +148,7 @@ class Layout:
                         raise ValueError(f"Estaciones desconectadas: {label}")
                 distances[station] = field[self.base]
             result[label] = distances
-        if not any(result["blocked"][s] > result["normal"][s] for s in self.stations):
+        if self.data["blockable_cells"] and not any(result["blocked"][s] > result["normal"][s] for s in self.stations):
             raise ValueError("El bloqueo no altera ninguna ruta desde BASE")
         return result
 

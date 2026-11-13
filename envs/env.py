@@ -122,6 +122,13 @@ class WarehouseRushEnv(gym.Env):
             return 0
         return self._fields[self.state.pasillo_bloqueado, target].get(self.position)
 
+    def manhattan_to(self, station: str | None) -> int:
+        """Distancia Manhattan |dx|+|dy| (en celdas, sin obstáculos) de la posición actual a una estación."""
+        if station is None:
+            return 0
+        tx, ty = self.layout.stations[station]
+        return abs(self.state.x - tx) + abs(self.state.y - ty)
+
     def facing_target(self) -> bool:
         if self.state.objetivo is None:
             return False
@@ -207,9 +214,11 @@ class WarehouseRushEnv(gym.Env):
         new_distance = self.route_distance(old_target)
         delta = float(old_distance - new_distance) if old_distance is not None and new_distance is not None else 0.0
         success = state.entregas == self.orders
+        target_distance = self.manhattan_to(old_target)
         components = reward_components(self.reward_config, distance_delta=delta,
                                        battery_used=used, pickup=pickup, delivery=delivery,
-                                       completion=success, collision=collision, invalid=invalid)
+                                       completion=success, collision=collision, invalid=invalid,
+                                       target_distance=target_distance)
         reward = float(sum(components.values()))
         state.recompensa_total += reward
         unreachable = not success and self.route_distance() is None

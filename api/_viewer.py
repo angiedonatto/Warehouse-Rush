@@ -16,6 +16,8 @@ import webbrowser
 
 from envs.env import Action, WarehouseRushEnv
 from pipelines.baselines import make_policy
+from envs.missions import MakeupMissionEnv
+from envs.inventory import Inventory, CATALOG
 from pipelines.train import default_model
 
 WEB_ROOT = Path(__file__).resolve().parents[1] / "web"
@@ -36,6 +38,7 @@ class ViewerSession:
         self.layout_path = layout_path
         self.policy_factory = policy_factory
         self.env = None
+        self.inventory = Inventory()
         self.reset(settings or {"orders": 2, "blocked": True, "policy": "heuristic", "seed": 10000})
 
     def reset(self, settings):
@@ -52,10 +55,17 @@ class ViewerSession:
                 raise ValueError("Política desconocida")
             # Construir primero: un error de modelo no destruye la sesión vigente.
             policy = None if name == "manual" else self.policy_factory(name, seed, viewer_model(orders))
-            environment = WarehouseRushEnv(orders, blocked, self.layout_path)
+            makeup = settings.get("makeup", False)
+            if type(makeup) is not bool:
+                raise ValueError("makeup debe ser booleano")
+            env_type = MakeupMissionEnv if makeup else WarehouseRushEnv
+            environment = env_type(orders, blocked, self.layout_path, **({"inventory": self.inventory} if makeup else {}))
             observation, info = environment.reset(seed=seed)
             if self.env is not None:
+                if isinstance(self.env, MakeupMissionEnv):
+                    self.inventory.close(self.env.order_id, time=self.env.state.tiempo)
                 self.env.close()
+            info = environment._info()  # Refleja también reservas liberadas del pedido anterior.
             self.env, self.observation, self.info = environment, observation, info
             self.policy, self.policy_name = policy, name
             self.seed, self.done = seed, False
@@ -92,7 +102,7 @@ class ViewerSession:
         with self.lock:
             return {"state": self.env.snapshot(), "info": self.info,
                     "observation": self.observation.tolist(), "policy": self.policy_name,
-                    "orders": self.env.orders, "seed": self.seed, "done": self.done,
+                    "orders": self.env.orders, "makeup": isinstance(self.env, MakeupMissionEnv), "seed": self.seed, "done": self.done,
                     "terminated": self.terminated, "truncated": self.truncated,
                     "last_action": self.last_action, "last_reward": self.last_reward,
                     "route": self.reference_route(), "route_kind": "bfs_reference",
@@ -127,7 +137,7 @@ class ViewerSession:
             return self.payload()
 
     def layout_payload(self):
-        return {"layout": self.env.layout.data, "layout_sha256": self.env.layout.digest,
+        return {"layout": self.env.layout.data, "catalog": list(CATALOG.values()), "layout_sha256": self.env.layout.digest,
                 "available_ppo": {str(order): viewer_model(order).is_file() for order in (1, 2)},
                 "environment_version": self.env.layout.data["version"]}
 
@@ -200,7 +210,7 @@ def serve_viewer(port=8080, open_browser=True, layout_path=None):
         if not (WEB_ROOT / "node_modules").is_dir():
             subprocess.run(["npm", "ci"], cwd=WEB_ROOT, check=True)
         subprocess.run(["npm", "run", "build"], cwd=WEB_ROOT, check=True)
-    session = ViewerSession(layout_path)
+    session = ViewerSession(layout_path, settings={"orders": 1, "blocked": True, "policy": "heuristic", "makeup": True})
     handler = partial(ViewerHandler, session=session, directory=str(WEB_ROOT / "dist"))
     server = ThreadingHTTPServer(("127.0.0.1", port), handler)
     url = f"http://127.0.0.1:{port}"

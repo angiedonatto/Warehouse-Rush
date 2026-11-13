@@ -1,0 +1,194 @@
+{
+  "version": "0.3.0",
+  "width": 25,
+  "height": 19,
+  "cell_meters": 1.0,
+  "base": [
+    3,
+    16
+  ],
+  "initial_orientation": 0,
+  "stations": {
+    "P1": [
+      2,
+      2
+    ],
+    "P2": [
+      22,
+      9
+    ],
+    "DELIVERY": [
+      22,
+      16
+    ]
+  },
+  "racks": [
+    {
+      "name": "R1",
+      "bounds": [
+        4,
+        4,
+        5,
+        5
+      ]
+    },
+    {
+      "name": "R2",
+      "bounds": [
+        11,
+        4,
+        12,
+        5
+      ]
+    },
+    {
+      "name": "R3",
+      "bounds": [
+        18,
+        4,
+        19,
+        5
+      ]
+    },
+    {
+      "name": "R4",
+      "bounds": [
+        4,
+        10,
+        5,
+        11
+      ]
+    },
+    {
+      "name": "R5",
+      "bounds": [
+        11,
+        10,
+        12,
+        11
+      ]
+    },
+    {
+      "name": "R6",
+      "bounds": [
+        18,
+        10,
+        19,
+        11
+      ]
+    }
+  ],
+  "internal_walls": [
+    [
+      1,
+      14
+    ],
+    [
+      2,
+      14
+    ],
+    [
+      3,
+      14
+    ],
+    [
+      4,
+      14
+    ],
+    [
+      5,
+      14
+    ],
+    [
+      7,
+      14
+    ],
+    [
+      8,
+      14
+    ],
+    [
+      9,
+      14
+    ],
+    [
+      10,
+      14
+    ],
+    [
+      11,
+      14
+    ],
+    [
+      12,
+      14
+    ],
+    [
+      13,
+      14
+    ],
+    [
+      14,
+      14
+    ],
+    [
+      15,
+      14
+    ],
+    [
+      16,
+      14
+    ],
+    [
+      17,
+      14
+    ],
+    [
+      18,
+      14
+    ],
+    [
+      19,
+      14
+    ],
+    [
+      21,
+      14
+    ],
+    [
+      22,
+      14
+    ],
+    [
+      23,
+      14
+    ]
+  ],
+  "blockable_cells": [
+    [
+      6,
+      14
+    ]
+  ],
+  "simulation": {
+    "battery_capacity": 180.0,
+    "max_steps": 400,
+    "forward_cost": 0.8,
+    "turn_cost": 0.2,
+    "brake_cost": 0.1,
+    "interact_cost": 0.2,
+    "step_seconds": 1.0,
+    "interaction_radius": 1,
+    "sensor_range": 8
+  },
+  "rewards": {
+    "pickup": 10.0,
+    "delivery": 30.0,
+    "completion": 50.0,
+    "progress": 0.3,
+    "time": -0.1,
+    "battery": -0.02,
+    "collision": -5.0,
+    "invalid_interaction": -2.0
+  }
+}

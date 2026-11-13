@@ -1,9 +1,26 @@
 import './style.css';
+import { renderOrderSheet, renderRack } from './order-sheet.js';
 import { WarehouseScene } from './warehouse.js';
 
 const $ = selector => document.querySelector(selector);
 let scene, current, layoutInfo, running = false, busy = false, changing = false, timer = null;
 let toastTimer;
+const handling = document.createElement('div');handling.id='handling-status';handling.className='handling-status';handling.setAttribute('aria-live','polite');document.querySelector('.robot-panel .panel-title').after(handling);
+let selectedRack = 'E01';
+const sheet = document.createElement('section');sheet.id = 'order-sheet';sheet.className = 'order-sheet';sheet.setAttribute('aria-live', 'polite');document.querySelector('.sidebar').prepend(sheet);
+const packingPanel=document.createElement('section');packingPanel.className='dispatch-panel';packingPanel.innerHTML='<span class="eyebrow">DESPACHO · EMPAQUE</span><p id="packing-status">Esperando productos</p><button id="inspect-dispatch" class="button">Ver despacho</button>';
+sheet.after(packingPanel);
+const inventoryPanel = document.createElement('section');inventoryPanel.className = 'order-sheet';
+const rackSelect = document.createElement('select');rackSelect.setAttribute('aria-label', 'Seleccionar estantería');
+for (let i = 1; i <= 6; i++) { const id = `E${String(i).padStart(2, '0')}`;rackSelect.add(new Option(id, id)); }
+const rackDetail = document.createElement('div');rackDetail.id = 'rack-detail';inventoryPanel.append(rackSelect, rackDetail);packingPanel.after(inventoryPanel);
+rackSelect.addEventListener('change', () => { selectedRack = rackSelect.value;if (scene) { scene.selectedRack = selectedRack;scene.inspectedStation = null;scene.dirty = true; }renderRack(rackDetail, current.state, selectedRack); });
+const makeupLabel = document.createElement('label');makeupLabel.className = 'makeup-control';
+makeupLabel.innerHTML = '<input id="makeup" type="checkbox"> Pedidos de maquillaje';
+const seedInput = document.createElement('input');seedInput.id = 'order-seed';seedInput.type = 'number';seedInput.min = '0';seedInput.max = '4294967295';seedInput.value = '10000';seedInput.setAttribute('aria-label', 'Semilla del pedido');
+const newOrder = document.createElement('button');newOrder.textContent = 'Generar pedido';newOrder.className = 'button';newOrder.addEventListener('click', () => { $('#makeup').checked = true;reset(); });
+document.querySelector('.toolbar').append(makeupLabel, seedInput, newOrder);
+$('#makeup').addEventListener('change', reset);
 const names = { iso: 'VISTA ISOMÉTRICA', fpv: 'PRIMERA PERSONA', side: 'VISTA LATERAL', station: 'DETALLE DE ESTACIÓN' };
 const actionNames = { AVANZAR: 'Navegando al objetivo', GIRAR_IZQUIERDA: 'Girando a la izquierda', GIRAR_DERECHA: 'Girando a la derecha', FRENAR: 'Robot detenido', INTERACTUAR: 'Interactuando con estación' };
 const speed = () => Number($('#speed').value);
@@ -23,6 +40,7 @@ async function api(path, body) {
 
 function controls() {
   const manual = current?.policy === 'manual';
+  $('#orders').closest('label').hidden = Boolean(current?.makeup);
   $('#play').disabled = !current || current.done || manual || changing;
   $('#step').disabled = !current || current.done || running || manual || changing;
   $('#reset').disabled = changing;
@@ -36,8 +54,23 @@ function controls() {
   ppoOption.textContent = ppoOption.disabled ? 'PPO · sin modelo para esta misión' : 'PPO entrenado';
 }
 
+function mountScene() {
+  scene?.dispose();
+  $('#station-labels').replaceChildren();
+  scene = new WarehouseScene(layoutInfo.layout, $('#world'), $('#stage'), layoutInfo.catalog);
+  scene.onDispatchSelect = inspectDispatch;
+  scene.onPackingChange = status => {
+    const phases={waiting:'Esperando productos',conveying:'Cinta en marcha · llevando productos a la caja',closing:'Cerrando la caja',partial:'Productos en caja · esperando el resto',ready:'♡ Caja preparada'};
+    $('#packing-status').textContent=`${phases[status.phase]} · ${status.packed}/${status.requested} unidades encajadas`;
+    packingPanel.dataset.phase=status.phase;
+  };
+  scene.onRackSelect = id => { scene.selectedRack = id;scene.inspectedStation = null;scene.dirty = true;selectedRack = id;rackSelect.value = id;renderRack(rackDetail, current.state, id); };
+  $('.minimap-caption > span:last-child').textContent = `${layoutInfo.layout.width} × ${layoutInfo.layout.height} m`;
+}
+
 function renderState(payload, instant = false) {
   current = payload;
+  scene.selectedRack = payload.makeup ? selectedRack : null;
   scene.setState(payload, instant);
   const s = payload.state, config = layoutInfo.layout.simulation;
   $('#position').innerHTML = `(${s.x}, ${s.y}) <span>m</span>`;
@@ -68,8 +101,27 @@ function renderState(payload, instant = false) {
   const banner = $('#mission-banner');banner.hidden = !payload.done;
   if (payload.done) {
     banner.classList.toggle('warning', !payload.info.success);
-    banner.textContent = payload.info.success ? `✓ Misión completada · ${s.entregas} entregas · ${s.tiempo} pasos` : `Episodio finalizado · ${{ time_limit: 'Límite de tiempo', battery_depleted: 'Batería agotada', unreachable_target: 'Objetivo inaccesible' }[payload.info.end_reason] || payload.info.end_reason}`;
+    banner.textContent = payload.info.success ? `✓ Misión completada · ${s.entregas} ${payload.makeup ? 'líneas entregadas' : 'entregas'} · ${s.tiempo} pasos` : `Episodio finalizado · ${{ time_limit: 'Límite de tiempo', battery_depleted: 'Batería agotada', unreachable_target: 'Objetivo inaccesible', insufficient_budget: 'Batería o tiempo insuficientes para recoger y volver' }[payload.info.end_reason] || payload.info.end_reason}`;
     pause();
+  }
+  document.querySelectorAll('.legend li').forEach(el => { if (['P1', 'P2'].includes(el.querySelector('kbd')?.textContent)) el.hidden = Boolean(payload.makeup); });
+  handling.hidden = !s.lift;
+  renderOrderSheet(sheet, s);
+  inventoryPanel.hidden = !s.inventory;
+  packingPanel.hidden = !payload.makeup;
+  if (s.inventory) renderRack(rackDetail, s, selectedRack);
+  if (s.order) {
+    const line = s.order.lines[s.pedido_actual];
+    if (s.lift) {
+      const phases={idle:'Plataforma baja · puede desplazarse',raising:'Elevando · desplazamiento bloqueado',ready:'Altura alcanzada · listo para transferir',lowering:'Bajando carga · desplazamiento bloqueado'};
+      const reasons={nearby_product:'Siguiente producto cercano que cabe en la carga',capacity:'Volver a despacho: capacidad completa',battery_or_time:'Volver a despacho: reservar batería y tiempo',all_picked:'Pedido recogido: ir a despacho',complete:'Pedido entregado',insufficient_budget:'No iniciar: presupuesto insuficiente para volver'};
+      handling.textContent=`${phases[s.lift.phase]} · ${s.lift.height.toFixed(2)} m / ${s.lift.target.toFixed(2)} m · ${reasons[s.lift.plan.reason] || ''} · Viajes a despacho: ${s.lift.dispatch_visits}`;
+      if (s.lift.phase !== 'idle' && !payload.done) $('#robot-activity').textContent=phases[s.lift.phase];
+    }
+    $('#cargo').textContent = s.cargo_lines?.length ? s.cargo_lines.map(l => `${l.subcategory} × ${l.quantity}`).join(' · ') : 'Sin productos';
+    $('#target').textContent = !s.objetivo ? 'Entrega confirmada' : s.objetivo === 'DELIVERY' ? 'Despacho' : line ? `${line.level} · ${line.subcategory} × ${line.quantity}` : 'Entrega confirmada';
+    $('#mission-title').textContent = `ORDEN ${s.order.id.slice(0, 8)} · ${s.order.state}`;
+    $('#mission-sequence').textContent = s.order.lines.map(l => `${l.level} ${l.delivered ? '✓' : l.picked ? '→ Despacho' : '○'}`).join(' · ');
   }
   controls();
 }
@@ -104,12 +156,16 @@ async function reset() {
     while (busy) await new Promise(resolve => setTimeout(resolve, 20));
     const ppoUnavailable = $('#policy').value === 'ppo' && !layoutInfo.available_ppo[$('#orders').value];
     if (ppoUnavailable) { $('#policy').value = 'heuristic';toast('Esta misión no tiene modelo PPO guardado. Se seleccionó el heurístico.'); }
-    const result = await api('reset', { orders: Number($('#orders').value), policy: $('#policy').value, blocked: $('#blocked').checked, seed: 10000 });
+    const result = await api('reset', { orders: Number($('#orders').value), policy: $('#policy').value, blocked: $('#blocked').checked, seed: Number(seedInput.value), makeup: $('#makeup').checked });
+    if (layoutInfo.layout_sha256 !== result.info.layout_sha256) {
+      layoutInfo = await api('layout');
+      mountScene();
+    }
     renderState(result, true);
     if (result.policy === 'ppo') toast('El PPO de 20 000 pasos obtuvo 0% de éxito. Se muestra su comportamiento real.');
   } catch (error) {
     toast(error.message);
-    if (current) { $('#orders').value = current.orders;$('#policy').value = current.policy;$('#blocked').checked = current.state.pasillo_bloqueado; }
+    if (current) { $('#orders').value = Math.min(2, current.orders);$('#policy').value = current.policy;$('#blocked').checked = current.state.pasillo_bloqueado; }
   } finally { changing = false;controls(); }
 }
 
@@ -132,6 +188,11 @@ function selectCamera(name) {
 }
 document.querySelectorAll('[data-camera]').forEach(button => button.addEventListener('click', () => selectCamera(button.dataset.camera)));
 $('#home-camera').addEventListener('click', () => selectCamera('iso'));
+function inspectDispatch() {
+  if (!scene) return;
+  scene.inspectedStation='DELIVERY';selectCamera('station');$('#camera-label').textContent='DETALLE DE DESPACHO';
+}
+$('#inspect-dispatch').addEventListener('click',inspectDispatch);
 // OrbitControls captura punteros en el escenario; los controles superpuestos
 // deben conservar su click en lugar de iniciar una órbita de cámara.
 $('.scene-toggles').addEventListener('pointerdown', event => event.stopPropagation());
@@ -148,9 +209,8 @@ window.addEventListener('pagehide', () => { pause();scene?.dispose(); });
 async function start() {
   try {
     [layoutInfo, current] = await Promise.all([api('layout'), api('state')]);
-    $('#policy').value = current.policy;$('#orders').value = current.orders;$('#blocked').checked = current.state.pasillo_bloqueado;
-    scene = new WarehouseScene(layoutInfo.layout, $('#world'), $('#stage'));
-    $('.minimap-caption > span:last-child').textContent = `${layoutInfo.layout.width} × ${layoutInfo.layout.height} m`;
+    $('#policy').value = current.policy;$('#orders').value = Math.min(2, current.orders);$('#blocked').checked = current.state.pasillo_bloqueado;$('#makeup').checked = current.makeup;seedInput.value = current.seed;
+    mountScene();
     renderState(current, true);
     $('#scene-loading').hidden = true;
     // Diagnóstico de la integración sin exponer acciones privilegiadas al modelo.

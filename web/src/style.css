@@ -16,3 +16,19 @@
 h1{font-family:'Barlow',Arial,sans-serif;font-size:42px;font-weight:800;letter-spacing:.8px}
 @media(min-width:1550px){h1{font-size:46px}}@media(max-width:1200px){.masthead h1{font-size:34px}}@media(max-width:760px){.masthead h1{font-size:36px}}@media(max-width:450px){.masthead h1{font-size:30px}}
 .switch-label{position:relative}.switch-label input{inset:0;margin:0;width:100%;height:100%;z-index:2;cursor:pointer}.switch-label .switch{pointer-events:none}
+/* Hoja funcional de pedido: cantidades y checks proceden del backend. */
+
+.toolbar{flex-wrap:wrap}.makeup-control{display:flex;gap:6px;align-items:center;font-size:12px}#order-seed{width:95px;padding:6px;border-radius:6px}.order-sheet{background:#fffafd;color:#553748;border:1px solid #efbfd4;border-radius:14px;padding:18px;box-shadow:0 6px 20px #b85c8210}.order-sheet h2{font-size:19px;margin:0 0 12px}.order-number{font-size:12px;overflow-wrap:anywhere;color:#97627c}.order-sheet ul{list-style:none;margin:0;padding:0}.order-sheet li{display:flex;align-items:flex-start;gap:10px;border-bottom:1px solid #f3dce6;padding:14px 0;font-size:13px;transition:background .3s}.order-sheet li.picked{background:#fce8f1}.order-sheet li.delivered{background:#f7edf4}.order-sheet input{accent-color:#cb739b;width:17px;height:17px;flex-shrink:0}.order-sheet small{display:block;font-size:11px;line-height:1.7;color:#97627c}.order-sheet p{font-size:12px;line-height:1.6}.order-sheet select{max-width:100%;padding:6px;border:1px solid #efbfd4;background:white;color:#553748}.order-confirmation{border-top:1px solid #efbfd4;padding-top:12px;font-weight:600}#station-labels{pointer-events:none}.order-sheet[hidden]{display:none}@media(max-width:760px){#order-sheet,.order-sheet{grid-column:1/-1}}
+
+@keyframes order-confirm{from{box-shadow:inset 3px 0 #cc739c;transform:translateX(3px)}to{box-shadow:inset 0 0 transparent;transform:translateX(0)}}.line-updated{animation:order-confirm .45s ease-out}@media(prefers-reduced-motion:reduce){.line-updated{animation:none}}
+
+.toolbar label[hidden]{display:none}.order-sheet input:disabled{opacity:1;filter:none}@media(max-width:760px){.station-label:not(.rack-label){font-size:7px;padding:4px}.station-label .station-icon{display:none}}
+.order-sheet input[type=checkbox]{appearance:none;border:1.5px solid #d68aaa;border-radius:4px;background:#fff8fc;display:grid;place-content:center;margin:2px 0}.order-sheet input[type=checkbox]:checked{background:#d68aaa}.order-sheet input[type=checkbox]:checked::after{content:'✓';color:white;font-size:13px;font-weight:700;line-height:1}
+
+.legend li[hidden]{display:none}#cargo{overflow-wrap:anywhere;font-size:11px}.makeup-control{color:#d5e2ec}
+
+.handling-status{margin:12px;padding:10px;border:1px solid #597381;border-radius:8px;background:#102534;color:#e6c7d9;font-size:11px;line-height:1.7}.handling-status[hidden]{display:none}
+
+.station-label{font-size:8px;padding:4px 6px;box-shadow:none;opacity:.88;letter-spacing:.5px}.station-label .station-icon{display:none}
+
+.dispatch-panel{padding:15px 18px;border:1px solid #b286a0;border-radius:14px;background:#182635;color:#f4d9e6}.dispatch-panel p{font-size:12px;line-height:1.6;margin:9px 0 12px}.dispatch-panel .eyebrow{color:#e6b8cd}.dispatch-panel .button{background:#e9bfd3;color:#563849;border-color:#e9bfd3}.dispatch-panel[data-phase=ready]{border-color:#b8d5c4}.dispatch-panel[hidden]{display:none}@media(max-width:760px){.dispatch-panel{grid-column:1/-1}}

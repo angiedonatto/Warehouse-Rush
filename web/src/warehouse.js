@@ -1,14 +1,19 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { StockVisuals } from './stock-visuals.js';
+import { mountRackSigns } from './rack-signs.js';
 
-const C = { cyan: 0x36d9f5, green: 0x42e567, yellow: 0xffbd22, red: 0xff3a42 };
+const C = { cyan: 0xf3a8c6, green: 0x42e567, yellow: 0xffbd22, red: 0xff3a42 };
 const up = new THREE.Vector3(0, 1, 0);
 const dummy = new THREE.Object3D();
 const clamp = THREE.MathUtils.clamp;
 
 export class WarehouseScene {
-  constructor(layout, canvas, stage) {
+  constructor(layout, canvas, stage, catalog = []) {
+    this.catalog = catalog;this.selectedRack = null;
     this.layout = layout;
+    // Objetivos de estante; no se cambian geometrías ni huellas físicas.
+    layout.racks.forEach((rack, i) => { layout.stations[`E${String(i + 1).padStart(2, '0')}`] = rack.bounds.slice(0, 2); });
     this.stage = stage;
     this.view = 'iso';
     this.payload = null;
@@ -58,11 +63,28 @@ export class WarehouseScene {
     this.controls.target.set(0, 0, 0);
     this.controls.addEventListener('change', () => { this.dirty = true; });
     this.resetCamera();
+    this.rackSigns = [];
     this.buildWarehouse();
     this.flushBatches();
     this.buildRobot();
+    this.stockVisuals = new StockVisuals(this);
     this.buildRoutes();
     this.buildLabels();
+    this.raycaster = new THREE.Raycaster();
+    this.pointerDown = event => {this.pointerStart = event.button === 0 ? [event.clientX, event.clientY] : null;};
+    this.pointerUp = event => {
+      if (!this.pointerStart || Math.hypot(event.clientX - this.pointerStart[0], event.clientY - this.pointerStart[1]) > 5) return;
+      this.pointerStart = null;
+      const rect = this.stage.getBoundingClientRect();
+      const pointer = new THREE.Vector2((event.clientX - rect.left) / rect.width * 2 - 1, -(event.clientY - rect.top) / rect.height * 2 + 1);
+      this.raycaster.setFromCamera(pointer, this.camera);
+      const picks=this.rackSigns.map(sign=>sign.pick);
+      if (this.stockVisuals.packing.group.visible) picks.push(this.stockVisuals.packing.pick);
+      const hit = this.raycaster.intersectObjects(picks)[0];
+      if (hit?.object.userData.station === 'DELIVERY') this.onDispatchSelect?.();
+      else if (hit) this.onRackSelect?.(hit.object.userData.rackId);
+    };
+    stage.addEventListener('pointerdown', this.pointerDown);stage.addEventListener('pointerup', this.pointerUp);
     this.resize = () => {
       this.renderer.setSize(window.innerWidth, window.innerHeight);
       if (this.view === 'iso') this.resetCamera();
@@ -94,7 +116,7 @@ export class WarehouseScene {
     this.batches.get(material).push({ size, position, rotation });
   }
 
-  flushBatches() {
+  flushBatches(target = this.scene) {
     const geometry = new THREE.BoxGeometry(1, 1, 1);
     for (const [material, instances] of this.batches) {
       const mesh = new THREE.InstancedMesh(geometry, material, instances.length);
@@ -109,7 +131,7 @@ export class WarehouseScene {
         mesh.setMatrixAt(index, dummy.matrix);
       });
       mesh.computeBoundingSphere();
-      this.scene.add(mesh);
+      target.add(mesh);
     }
     this.batches.clear();
   }
@@ -154,6 +176,10 @@ export class WarehouseScene {
 
   buildWarehouse() {
     const W = this.layout.width, H = this.layout.height;
+    const halfW = (W - 1) / 2, halfH = (H - 1) / 2;
+    const shadowSpan = Math.max(W, H);
+    Object.assign(this.sun.shadow.camera, {left:-shadowSpan, right:shadowSpan, top:shadowSpan, bottom:-shadowSpan});
+    this.sun.shadow.camera.updateProjectionMatrix();
     const floor = new THREE.Mesh(new THREE.BoxGeometry(W + .2, .2, H + .2), this.material('concrete', 0x999d9b, { map: this.floorTexture(), roughness: .94 }));
     floor.position.y = -.12;
     floor.receiveShadow = true;
@@ -169,7 +195,7 @@ export class WarehouseScene {
     const wall = this.material('wall', 0x68717a, { metalness: .25 });
     const wallEdge = this.material('wall-edge', 0x3c4952, { metalness: .6 });
     const wallLine = this.material('wall-line', 0x303e48, { metalness: .55 });
-    const yellow = this.material('safety-yellow', 0xb88a28, { roughness: .8 });
+    const yellow = this.material('safety-yellow', 0xbca47c, { roughness: .8 });
     for (let x = 0; x < W; x++) {
       for (const y of [0, H - 1]) {
         const back = y === 0, height = back ? 2.25 : .44;
@@ -189,28 +215,32 @@ export class WarehouseScene {
       this.box([.99, .055, .27], p.clone().setY(.57), yellow);
       this.box([.05, .56, .28], p.clone().add(new THREE.Vector3(-.48, .28, 0)), wallEdge);
     }
-    for (const rack of this.layout.racks) this.buildRack(rack);
-    for (const [name, coordinate] of Object.entries(this.layout.stations)) this.buildStation(name, coordinate);
+    this.layout.racks.forEach((rack, i) => {this.buildRack(rack);this.rackSigns.push(mountRackSigns(this, rack, `E${String(i + 1).padStart(2, '0')}`));});
+    this.legacyStations = new THREE.Group();this.scene.add(this.legacyStations);
+    const warehouseBatches = this.batches;this.batches = new Map();
+    for (const name of ['P1', 'P2']) this.buildStation(name, this.layout.stations[name], this.legacyStations);
+    this.flushBatches(this.legacyStations);this.batches = warehouseBatches;
+    this.buildStation('DELIVERY', this.layout.stations.DELIVERY);
     this.buildStation('BASE', this.layout.base);
     // Delimitación de pasillos: pintura, sin añadir obstáculos al simulador.
-    for (const x of [-6.9, 6.9]) this.box([.04, .012, 9], new THREE.Vector3(x, .02, -.2), yellow);
-    this.box([12.6, .012, .035], new THREE.Vector3(0, .02, 4.45), yellow);
-    for (let x = -6; x <= 6; x += 2) this.box([.45, .012, .035], new THREE.Vector3(x, .02, 3.5), yellow);
+    for (const x of [-halfW + 1.1, halfW - 1.1]) this.box([.04, .012, H - 4], new THREE.Vector3(x, .02, -.2), yellow);
+    this.box([W - 4.4, .012, .035], new THREE.Vector3(0, .02, halfH - 1.55), yellow);
+    for (let x = -halfW + 2; x <= halfW - 2; x += 3) this.box([.45, .012, .035], new THREE.Vector3(x, .02, halfH - 2.5), yellow);
     this.buildBarrier();
     const lampMat = this.material('lamps', 0xffedb4, { emissive: 0xffcc77, emissiveIntensity: 2.2 });
-    for (const x of [-6, -2, 2, 6]) {
-      this.box([.32, .12, .14], new THREE.Vector3(x, 1.8, -5.82), lampMat);
+    for (const x of [-.75, -.25, .25, .75].map(t => t * halfW)) {
+      this.box([.32, .12, .14], new THREE.Vector3(x, 1.8, -halfH + .18), lampMat);
       const lamp = new THREE.PointLight(0xffd08a, 2.4, 4, 2);
-      lamp.position.set(x, 1.7, -5.5);
+      lamp.position.set(x, 1.7, -halfH + .5);
       this.scene.add(lamp);
     }
     // Señales y pequeños armarios fijados a pared; no ocupan celdas transitables.
     const cabinet = this.material('cabinet', 0x48545b, { metalness: .6 });
     const red = this.material('extinguisher', 0xb9312c, { roughness: .5 });
-    for (const x of [-5, 1, 5]) {
-      this.box([.32, .55, .15], new THREE.Vector3(x, .95, -5.78), cabinet);
-      this.box([.06, .08, .025], new THREE.Vector3(x + .09, 1, -5.69), yellow);
-      this.box([.14, .33, .12], new THREE.Vector3(x - .5, .75, -5.75), red);
+    for (const x of [-.65, .1, .65].map(t => t * halfW)) {
+      this.box([.32, .55, .15], new THREE.Vector3(x, .95, -halfH + .22), cabinet);
+      this.box([.06, .08, .025], new THREE.Vector3(x + .09, 1, -halfH + .31), yellow);
+      this.box([.14, .33, .12], new THREE.Vector3(x - .5, .75, -halfH + .25), red);
     }
   }
 
@@ -226,32 +256,19 @@ export class WarehouseScene {
     const [x0, y0, x1, y1] = rack.bounds;
     const center = this.world((x0 + x1) / 2, (y0 + y1) / 2);
     const width = x1 - x0 + .8, depth = y1 - y0 + .8;
-    const steel = this.material('steel', 0x343e46, { metalness: .72, roughness: .43 });
-    const beam = this.material('beam', 0xc87b20, { metalness: .45, roughness: .58 });
-    const shelf = this.material('shelf', 0x60707a, { metalness: .55, roughness: .65 });
-    const tape = this.material('tape', 0xc5a374, { roughness: .95 });
-    const label = this.material('box-label', 0xc8c6ab);
-    this.outline(center, width + .32, depth + .32, 0xb5953d, .045);
+    const steel = this.material('steel', 0x939ca4, { metalness: .72, roughness: .43 });
+    const beam = this.material('beam', 0xd2a2b8, { metalness: .45, roughness: .58 });
+    const shelf = this.material('shelf', 0xc7ced1, { metalness: .55, roughness: .65 });
+    this.outline(center, width + .32, depth + .32, 0xc8b3bc, .025);
     for (const dx of [-width / 2, width / 2]) for (const dz of [-depth / 2, depth / 2]) {
       this.box([.065, 2.65, .065], center.clone().add(new THREE.Vector3(dx, 1.325, dz)), steel);
       this.box([.14, .065, .14], center.clone().add(new THREE.Vector3(dx, .04, dz)), steel);
-      for (const h of [.14, .23, .32]) this.box([.09, .07, .09], center.clone().add(new THREE.Vector3(dx, h, dz)), this.material('post-protection', 0xe8ae29));
+      for (const h of [.14, .23, .32]) this.box([.09, .07, .09], center.clone().add(new THREE.Vector3(dx, h, dz)), this.material('post-protection', 0xc9b390));
     }
     for (const h of [.15, .95, 1.75, 2.56]) {
       this.box([width, .065, depth], center.clone().add(new THREE.Vector3(0, h, 0)), shelf);
       for (const dz of [-depth / 2, depth / 2]) this.box([width + .06, .12, .055], center.clone().add(new THREE.Vector3(0, h, dz)), beam);
       for (const dx of [-width / 2, width / 2]) this.box([.055, .10, depth], center.clone().add(new THREE.Vector3(dx, h, 0)), steel);
-    }
-    for (let layer = 0; layer < 4; layer++) for (let col = 0; col < 3; col++) for (let row = 0; row < 2; row++) {
-      const variation = (x0 + y0 + layer * 3 + col * 7 + row) % 4;
-      const h = [.38, .48, .42, .56][variation];
-      const w = [.43, .48, .46, .40][variation];
-      const position = center.clone().add(new THREE.Vector3((col - 1) * .53, .21 + layer * .8 + h / 2, (row - .5) * .78));
-      const carton = this.material(`carton-${variation}`, [0x9d7449, 0xb88b55, 0x92704d, 0xc19a69][variation], { roughness: .96 });
-      this.box([w, h, .63], position, carton);
-      this.box([.055, .007, .64], position.clone().add(new THREE.Vector3(0, h / 2 + .005, 0)), tape);
-      this.box([.056, h * .65, .007], position.clone().add(new THREE.Vector3(0, h * .17, .32)), tape);
-      if ((col + layer) % 2 === 0) this.box([.12, .08, .008], position.clone().add(new THREE.Vector3(.10, 0, .321)), label);
     }
     // Arriostramiento diagonal en el lateral del rack.
     for (const dx of [-width / 2, width / 2]) {
@@ -263,28 +280,29 @@ export class WarehouseScene {
     }
   }
 
-  buildStation(name, coordinate) {
+  buildStation(name, coordinate, target = this.scene) {
+    if (name === 'DELIVERY' && this.layout.dispatch_area) return;
     const p = this.world(...coordinate), color = name === 'BASE' ? C.green : name === 'DELIVERY' ? C.yellow : C.cyan;
     const pad = this.material(`pad-${name}`, color, { transparent: true, opacity: .17, emissive: color, emissiveIntensity: .9, depthWrite: false });
     this.box([.96, .018, .96], p.clone().setY(.02), pad);
     const neon = this.material(`neon-${name}`, color, { emissive: color, emissiveIntensity: 2.5, roughness: .4 });
     for (const dz of [-.46, .46]) this.box([.96, .025, .035], p.clone().add(new THREE.Vector3(0, .045, dz)), neon);
     for (const dx of [-.46, .46]) this.box([.035, .025, .96], p.clone().add(new THREE.Vector3(dx, .045, 0)), neon);
-    if (name !== 'BASE') {
+    if (name.startsWith('P')) {
       const pallet = this.material('pallet', 0x715738);
       for (const dx of [-.26, 0, .26]) this.box([.13, .12, .64], p.clone().add(new THREE.Vector3(dx, .09, 0)), pallet);
       for (const dz of [-.23, 0, .23]) this.box([.68, .045, .14], p.clone().add(new THREE.Vector3(0, .17, dz)), pallet);
       this.box([.52, .36, .47], p.clone().setY(.38), this.material('station-carton', 0xb68e5b));
       this.box([.07, .008, .48], p.clone().setY(.564), this.material('station-tape', 0xd6b886));
       this.box([.14, .09, .008], p.clone().add(new THREE.Vector3(.09, .38, .24)), this.material('shipping-label', 0xd7d4ba));
-    } else {
+    } else if (name === 'BASE') {
       const baseMark = this.material('base-mark', 0x88ff94, { emissive: 0x33e84a, emissiveIntensity: 1.2 });
       for (const dx of [-.12, .12]) this.box([.025, .012, .35], p.clone().add(new THREE.Vector3(dx, .045, 0)), baseMark);
       for (const dz of [-.17, .17]) this.box([.24, .012, .025], p.clone().add(new THREE.Vector3(0, .045, dz)), baseMark);
     }
     const glow = new THREE.PointLight(color, 1.8, 2.3, 2);
     glow.position.copy(p).y = .35;
-    this.scene.add(glow);
+    target.add(glow);
   }
 
   buildBarrier() {
@@ -378,9 +396,9 @@ export class WarehouseScene {
   }
 
   buildRoutes() {
-    this.routeMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(.045, .018, .17), this.material('route-cyan', C.cyan, { emissive: C.cyan, emissiveIntensity: 1.7 }), 1800);
+    this.routeMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(.045, .018, .17), this.material('route-cyan', C.cyan, { emissive: C.cyan, emissiveIntensity: .8 }), this.layout.width * this.layout.height * 4);
     this.routeMesh.count = 0;this.routeMesh.frustumCulled = false;this.scene.add(this.routeMesh);
-    this.trailMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(.032, .012, .032), this.material('trail', 0x63bacb, { emissive: 0x14495a, transparent: true, opacity: .5 }), 250);
+    this.trailMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(.032, .012, .032), this.material('trail', 0x63bacb, { emissive: 0x14495a, transparent: true, opacity: .5 }), this.layout.simulation.max_steps + 1);
     this.trailMesh.count = 0;this.trailMesh.frustumCulled = false;this.scene.add(this.trailMesh);
     this.sensorGeometry = new THREE.BufferGeometry();
     this.sensorGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(8 * 6), 3));
@@ -391,14 +409,13 @@ export class WarehouseScene {
   buildLabels() {
     this.labels = [];
     const container = document.querySelector('#station-labels');
-    const entries = [['BASE', this.layout.base], ...Object.entries(this.layout.stations), ['BLOCK', this.layout.blockable_cells[0]]];
+    const entries = [['BASE', this.layout.base], ...Object.entries(this.layout.stations).filter(([name]) => !name.startsWith('E')), ['BLOCK', this.layout.blockable_cells[0]]];
     for (const [name, coordinate] of entries) {
       const el = document.createElement('div');
       el.className = `station-label ${name === 'BASE' ? 'base' : name === 'DELIVERY' ? 'delivery' : name === 'BLOCK' ? 'blocked' : ''}`;
-      const title = { BASE: 'BASE / INICIO', P1: 'RECOGIDA 1', P2: 'RECOGIDA 2', DELIVERY: 'ENTREGA', BLOCK: 'PASILLO BLOQUEADO' }[name];
-      el.innerHTML = `${name === 'BLOCK' ? '' : '<span class="station-icon"></span>'}<span>${title}${name.startsWith('P') ? `<small>(${name})</small>` : name === 'DELIVERY' ? '<small>(D)</small>' : ''}</span>`;
+      el.textContent = {BASE:'BASE', DELIVERY:'DESPACHO', BLOCK:'PASILLO BLOQUEADO', P1:'RECOGIDA 1', P2:'RECOGIDA 2'}[name];
       container.append(el);
-      this.labels.push({ name, el, position: this.world(...coordinate, name === 'BLOCK' ? 1.15 : name === 'BASE' ? .7 : 1.25) });
+      this.labels.push({name, el, position:this.world(...coordinate, name === 'BLOCK' ? .9 : .45)});
     }
   }
 
@@ -408,8 +425,9 @@ export class WarehouseScene {
     this.targetPosition = this.world(s.x, s.y);
     this.targetYaw = -s.theta * Math.PI / 2;
     if (instant) { this.robot.position.copy(this.targetPosition);this.robot.rotation.y = this.targetYaw; }
-    this.cargo.visible = Boolean(s.carga);
-    this.avatarCargo.visible = Boolean(s.carga);
+    this.cargo.visible = this.avatarCargo.visible = !payload.makeup && Boolean(s.carga);
+    this.legacyStations.visible = !payload.makeup;
+    this.stockVisuals.update(s, Boolean(payload.makeup), instant);
     this.barrier.visible = s.pasillo_bloqueado;
     const route = payload.route;
     let count = 0;
@@ -433,7 +451,7 @@ export class WarehouseScene {
 
   resetCamera() {
     const aspect = this.stage.clientWidth / this.stage.clientHeight;
-    const fit = Math.max(1, 1.45 / aspect);
+    const fit = Math.max(1, 1.45 / aspect) * Math.max(this.layout.width / 17, this.layout.height / 13);
     this.camera.position.set(-13.8, 17.5, 17.8).multiplyScalar(fit);
     this.controls.maxDistance = Math.max(36, this.camera.position.length() * 1.3);
     this.controls.target.set(0, .15, .1);
@@ -451,16 +469,20 @@ export class WarehouseScene {
   cameraPositions() {
     const p = this.robot.position;
     const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(up, this.robot.rotation.y);
-    this.cameras.iso.position.set(-12, 15, 15);this.cameras.iso.lookAt(0, .4, 0);
+    this.cameras.iso.position.set(-12, 15, 15).multiplyScalar(Math.max(this.layout.width / 17, this.layout.height / 13));this.cameras.iso.lookAt(0, .4, 0);
     this.cameras.fpv.position.copy(p).add(new THREE.Vector3(0, 1.10, 0)).addScaledVector(forward, .06);
     this.cameras.fpv.lookAt(p.clone().addScaledVector(forward, 5).add(new THREE.Vector3(0, .85, 0)));
     this.cameras.side.position.copy(p).add(new THREE.Vector3(-2.7, 1.35, 2.5));
     this.cameras.side.lookAt(p.clone().setY(.45));
-    const target = this.payload?.state.objetivo;
-    const station = target ? this.world(...this.layout.stations[target]) : this.world(...this.layout.stations.DELIVERY);
+    const target = this.inspectedStation || this.selectedRack || this.payload?.state.objetivo;
+    const rack = target?.startsWith('E') ? this.layout.racks[Number(target.slice(1)) - 1] : null;
+    const station = rack ? this.world((rack.bounds[0] + rack.bounds[2]) / 2, (rack.bounds[1] + rack.bounds[3]) / 2)
+      : target ? this.world(...this.layout.stations[target]) : this.world(...this.layout.stations.DELIVERY);
+    if (target === 'DELIVERY' && this.layout.dispatch_area) station.x += .5;
+    const packing = target === 'DELIVERY' && this.payload?.makeup;
     const side = target === 'DELIVERY' ? -1 : 1;
-    this.cameras.station.position.copy(station).add(new THREE.Vector3(-2 * side, 2.15, 2.35));
-    this.cameras.station.lookAt(station.clone().setY(.3));
+    this.cameras.station.position.copy(station).add(new THREE.Vector3(packing ? -3.2 : rack ? -2.8 : -2 * side, packing ? 2.6 : rack ? 3.7 : 2.15, packing ? 3.4 : rack ? 4.6 : 2.35));
+    this.cameras.station.lookAt(station.clone().setY(packing ? .70 : rack ? 1.65 : .3));
     if (this.view !== 'iso') {
       this.camera.position.copy(this.cameras[this.view].position);
       this.camera.quaternion.copy(this.cameras[this.view].quaternion);
@@ -483,10 +505,10 @@ export class WarehouseScene {
 
   updateLabels() {
     const w = this.stage.clientWidth, h = this.stage.clientHeight;
-    for (const { name, el, position } of this.labels) {
+    for (const { name, rack, el, position } of this.labels) {
       const v = position.clone().project(this.camera);
       const x = (v.x * .5 + .5) * w, y = (-v.y * .5 + .5) * h;
-      const visible = v.z > -1 && v.z < 1 && x > 20 && x < w - 20 && y > 45 && y < h - 25 && (name !== 'BLOCK' || this.barrier.visible);
+      const visible = v.z > -1 && v.z < 1 && x > 20 && x < w - 20 && y > 45 && y < h - 25 && (name !== 'BLOCK' || this.barrier.visible) && (name !== 'DELIVERY' || !this.payload?.makeup) && (!name.startsWith('P') || !this.payload?.makeup) && (!name.startsWith('E') || this.payload?.makeup) && (!rack || (this.payload?.makeup && rack === (this.selectedRack || this.payload?.state.objetivo)));
       el.style.display = visible ? 'flex' : 'none';el.style.left = `${x}px`;el.style.top = `${y}px`;
     }
   }
@@ -537,7 +559,7 @@ export class WarehouseScene {
       ctx.fillStyle = color;ctx.font = `bold ${Math.max(8, cw * .68)}px Arial`;ctx.textAlign = 'center';ctx.textBaseline = 'middle';ctx.fillText(text, px, py + .5);
     };
     marker(this.layout.base, 'B', '#71ed82');
-    for (const [name, cell] of Object.entries(this.layout.stations)) marker(cell, name === 'DELIVERY' ? 'D' : name, name === 'DELIVERY' ? '#ffcc46' : '#56e4f3');
+    for (const [name, cell] of Object.entries(this.layout.stations).filter(([name]) => name === 'DELIVERY' || (this.payload?.makeup ? name.startsWith('E') : name.startsWith('P')))) marker(cell, name === 'DELIVERY' ? 'D' : name, name === 'DELIVERY' ? '#ffcc46' : '#56e4f3');
     if (this.payload) {
       const x = (this.robot.position.x + (W - 1) / 2 + .5) * cw, y = (this.robot.position.z + (H - 1) / 2 + .5) * ch;
       ctx.save();ctx.translate(x, y);ctx.rotate(-this.robot.rotation.y);ctx.fillStyle = '#fff';ctx.shadowColor = '#50dfff';ctx.shadowBlur = 5;
@@ -549,10 +571,11 @@ export class WarehouseScene {
     this.frame = requestAnimationFrame(this.animate);
     const dt = Math.min(this.clock.getDelta(), .08);
     this.elapsed += dt;
+    this.stockVisuals.animate(dt);
     if (this.renderer.domElement.width === 0) return;
     this.robot.position.lerp(this.targetPosition, 1 - Math.exp(-dt * (this.motionSpeed || 9)));
     const angle = Math.atan2(Math.sin(this.targetYaw - this.robot.rotation.y), Math.cos(this.targetYaw - this.robot.rotation.y));
-    const moving = this.robot.position.distanceToSquared(this.targetPosition) > .00001 || Math.abs(angle) > .001;
+    const moving = this.stockVisuals.packing.isAnimating || Math.abs(this.stockVisuals.lift.height - this.stockVisuals.lift.target) > .001 || this.robot.position.distanceToSquared(this.targetPosition) > .00001 || Math.abs(angle) > .001;
     this.robot.rotation.y += angle * (1 - Math.exp(-dt * 12));
     if (this.payload?.state.v) this.wheels.forEach(wheel => { wheel.rotation.x += dt * 4; });
     this.barrierGlow.intensity = 2.7 + Math.sin(this.elapsed * 5) * .5;
@@ -580,9 +603,10 @@ export class WarehouseScene {
   }
 
   dispose() {
+    this.stage.removeEventListener('pointerdown', this.pointerDown);this.stage.removeEventListener('pointerup', this.pointerUp);
     cancelAnimationFrame(this.frame);window.removeEventListener('resize', this.resize);window.removeEventListener('scroll', this.scroll);this.controls.dispose();
     const geometries = new Set(), materials = new Set();
-    for (const scene of [this.scene, this.avatarScene]) scene.traverse(obj => { if (obj.geometry) geometries.add(obj.geometry);if (obj.material) materials.add(obj.material); });
+    for (const scene of [this.scene, this.avatarScene]) scene.traverse(obj => { if (obj.geometry) geometries.add(obj.geometry);if (obj.material) for (const material of Array.isArray(obj.material) ? obj.material : [obj.material]) materials.add(material); });
     geometries.forEach(g => g.dispose());materials.forEach(m => { m.map?.dispose();m.dispose(); });this.renderer.dispose();
   }
 }

@@ -1,5 +1,7 @@
 # Warehouse Rush
 
+> **Antes de modificar el proyecto:** lee [AGENTS.md](AGENTS.md). Incluye el relevo de Naomi, el alcance visual, las funcionalidades que deben conservarse y cómo actualizarse desde GitHub y comprobar producción antes de subir cambios.
+
 Proyecto final de MLOps (Universidad Externado de Colombia). Un robot recoge paquetes en dos estaciones y los entrega
 en la correcta. PPO (Stable-Baselines3) sobre un ambiente Gymnasium; visor Three.js desplegado en Vercel
 (https://warehouse-rush-experiment-001.vercel.app); experimentos en MLflow; versionado con Git + DVC.

@@ -326,7 +326,31 @@ Son cuatro runs porque el término de distancia y el de altura se separan (e1, e
 ### Presupuesto real por run (barrido v5)
 | Run | Nivel | Pasos | Minutos | Estado |
 |---|---|---|---|---|
-| m1o-e1-seed0 | m1o | (pendiente) | (pendiente) | en curso |
-| m1o-e2-seed0 | m1o | (pendiente) | (pendiente) | en curso |
-| m1o-e3-seed0 | m1o | (pendiente) | (pendiente) | en curso |
-| m1o-e4-seed0 | m1o | (pendiente) | (pendiente) | en curso |
+| m1o-e1-seed0 | m1o | 204 800 | 10.6 (4 runs en paralelo, ~540 pasos/s cada uno) | rechazado |
+| m1o-e2-seed0 | m1o | 204 800 | 10.2 (4 runs en paralelo, ~540 pasos/s cada uno) | rechazado |
+| m1o-e3-seed0 | m1o | 204 800 | 10.3 (4 runs en paralelo, ~540 pasos/s cada uno) | rechazado |
+| m1o-e4-seed0 | m1o | 204 800 | 10.7 (4 runs en paralelo, ~540 pasos/s cada uno) | rechazado |
+
+### Resultados del barrido v5 (2026-11-13, semilla 0, `suite-m1o-v1`: 50 episodios, semillas 10000–10049, acciones deterministas, mapa abierto)
+Código: commit `2b80031` (tag `env/warehouse-v5`). `git_dirty` figura `true` en e1, e2 y e4 solo por carpetas de salida de runs hermanos sin versionar; ningún archivo versionado cambió.
+`invalid_interaction` −0.2 y `collision` −1 en todos. Manifiestos en `manifests/m1o-e*-seed0.json`; evidencia por episodio en `docs/resultados/eval/m1o-e*/`.
+
+| Run | `manhattan_progress` | `height_mismatch` | Éxito | Recogidas (media/ep) | Inválidas/ep | CARGAR / SUBIR / BAJAR (% de pasos) | Éxitos en entrenamiento | Estado |
+|---|---:|---:|---:|---:|---:|---|---:|---|
+| m1o-c0-seed0 (control, v4) | 0 | 0 | 0% | 0.14 | 0.0 | 0.0 / 0.2 / 0.0 | 0 / 512 | candidato |
+| m1o-e1-seed0 | 0.3 | 0 | 0% | 0.00 | 26.6 | 5.2 / 1.8 / 0.0 | 0 / 512 | **rechazado** |
+| m1o-e2-seed0 | 0 | −0.1 | 0% | 0.00 | 0.0 | 0.0 / 0.0 / 0.0 | 0 / 512 | **rechazado** |
+| m1o-e3-seed0 | 0.3 | −0.1 | 0% | 0.00 | 0.0 | 0.0 / 0.0 / 0.0 | 0 / 512 | **rechazado** |
+| m1o-e4-seed0 | 0.3 | −0.02 | 0% | **0.30** | 159.4 | **28.6 / 16.5 / 4.3** | **1 / 512** (3 entregas) | **rechazado** (criterio) |
+
+**Decisión:** ningún run supera al control en ≥ 5 pp de éxito (todos 0 pp); e1–e4 se **rechazan** según `configs/criterios.yaml` y se conservan con su evidencia. **La hipótesis «diferencia de distancia + penalización por altura permite superar al control» se rechaza** con 200 000 pasos y una semilla. e4 es, sin embargo, el run **más avanzado** hasta ahora (ver abajo).
+
+**Diagnóstico (repetición determinista de las 50 semillas, acción más probable):**
+- **e2 y e3: evitación del estante, como se advirtió antes de entrenar.** En 0/50 episodios llegan a una celda de interacción. e3 termina a ≈ 3.0 celdas Manhattan del primer estante (recompensa de acercamiento pero sin entrar en la zona penalizada); e2 se queda cerca de la base (≈ 5.2 celdas) girando (GIRAR_DERECHA 97.7%). Con −0.1 por puesto de bandeja, estar en la celda de interacción con la altura equivocada rinde −103 a −106 frente a −41 de no ir (medido antes de entrenar): la política aprendió a no ir.
+- **e1 (solo diferencia Manhattan): llega y sube, pero no carga.** Llega y mira al estante en 49/50 episodios (mediana: paso 15) y sube la bandeja en 41/50, pero con la bandeja por debajo de la altura exigida elige CARGAR (1 038 pasos, inválida) o FRENAR, y con la bandeja a la altura correcta elige FRENAR (11 192 pasos; probabilidad media de CARGAR 0.17). Cero cargas. No aprende a subir hasta la altura ni a cargar.
+- **e4 (ambos, altura −0.02): primera conducta con la cadena casi completa.** Llega al estante en 35/50 episodios, sube la bandeja en 27/50, carga en **12/50** (15 productos; 3 episodios con 2 productos) y baja la bandeja por completo tras cargar en 6/50 (BAJAR 4.3% de los pasos; es la primera vez que un run usa BAJAR). Tuvo **un episodio de entrenamiento con éxito (3 entregas)**: la tarea completa es alcanzable con esta recompensa. Pero en evaluación nunca intenta DESCARGAR en la etapa de entrega y no completa ningún pedido; 3 episodios terminan por batería agotada.
+- Lo que falla en e4: con la bandeja por debajo de la altura exigida elige CARGAR (2 156 pasos, inválida) más que SUBIR (559); a la altura correcta elige BAJAR (354) en vez de CARGAR (12; probabilidades 0.36 frente a 0.34): oscila entre subir y bajar. Tras cargar mezcla casi uniformemente giros bloqueados, SUBIR, BAJAR y CARGAR. Esto da 159 inválidas por episodio (≈ −32 de retorno) y un retorno medio de −70.5, peor que el control aunque la conducta sea más avanzada: el retorno no mide el avance.
+
+**Lectura (hipótesis, no causa demostrada):** el término de altura débil (−0.02) funciona como gradiente sin crear una zona prohibida; el fuerte (−0.1) la crea. La diferencia Manhattan sola no basta (e1). Falta señal directa para los pasos intermedios (subir exactamente hasta la altura, cargar, bajar). Candidatos: (a) el mismo e4 con más pasos y 3 semillas (e4 es el único con un éxito en entrenamiento; con una semilla no se sabe cuánto varía), (b) bonos únicos por línea al alcanzar la altura correcta y al bajar tras cargar, (c) una penalización de altura intermedia (−0.05) para ver el punto entre −0.02 y −0.1.
+
+**Limitaciones:** una semilla por configuración; presupuesto de 200 000 pasos; el control se entrenó bajo el código v4 con recompensa idéntica; evaluación en mapa abierto; el éxito en entrenamiento de e4 es un único episodio.

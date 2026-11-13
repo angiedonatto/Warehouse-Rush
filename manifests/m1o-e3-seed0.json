@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "run_id": "m1o-e3-seed0",
+  "level_id": "m1o",
+  "environment_version": "warehouse-v5",
+  "git_commit": "2b8003191ed25e2d4ed1176ba19604141404d7de",
+  "config_sha256": "a91c84c3361b908259b641a2dc172d7d2f9f2002102cc5f49afb4c627c51020a",
+  "model_uri": "models/m1o-e3-seed0/model.zip",
+  "model_sha256": "234f7f001c6ba643680230601d87dea5a8a456eb6dd3a5ca135e515d2c23cdbc",
+  "normalization_uri": null,
+  "runtime_ref": "env/warehouse-v5",
+  "evaluation_suite_id": "suite-m1o-v1",
+  "seed": 0,
+  "parent_run_id": null,
+  "estado": "rechazado",
+  "created_at": "2026-11-13T23:30:48.592562+00:00",
+  "author": "lis",
+  "algorithm": "PPO",
+  "policy": "MlpPolicy",
+  "budget_steps": 204800,
+  "budget_minutes": 10.27,
+  "mlflow_run_id": "d3ede7b8de3c417798b7da40e318b95f",
+  "mlflow_experiment": "warehouse-m1o",
+  "config_uri": "configs/experiments/m1o_e3_ambos_01.yaml",
+  "obs_spec": "envs/CONTRATO.md@env/warehouse-v5 (Box(27), todo en [0,1], sin VecNormalize)",
+  "action_spec": "envs/CONTRATO.md@env/warehouse-v5 (Discrete(8): AVANZAR, GIRAR_I, GIRAR_D, FRENAR, CARGAR, DESCARGAR, SUBIR, BAJAR)",
+  "rules_ref": "docs/ambiente-v0.5.md",
+  "reward": {
+    "pickup": 10.0,
+    "delivery": 30.0,
+    "completion": 50.0,
+    "progress": 0.3,
+    "time": -0.1,
+    "battery": -0.02,
+    "collision": -1.0,
+    "invalid_interaction": -0.2,
+    "distance": 0.0,
+    "manhattan_progress": 0.3,
+    "height_mismatch": -0.1
+  },
+  "reward_overrides": {
+    "invalid_interaction": -0.2,
+    "collision": -1.0,
+    "manhattan_progress": 0.3,
+    "height_mismatch": -0.1
+  },
+  "layout_path": "configs/layout_v0.5.json",
+  "layout_sha256": "0bd1788a5daf4cd0857d62ef86ed48a4b2145ea6f2e050aa37eb901845e4bbca",
+  "results_uri": "docs/resultados/eval/m1o-e3-seed0/evaluation.json",
+  "training_metadata_uri": "docs/resultados/training/m1o-e3-seed0/metadata.json",
+  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "evaluation": {
+    "suite": "suite-m1o-v1",
+    "episodes": 50,
+    "seeds": "10000-10049",
+    "scenario": "mapa abierto layout_v0.5",
+    "deterministic": true,
+    "policies": {
+      "heuristic": {
+        "success_rate": 1.0,
+        "mean_total_reward": 125.79870080000002,
+        "mean_steps": 71.32,
+        "mean_battery_used": 44.464960000000225,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 3.0,
+        "mean_pickups": 3.0,
+        "end_reasons": {
+          "success": 50
+        },
+        "action_counts": {
+          "0": 2182,
+          "1": 191,
+          "2": 257,
+          "3": 186,
+          "4": 150,
+          "5": 50,
+          "6": 275,
+          "7": 275
+        }
+      },
+      "ppo": {
+        "success_rate": 0.0,
+        "mean_total_reward": -36.88231999999984,
+        "mean_steps": 400.0,
+        "mean_battery_used": 76.31599999999787,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 0.0,
+        "mean_pickups": 0.0,
+        "end_reasons": {
+          "time_limit": 50
+        },
+        "action_counts": {
+          "0": 433,
+          "1": 7080,
+          "2": 8047,
+          "3": 4440,
+          "4": 0,
+          "5": 0,
+          "6": 0,
+          "7": 0
+        }
+      }
+    }
+  },
+  "decision": "rechazado",
+  "decision_reason": "No supera al control (0 pp), 0 recogidas. Evita la celda de interacción: termina a ~3 celdas del estante y en 0/50 episodios llega a una celda de interacción (la penalización de altura la convierte en zona a evitar)."
+}

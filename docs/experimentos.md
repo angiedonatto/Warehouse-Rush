@@ -244,7 +244,31 @@ Retornos solo comparables entre runs con los mismos coeficientes; se compara éx
 ### Presupuesto real por run (barrido de distancia)
 | Run | Nivel | Pasos | Minutos | Estado |
 |---|---|---|---|---|
-| m1o-c0-seed0 | m1o | (pendiente) | (pendiente) | en curso |
-| m1o-d1-seed0 | m1o | (pendiente) | (pendiente) | en curso |
-| m1o-d2-seed0 | m1o | (pendiente) | (pendiente) | en curso |
-| m1o-d3-seed0 | m1o | (pendiente) | (pendiente) | en curso |
+| m1o-c0-seed0 | m1o | 204 800 | 10.7 (4 runs en paralelo, ~540 pasos/s cada uno) | candidato (control) |
+| m1o-d1-seed0 | m1o | 204 800 | 10.4 (4 runs en paralelo, ~540 pasos/s cada uno) | rechazado |
+| m1o-d2-seed0 | m1o | 204 800 | 10.4 (4 runs en paralelo, ~540 pasos/s cada uno) | rechazado |
+| m1o-d3-seed0 | m1o | 204 800 | 10.3 (4 runs en paralelo, ~540 pasos/s cada uno) | rechazado |
+
+### Resultados del barrido de distancia (2026-11-13, semilla 0, `suite-m1o-v1`: 50 episodios, semillas 10000–10049, acciones deterministas, mapa abierto)
+Código: commit `1b82ca9` (tag `env/warehouse-v4`). `git_dirty` figura `true` en c0 y d3 solo por carpetas de salida de runs hermanos sin versionar; ningún archivo versionado cambió.
+`invalid_interaction` −0.2 y `collision` −1 en todos. Manifiestos en `manifests/m1o-*-seed0.json`; evidencia por episodio en `docs/resultados/eval/m1o-*/`.
+
+| Run | `distance` | Éxito | Retorno medio | Episodios con una recogida | Dist. Manhattan final al primer objetivo (media) | Terminó a ≤ 2 celdas | FRENAR | Estado |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| m1o-c0-seed0 (control) | 0 | 0% | −37.1 | **7 / 50** | 1.4 | 48 / 50 | 61.2% | candidato |
+| m1o-d1-seed0 | −0.005 | 0% | −46.6 | 0 / 50 | 3.5 | 32 / 50 | 86.2% | **rechazado** |
+| m1o-d2-seed0 | −0.01 | 0% | −46.8 | 0 / 50 | 1.8 | 45 / 50 | 8.0% (GIRAR 90%) | **rechazado** |
+| m1o-d3-seed0 | −0.02 | 0% | −62.5 | 0 / 50 | 2.9 | 38 / 50 | 80.8% | **rechazado** |
+
+La heurística BFS logra 100% en 71 pasos bajo los tres coeficientes (retorno +115.1, +112.7, +110.3, +105.5 según `distance`); los retornos entre runs con coeficientes distintos no son comparables, el éxito sí.
+
+**Decisión:** ningún run con término de distancia supera al control del mismo mapa en ≥ 5 pp de éxito (todos 0 pp) y ninguno logra una sola recogida, mientras el control sí; d1–d3 se **rechazan** según `configs/criterios.yaml` y se conservan con su evidencia. **La hipótesis «penalizar la distancia Manhattan permite descubrir la tarea» se rechaza** en el rango −0.005 a −0.02 con 200 000 pasos y una semilla. Por la regla fijada antes de entrenar (solo continuar si algún run era favorable), **no se entrenó la versión con muros interiores con el término de distancia**.
+
+**Hechos medidos:**
+- El término sí cambia la conducta: d2 y d3 terminan cerca del primer objetivo (45 y 38 de 50 episodios a ≤ 2 celdas) con retornos mucho mejores que quedarse quieto en la base (−84 y −128 según las referencias previas), pero ese acercamiento no se convierte en recogidas.
+- **El control es la política más avanzada hasta ahora** (ningún run anterior recogió nada): en el mapa abierto, con `collision` −1 e `invalid_interaction` −0.2, llega a ≤ 2 celdas del primer objetivo en 48/50 episodios y completa la secuencia navegar–detenerse–SUBIR–CARGAR en 7/50 (≈ 23 pasos; son episodios cuyo primer producto está en E05, nivel 1 o 2). La comparación pertinente es con `m1-r5-seed0` (mismos coeficientes, mapa con muro): 0 recogidas y FRENAR 98.2%. Las únicas diferencias entre ambos son el mapa y la versión del código (término `distance` por defecto 0). Es un solo run por configuración.
+- **Dónde se atasca:** tras el primer CARGAR la bandeja queda arriba (0.99 m) y el robot no puede moverse hasta bajarla. En las semillas 10002, 10014, 10015 y 10020 la política nunca usa BAJAR (1 sola vez en 4 episodios; 0.0% en la evaluación) y pasa los ~377 pasos restantes girando y frenando con la carga puesta: **no ha descubierto que debe bajar la bandeja**.
+
+**Lectura (hipótesis de diagnóstico, no causa demostrada):** quitar el muro y los pasos estrechos (junto con los castigos menores) facilita aprender la navegación, pero la penalización de distancia no aporta nada sobre eso y empeora el resultado; el siguiente cuello de botella es BAJAR tras cargar, que no tiene ninguna señal propia. Candidato siguiente: bono único por línea al bajar la bandeja tras cargar (y por llegar a la altura correcta), sobre el mapa abierto. También queda la clonación de comportamiento. No se ha probado por qué el término de distancia no ayuda.
+
+**Limitaciones:** una semilla por configuración; presupuesto de 200 000 pasos; evaluación en mapa abierto (sin incidente de pasillo); la comparación control frente a `m1-r5` mezcla mapa y versión de código.

@@ -67,3 +67,26 @@ def test_experiment_configs_change_one_dimension():
         assert list(config["recompensa"]) == ["invalid_interaction"]
         assert -2.0 < config["recompensa"]["invalid_interaction"] < 0
     assert "recompensa" not in load_config("configs/experiments/m1_c0b_control_v3.yaml")
+
+
+def test_collision_override_applies_and_bumping_is_never_profitable():
+    for penalty in (-5.0, -2.0, -0.5, -0.1, 0.0):
+        env = make_env(orders=3, reward_overrides={"invalid_interaction": -0.2, "collision": penalty})
+        env.reset(seed=0)
+        env.step(Action.AVANZAR)                      # BASE (3,16) -> (3,15)
+        _, reward, _, _, info = env.step(Action.AVANZAR)   # (3,14) es el muro interior: choque
+        assert info["collisions"] == 1
+        assert info["reward_components"]["collision"] == pytest.approx(penalty)
+        assert reward < 0                              # tiempo y batería siguen restando aunque el choque cueste 0
+
+
+def test_collision_sweep_configs_change_one_dimension_from_r2():
+    r2 = load_config("configs/experiments/m1_r2_invalida_02.yaml")["recompensa"]
+    assert r2 == {"invalid_interaction": -0.2}
+    seen = []
+    for name in ("m1_r4_choque_2", "m1_r5_choque_1", "m1_r6_choque_05", "m1_r7_choque_01"):
+        rec = load_config(f"configs/experiments/{name}.yaml")["recompensa"]
+        assert rec["invalid_interaction"] == -0.2 and set(rec) == {"invalid_interaction", "collision"}
+        assert -5.0 < rec["collision"] < 0
+        seen.append(rec["collision"])
+    assert seen == sorted(seen) and len(set(seen)) == 4

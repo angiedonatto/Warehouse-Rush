@@ -152,3 +152,36 @@ La heurística BFS obtiene 100% (retorno +115.9) bajo los cuatro conjuntos de co
 **Lectura (hipótesis de diagnóstico, no causa demostrada):** las inválidas no eran el cuello de botella. Mientras ninguna conducta explorada produzca recompensa positiva, quedarse quieto (≈ −40, la penalización por tiempo) sigue siendo la mejor política y PPO converge a ella; reducir un costo de explorar no crea una señal que seguir. Quedan dos candidatos a probar, uno por experimento: (1) bajar el castigo de choques (−5), que es el costo restante; (2) **bonos por sub-pasos pagados una vez por línea** (llegar de frente al estante, alcanzar la altura correcta, bajar tras cargar), que dan señal positiva antes de la primera entrega y respetan la regla de «hitos una sola vez». La opción A (clonar la heurística y afinar con RL) sigue pendiente. No se tocaron modelo ni hiperparámetros.
 
 **Limitaciones:** una semilla por configuración (sin medir la variación entre semillas), presupuesto de 200 000 pasos y evaluación solo con pasillo abierto.
+
+
+## Barrido de penalización por choque con inválidas en −0.2 (escrito antes de entrenar, 2026-11-13)
+**Contexto:** el barrido anterior (inválidas −1, −0.2, −0.05) dio 0% de éxito en los tres runs y la política colapsó a FRENAR (98–99%). Con inválidas en −0.05 la
+exploración seguía ~70 por debajo de quedarse quieto, sobre todo por choques (15.3 × −5 ≈ −77). Instrucción del equipo: fijar `invalid_interaction` en **−0.2** y
+probar distintas penalizaciones por choque.
+
+**Hipótesis (una dimensión respecto de `m1-r2`):** bajar `collision` de −5 a valores menores hace que explorar deje de ser mucho peor que quedarse quieto y el agente
+descubre la secuencia.
+**Qué la refutaría:** que ningún run supere a `m1-r2` en ≥ 5 pp de éxito en `suite-m1-v1` (criterio de `configs/criterios.yaml`).
+**Cuentas previas (aritmética con los conteos de la política aleatoria de `m1-c0`, no resultados):** retorno aleatorio por episodio ≈ −40 (inválidas −0.2 × 199.6) + 15.3 × `collision`
+− 42 (tiempo y batería): −5 → ≈ −160; −2 → ≈ −113; −1 → ≈ −98; −0.5 → ≈ −90; −0.1 → ≈ −83. Todas siguen por debajo de quedarse quieto (≈ −41) porque las inválidas aportan ≈ −40
+por sí solas: **bajar solo los choques no garantiza quitar el colapso**; lo que se mide es cuánto se acerca la exploración al piso de −41.
+
+| Run | `invalid_interaction` | `collision` | Config |
+|---|---:|---:|---|
+| m1-r2-seed0 (control, ya entrenado) | −0.2 | −5 (por defecto) | `m1_r2_invalida_02.yaml` |
+| m1-r4-seed0 | −0.2 | −2 | `m1_r4_choque_2.yaml` |
+| m1-r5-seed0 | −0.2 | −1 | `m1_r5_choque_1.yaml` |
+| m1-r6-seed0 | −0.2 | −0.5 | `m1_r6_choque_05.yaml` |
+| m1-r7-seed0 | −0.2 | −0.1 | `m1_r7_choque_01.yaml` |
+
+Igual en todos: PPO, hiperparámetros de C0, 200 000 pasos, semilla 0, 3 productos aleatorios, código `env/warehouse-v3`, `suite-m1-v1` (50 episodios).
+`m1-r2` es el control porque comparte código, semilla y todo lo demás; la prueba `test_collision_sweep_configs_change_one_dimension_from_r2` lo verifica en los YAML.
+Retornos solo comparables entre runs con los mismos coeficientes; se compara éxito, pasos, batería, choques e inválidas.
+
+### Presupuesto real por run (barrido de choques)
+| Run | Nivel | Pasos | Minutos | Estado |
+|---|---|---|---|---|
+| m1-r4-seed0 | m1 | (pendiente) | (pendiente) | en curso |
+| m1-r5-seed0 | m1 | (pendiente) | (pendiente) | en curso |
+| m1-r6-seed0 | m1 | (pendiente) | (pendiente) | en curso |
+| m1-r7-seed0 | m1 | (pendiente) | (pendiente) | en curso |

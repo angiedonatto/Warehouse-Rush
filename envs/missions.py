@@ -9,13 +9,17 @@ from envs.layout import Layout, PACKING_LAYOUT
 
 class MakeupMissionEnv(WarehouseRushEnv):
     def __init__(self, orders=1, blocked=False, layout_path=None, simulation=None,
-                 rewards=None, render_mode=None, *, capacity=3, inventory=None):
+                 rewards=None, render_mode=None, *, capacity=3, inventory=None, restock=False,
+                 lines=None, max_per_line=None):
         if type(capacity) is not int or capacity < 1:
             raise ValueError('Capacidad inválida')
         super().__init__(orders, blocked, layout_path or PACKING_LAYOUT,
                          simulation=simulation, rewards=rewards, render_mode=render_mode)
         self.capacity = capacity
+        self.order_lines = lines                       # nº fijo de SKUs por pedido (None = 1-3 al azar)
+        self.max_per_line = max_per_line or capacity
         self.lift_config = LiftConfig()
+        self.restock = bool(restock) and inventory is None   # entrenamiento: stock nuevo en cada episodio
         self.inventory = inventory or Inventory()
         data = deepcopy(self.layout.data)
         for i, rack in enumerate(data['racks'], 1):
@@ -30,9 +34,13 @@ class MakeupMissionEnv(WarehouseRushEnv):
         self.order_id = None
 
     def reset(self, *, seed=None, options=None):
-        if self.order_id:
+        if self.restock:
+            self.inventory = Inventory()
+        elif self.order_id:
             self.inventory.close(self.order_id, time=self.state.tiempo)
-        order = self.inventory.generate(seed, max_per_line=self.capacity)
+        # Con seed explícita el pedido es reproducible; sin ella se sortea desde el RNG del entorno.
+        order_seed = seed if seed is not None else int(self.np_random.integers(2 ** 31 - 1))
+        order = self.inventory.generate(order_seed, max_per_line=self.max_per_line, lines=self.order_lines)
         self.order_id = order['id']
         self.lines = order['lines']
         self.orders = len(self.lines)
@@ -46,7 +54,6 @@ class MakeupMissionEnv(WarehouseRushEnv):
         self.blocked_lift_moves = 0
         self.plan = {}
         self.budget_failure = False
-        self._lift_was_busy = False
         super().reset(seed=seed, options=options)
         self._assign_next_target()
         return self._observation(), self._info()
@@ -62,7 +69,7 @@ class MakeupMissionEnv(WarehouseRushEnv):
         back_field = self._fields[blocked, 'DELIVERY']
         back = min((back_field.get(p, math.inf) for p in self.layout.approaches(line['rack'], blocked)), default=math.inf)
         lift_steps = self.lift_config.cycles(line['height_m'])
-        current_lowering = math.ceil(abs(self.lift_height - self.lift_config.travel_height) / self.lift_config.meters_per_step)
+        current_lowering = self.lift_config.index(self.lift_height)
         # Margen explícito para orientación, frenado y transferencia. No es una
         # optimización global: la estimación se recalcula después de cada recogida.
         steps = outward + back + lift_steps + current_lowering + 12
@@ -106,7 +113,9 @@ class MakeupMissionEnv(WarehouseRushEnv):
     def restore_mechanism(self, record):
         if not record:
             return
-        self.lift_height, self.lift_target, self.lift_phase = record['height'], record['target'], record['phase']
+        index = self.lift_config.index(record['height'])
+        self.lift_height = self.lift_target = self.lift_config.positions[index]
+        self.lift_phase = 'idle' if index == 0 else 'ready'
         self.lift_sku, self.lift_energy = record['sku'], record['energy']
         self.dispatch_visits, self.blocked_lift_moves = record['dispatch_visits'], record['blocked_moves']
         self.plan, self.budget_failure = record['plan'], record['budget_failure']
@@ -114,36 +123,35 @@ class MakeupMissionEnv(WarehouseRushEnv):
     def _lift_event(self, kind):
         self.inventory.event(self.inventory.orders[self.order_id], kind, self.state.tiempo)
 
-    def _tick_lift(self):
-        delta = self.lift_target - self.lift_height
-        distance = min(abs(delta), self.lift_config.meters_per_step,
-                       self.state.bateria / self.lift_config.energy_per_meter)
-        used = distance * self.lift_config.energy_per_meter
-        self.state.bateria = max(0., self.state.bateria - used)
-        self._lift_used += used
-        self.lift_energy += used
-        self.lift_height += math.copysign(distance, delta)
-        if abs(self.lift_height - self.lift_target) < 1e-9:
-            self.lift_height = self.lift_target
-            self.lift_phase = 'ready' if self.lift_phase == 'raising' else 'idle'
-            if self.lift_phase == 'idle':
-                self.lift_sku = None
-            self._lift_event('LIFT_READY' if self.lift_phase == 'ready' else 'LIFT_STOWED')
+    def interactable_stations(self):
+        return (*(f'E{i:02d}' for i in range(1, len(self.layout.data['racks']) + 1)), 'DELIVERY')
+
+    def can_interact_from_here(self, station):
+        if station == 'DELIVERY':
+            return self.position in self.layout.approaches('DELIVERY', self.state.pasillo_bloqueado)
+        return True
+
+    def elevation(self):
+        return self.lift_config.normalized(self.lift_height)
+
+    def target_elevation(self):
+        s = self.state
+        if s.etapa != 'recoger' or not self.lines:
+            return 0.0
+        return self.lift_config.normalized(self.lines[s.pedido_actual]['height_m'])
+
+    def carried_fraction(self):
+        return min(1.0, sum(l['picked'] - l['delivered'] for l in self.carried_lines) / self.capacity)
 
     def _move(self, action):
-        self._lift_was_busy = self.lift_phase in ('raising', 'lowering')
         if self.budget_failure:
             self.state.v = 0.
             return False
         if self.lift_phase != 'idle':
+            # Con la bandeja arriba el robot no avanza ni gira; sólo SUBIR/BAJAR/CARGAR/FRENAR.
             self.state.v = 0.
             if action in (Action.AVANZAR, Action.GIRAR_IZQUIERDA, Action.GIRAR_DERECHA):
                 self.blocked_lift_moves += 1
-            if self._lift_was_busy:
-                self._tick_lift()
-            elif action == Action.FRENAR:  # Permite abortar antes de recoger, sin consumir stock.
-                self.lift_phase, self.lift_target = 'lowering', self.lift_config.travel_height
-                self._lift_event('LIFT_ABORT')
             return False
         return super()._move(action)
 
@@ -152,35 +160,62 @@ class MakeupMissionEnv(WarehouseRushEnv):
             return False
         return super().facing_target()
 
-    def _interact(self):
+    def _lift_step(self, action):
+        """SUBIR/BAJAR: una posición de la bandeja por acción (0.55 m, 0.99, 1.79, 2.60 m)."""
+        s, cfg = self.state, self.lift_config
+        index, top = cfg.index(self.lift_height), len(cfg.positions) - 1
+        if action == Action.SUBIR:
+            if index >= top:
+                s.interacciones_invalidas += 1
+                return False, False, True
+            if index == 0:
+                if s.v != 0 or s.etapa != 'recoger' or not self.facing_target():
+                    s.interacciones_invalidas += 1
+                    return False, False, True
+                line = self.lines[s.pedido_actual]
+                self.lift_sku = line['sku']
+                self._lift_event(f'LIFT_START:{line["level"]}')
+            new = index + 1
+        else:
+            if index == 0:
+                s.interacciones_invalidas += 1
+                return False, False, True
+            new = index - 1
+            self._lift_event('LIFT_LOWERING')
+        height = cfg.positions[new]
+        distance = min(abs(height - self.lift_height), s.bateria / cfg.energy_per_meter)
+        used = distance * cfg.energy_per_meter
+        s.bateria = max(0., s.bateria - used)
+        self._lift_used += used
+        self.lift_energy += used
+        self.lift_height = self.lift_target = height
+        self.lift_phase = 'idle' if new == 0 else 'ready'
+        if new == 0:
+            self.lift_sku = None
+            self._lift_event('LIFT_STOWED')
+        elif s.etapa == 'recoger' and abs(height - self.lines[s.pedido_actual]['height_m']) < 1e-9:
+            self._lift_event('LIFT_READY')
+        return False, False, False
+
+    def _interact(self, action):
         s = self.state
-        if self._lift_was_busy or self.budget_failure:
+        if self.budget_failure:
             return False, False, False
+        if action in (Action.SUBIR, Action.BAJAR):
+            return self._lift_step(action)
         if s.v != 0 or not self.facing_target():
             s.interacciones_invalidas += 1
             return False, False, True
-        if s.etapa == 'recoger':
+        if action == Action.CARGAR and s.etapa == 'recoger':
             line = self.lines[s.pedido_actual]
-            height = line['height_m']
-            if height > self.lift_config.max_height:
-                s.interacciones_invalidas += 1
-                return False, False, True
-            if self.lift_phase == 'idle':
-                self.lift_phase, self.lift_target, self.lift_sku = 'raising', height, line['sku']
-                self._lift_event(f'LIFT_START:{line["level"]}')
-                return False, False, False
-            if self.lift_phase != 'ready' or self.lift_sku != line['sku'] or abs(self.lift_height - height) > 1e-9:
-                s.interacciones_invalidas += 1
-                return False, False, True
             used = sum(l['picked'] - l['delivered'] for l in self.carried_lines)
-            if used + line['quantity'] <= self.capacity and self.inventory.pick(
-                    self.order_id, line['sku'], line['quantity'], s.tiempo):
+            if (self.lift_phase == 'ready' and abs(self.lift_height - line['height_m']) < 1e-9
+                    and used + line['quantity'] <= self.capacity
+                    and self.inventory.pick(self.order_id, line['sku'], line['quantity'], s.tiempo)):
                 self.picked_packages.add(line['sku'])
-                self.lift_phase, self.lift_target = 'lowering', self.lift_config.travel_height
-                self._lift_event('LIFT_LOWERING')
                 self._assign_next_target()
                 return True, False, False
-        elif s.etapa == 'entregar' and self.carried_lines and self.lift_phase == 'idle':
+        elif action == Action.DESCARGAR and s.etapa == 'entregar' and self.carried_lines and self.lift_phase == 'idle':
             self.dispatch_visits += 1
             for line in self.carried_lines:
                 if self.inventory.deliver(self.order_id, line['sku'], s.tiempo):

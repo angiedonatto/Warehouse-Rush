@@ -34,7 +34,7 @@ def test_legacy_training_layout_and_contract_remain_unchanged():
     assert env.layout.source == DEFAULT_LAYOUT.resolve()
     assert (env.layout.width, env.layout.height) == (17, 13)
     assert env.config.battery_capacity == 100 and env.config.max_steps == 250
-    assert observation.shape == (22,) and env.action_space.n == 5
+    assert observation.shape == (27,) and env.action_space.n == 8
 
 
 def test_layout_api_matches_signed_state_for_both_modes():

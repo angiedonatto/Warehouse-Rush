@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import time
 
-from envs import ENV_VERSION, __version__
+from envs import ENV_VERSION, __version__, make_env
 from envs.env import WarehouseRushEnv
 
 
@@ -30,7 +30,7 @@ DEFAULT_PPO = dict(learning_rate=3e-4, n_steps=500, batch_size=100, n_epochs=10,
                    net_arch=[64, 64])
 
 
-# DQN (alternativa a PPO, misma recompensa y ambiente): acciones Discrete(5), replay buffer y
+# DQN (alternativa a PPO, misma recompensa y ambiente): acciones Discrete(8), replay buffer y
 # exploración epsilon-greedy que no colapsa a una política determinista como PPO en C0-C1c.
 DEFAULT_DQN = dict(learning_rate=5e-4, buffer_size=100_000, learning_starts=5_000, batch_size=64,
                    tau=1.0, gamma=0.99, train_freq=4, gradient_steps=1, target_update_interval=1_000,
@@ -71,8 +71,8 @@ def train_ppo(*, timesteps=20_000, seed=42, orders=1, blocked=False, layout_path
     model_dir = Path("models") / name
     run_dir.mkdir(parents=True, exist_ok=False)
     model_dir.mkdir(parents=True, exist_ok=False)
-    env = WarehouseRushEnv(orders, blocked, layout_path)  # referencia para metadatos
-    eval_env = Monitor(WarehouseRushEnv(orders, blocked, layout_path))
+    env = make_env(blocked, layout_path, orders)  # referencia para metadatos
+    eval_env = Monitor(make_env(blocked, layout_path, orders))
     eval_env.reset(seed=20_000)
     net_arch = params.pop("net_arch")
     arch = {"pi": list(net_arch), "vf": list(net_arch)} if algo == "ppo" else list(net_arch)
@@ -95,7 +95,7 @@ def train_ppo(*, timesteps=20_000, seed=42, orders=1, blocked=False, layout_path
     write_json(run_dir / "metadata.json", metadata)
     from stable_baselines3.common.vec_env import DummyVecEnv, VecMonitor
 
-    vec_env = DummyVecEnv([lambda: WarehouseRushEnv(orders, blocked, layout_path) for _ in range(n_envs)])
+    vec_env = DummyVecEnv([lambda: make_env(blocked, layout_path, orders) for _ in range(n_envs)])
     monitor = VecMonitor(vec_env, str(run_dir / "episodes"),
                          info_keywords=("success", "deliveries", "collisions", "end_reason"))
     started = time.perf_counter()
@@ -253,7 +253,7 @@ def train_from_config(path, *, tipo="candidato", timesteps=None) -> dict:
     tags = {"nivel": config["nivel"], "hipotesis": config["hipotesis"].strip(), "tipo": tipo,
             "estado": "candidato", "algoritmo": algo, "environment_version": ENV_VERSION, "config_sha256": config_hash,
             "parent_run_id": parent or "none", "config_id": config["id"], "seed": config["seed"],
-            "suite_final": evaluation.get("final", "")}
+            "suite_final": evaluation.get("final", ""), "runtime_ref": f"env/{ENV_VERSION}"}
     with mlflow_run(experiment=f"warehouse-{config['nivel']}", run_name=name,
                     config={**config, "presupuesto_efectivo": budget}, tags=tags):
         meta = train_ppo(timesteps=budget, seed=config["seed"], orders=level["orders"],

@@ -17,7 +17,10 @@ class Action(IntEnum):
     GIRAR_IZQUIERDA = 1
     GIRAR_DERECHA = 2
     FRENAR = 3
-    INTERACTUAR = 4
+    CARGAR = 4
+    DESCARGAR = 5
+    SUBIR = 6
+    BAJAR = 7
 
 
 @dataclass(frozen=True)
@@ -64,7 +67,7 @@ class WorldState:
 
 class WarehouseRushEnv(gym.Env):
     metadata = {"render_modes": ["ansi", "human"], "render_fps": 5}
-    OBSERVATION_SIZE = 22
+    OBSERVATION_SIZE = 27
 
     def __init__(self, orders: int = 1, blocked: bool = False, layout_path=None,
                  simulation: SimulationConfig | None = None,
@@ -82,9 +85,8 @@ class WarehouseRushEnv(gym.Env):
         self.packages = ("P1", "P2")[:orders]
         self.blocked = blocked
         self.render_mode = render_mode
-        self.action_space = spaces.Discrete(5)
+        self.action_space = spaces.Discrete(8)
         low = np.zeros(self.OBSERVATION_SIZE, dtype=np.float32)
-        low[8:10] = -1.0
         self.observation_space = spaces.Box(low, np.ones_like(low), dtype=np.float32)
         self._done = True
         # Cachés internes: sólo recompensa/diagnóstico/heurística; jamás se exponen a PPO.
@@ -147,21 +149,27 @@ class WarehouseRushEnv(gym.Env):
             state.v = 0.0
         return False
 
-    def _interact(self) -> tuple[bool, bool, bool]:
-        """Recogida, entrega, invalidez: identidades y pedidos son monotónicos."""
+    def _interact(self, action=Action.CARGAR) -> tuple[bool, bool, bool]:
+        """Recogida, entrega, invalidez: identidades y pedidos son monotónicos.
+
+        CARGAR sólo recoge y DESCARGAR sólo entrega; SUBIR/BAJAR no existen sin elevador.
+        """
         state = self.state
+        if action in (Action.SUBIR, Action.BAJAR):
+            state.interacciones_invalidas += 1
+            return False, False, True
         if state.v != 0 or not self.facing_target():
             state.interacciones_invalidas += 1
             return False, False, True
         package = self.packages[state.pedido_actual]
-        if (state.etapa == "recoger" and state.carga is None
+        if (action == Action.CARGAR and state.etapa == "recoger" and state.carga is None
                 and package not in self.picked_packages and package not in self.completed_packages):
             self.picked_packages.add(package)
             state.carga = package
             state.etapa = "entregar"
             state.objetivo = "DELIVERY"
             return True, False, False
-        if (state.etapa == "entregar" and state.carga == package
+        if (action == Action.DESCARGAR and state.etapa == "entregar" and state.carga == package
                 and package in self.picked_packages and package not in self.completed_packages):
             self.completed_packages.add(package)
             state.carga = None
@@ -179,21 +187,22 @@ class WarehouseRushEnv(gym.Env):
         if self._done:
             raise RuntimeError("El episodio terminó; llama reset() antes de step()")
         if not self.action_space.contains(action):
-            raise ValueError(f"Acción fuera de Discrete(5): {action}")
+            raise ValueError(f"Acción fuera de Discrete(8): {action}")
         action = Action(int(action))
         state = self.state
         old_target = state.objetivo
         old_distance = self.route_distance(old_target)
         costs = (self.config.forward_cost, self.config.turn_cost, self.config.turn_cost,
-                 self.config.brake_cost, self.config.interact_cost)
+                 self.config.brake_cost, self.config.interact_cost, self.config.interact_cost,
+                 self.config.brake_cost, self.config.brake_cost)
         used = min(state.bateria, costs[action])
         state.bateria = max(0.0, state.bateria - used)
         state.tiempo += 1
         state.tiempo_restante = max(0, self.config.max_steps - state.tiempo)
         collision = self._move(action)
         pickup = delivery = invalid = False
-        if action == Action.INTERACTUAR:
-            pickup, delivery, invalid = self._interact()
+        if action in (Action.CARGAR, Action.DESCARGAR, Action.SUBIR, Action.BAJAR):
+            pickup, delivery, invalid = self._interact(action)
         # Mantener el objetivo previo evita recompensa por el salto de etapa.
         new_distance = self.route_distance(old_target)
         delta = float(old_distance - new_distance) if old_distance is not None and new_distance is not None else 0.0
@@ -226,23 +235,50 @@ class WarehouseRushEnv(gym.Env):
             values.append(distance)
         return np.asarray(values, dtype=np.float32)
 
+    def interactable_stations(self):
+        return tuple(self.layout.stations)
+
+    def can_interact_from_here(self, station) -> bool:
+        return True
+
+    def facing_interactable(self) -> bool:
+        """El tramo de celda frente al robot es una estación con la que se puede interactuar."""
+        dx, dy = DIRECTIONS[self.state.theta]
+        ahead = (self.state.x + dx, self.state.y + dy)
+        return any(self.layout.stations[name] == ahead and self.can_interact_from_here(name)
+                   for name in self.interactable_stations())
+
+    def elevation(self) -> float:
+        """Elevación normalizada de la bandeja; sin elevador siempre 0."""
+        return 0.0
+
+    def target_elevation(self) -> float:
+        return 0.0
+
     def _observation(self) -> np.ndarray:
         state = self.state
         target = self.layout.stations[state.objetivo] if state.objetivo else self.position
+        wm, hm = self.layout.width - 1, self.layout.height - 1
         obs = np.zeros(self.OBSERVATION_SIZE, dtype=np.float32)
         obs[:8] = self.sensor_distances() / self.config.sensor_range
-        obs[8:10] = ((target[0] - state.x) / (self.layout.width - 1),
-                      (target[1] - state.y) / (self.layout.height - 1))
-        obs[10 + state.theta] = 1.0
-        obs[14] = state.v
-        obs[15] = state.bateria / self.config.battery_capacity
-        obs[16] = float(state.carga is not None)
-        obs[17:20] = [float(state.etapa == stage) for stage in ("recoger", "entregar", "completada")]
-        obs[20] = state.tiempo_restante / self.config.max_steps
-        obs[21] = state.entregas / self.orders
+        obs[8:10] = (state.x / wm, state.y / hm)
+        obs[10:12] = (target[0] / wm, target[1] / hm)
+        obs[12 + state.theta] = 1.0
+        obs[16] = state.v
+        obs[17] = state.bateria / self.config.battery_capacity
+        obs[18] = self.carried_fraction()
+        obs[19:22] = [float(state.etapa == stage) for stage in ("recoger", "entregar", "completada")]
+        obs[22] = state.tiempo_restante / self.config.max_steps
+        obs[23] = state.entregas / self.orders
+        obs[24] = float(self.facing_interactable())
+        obs[25] = self.elevation()
+        obs[26] = self.target_elevation()
         if not np.isfinite(obs).all() or not self.observation_space.contains(obs):
             raise RuntimeError(f"Observación inválida: {obs}")
         return obs
+
+    def carried_fraction(self) -> float:
+        return float(self.state.carga is not None)
 
     def snapshot(self) -> dict:
         return {**asdict(self.state), "paquetes_recogidos": sorted(self.picked_packages),

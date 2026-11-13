@@ -26,11 +26,11 @@ def test_delivery_requires_the_conveyor_intake_side():
     # Poses controladas para verificar acceso lateral, sin simular navegación falsa.
     env.state.x,env.state.y,env.state.theta,env.state.v=22,15,2,0
     assert not env.facing_target()
-    _,_,_,_,info=env.step(Action.INTERACTUAR)
+    _,_,_,_,info=env.step(Action.DESCARGAR)
     assert info['deliveries']==0 and env.carried_lines
     env.state.x,env.state.y,env.state.theta=21,16,1
     assert env.facing_target()
-    _,_,_,_,info=env.step(Action.INTERACTUAR)
+    _,_,_,_,info=env.step(Action.DESCARGAR)
     assert info['success'] and info['deliveries']==1
     assert env.inventory.total[sku]==0
     env.inventory.check()

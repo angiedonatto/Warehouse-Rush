@@ -1,8 +1,9 @@
 # Warehouse Rush · Proyecto final de MLOps
 
 ## Qué es
-Agente PPO que aprende a recoger paquetes en dos estaciones de recogida y entregarlos
-en la estación correcta de una bodega con estanterías y pasillos. La web (Vercel) muestra
+Agente PPO que aprende a atender pedidos de productos de estantería (bandeja a 3 alturas) y entregarlos
+en la cinta de despacho de una bodega con estanterías y pasillos (ambiente `warehouse-v2`, solo maquillaje;
+`warehouse-v1` se conserva como historia). La web (Vercel) muestra
 la evolución del agente, el catálogo de experimentos, permite cargar modelos históricos y
 evaluarlos con su ambiente compatible. Más contexto: skill `warehouse-rush`.
 
@@ -31,6 +32,6 @@ evaluarlos con su ambiente compatible. Más contexto: skill `warehouse-rush`.
 
 ## Comandos
 - Pruebas: python -m pytest tests -q
-- Entrenar: python -m pipelines.train --config configs/experiments/<archivo>.yaml
+- Entrenar: python -m pipelines.train --config configs/experiments/<archivo>.yaml (v2: m1_c0_makeup3.yaml)
 - Visor 3D local: python -m pipelines.cli view
 - Modelo actual y reentrenamiento: docs/modelo-actual.md

@@ -1,5 +1,7 @@
 # Warehouse Rush — ficha del ambiente v0.1
 
+> **Sustituida para entrenamiento por [ambiente-v0.2.md](ambiente-v0.2.md) (`warehouse-v2`, 2026-11-13).** Esta ficha describe la familia `warehouse-v1` (Box(22), Discrete(5)) y se conserva porque sus modelos y resultados (experiment-001, n1-c0…c6) se explican con estas reglas.
+
 ## 1. Objetivo y misión
 
 Un robot debe recoger paquetes identificados y entregarlos en una bodega antes de

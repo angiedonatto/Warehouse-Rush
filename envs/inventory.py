@@ -60,7 +60,7 @@ class Inventory:
             self.check()
             return deepcopy(order)
 
-    def generate(self, seed=None, max_per_line=3, time=0):
+    def generate(self, seed=None, max_per_line=3, time=0, lines=None):
         if type(max_per_line) is not int or max_per_line < 1:
             raise ValueError('Límite de línea inválido')
         with self.lock:
@@ -68,7 +68,9 @@ class Inventory:
             skus = sorted(s for s in self.total if self.available(s) > 0)
             if not skus:
                 raise ValueError('No puede generarse una orden válida: sin stock disponible')
-            selected = rng.sample(skus, rng.randint(1, min(3, len(skus))))
+            if lines is not None and (type(lines) is not int or not 1 <= lines <= min(3, len(skus))):
+                raise ValueError('Número de líneas inválido o sin stock suficiente')
+            selected = rng.sample(skus, lines or rng.randint(1, min(3, len(skus))))
             return self.reserve({s: rng.randint(1, min(max_per_line, self.available(s))) for s in selected}, time=time)
 
     def pick(self, identity, sku, quantity, time=0):

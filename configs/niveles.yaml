@@ -13,3 +13,9 @@ n3:
   descripcion: Operación exigente, 2 pedidos, pasillo cerrado (incidente)
   orders: 2
   blocked: true
+# v2 (warehouse-v2, solo modo maquillaje): cada episodio sortea `orders` productos distintos (1 unidad)
+# y repone el stock al reiniciar. n1-n3 describen la familia warehouse-v1 y se conservan como historia.
+m1:
+  descripcion: Maquillaje v2, 3 productos aleatorios por episodio, pasillo abierto
+  orders: 3
+  blocked: false

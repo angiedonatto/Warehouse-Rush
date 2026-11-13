@@ -43,15 +43,21 @@ def test_upper_levels_take_real_time_and_energy():
     assert all(r['state']['lift']['energy'] > 0 for r in results)
 
 
+def raise_to(env, policy, obs, height):
+    while env.lift_height != height:
+        obs, _, _, _, _ = env.step(policy.action(obs, env))
+    return obs
+
+
 def test_cannot_reach_from_base_or_drive_with_lift_up():
     sku = 'TMP-E01-L3'
     env = MakeupMissionEnv(inventory=Inventory({sku: 1}))
     obs, _ = env.reset(seed=0)
-    env.step(Action.INTERACTUAR)
+    env.step(Action.SUBIR)   # desde BASE no mira a ningún estante: inválido
     assert env.lift_phase == 'idle' and env.inventory.total[sku] == 1
+    assert env.state.interacciones_invalidas == 1
     policy = HeuristicPolicy()
-    while env.lift_phase != 'ready':
-        obs, _, _, _, _ = env.step(policy.action(obs, env))
+    obs = raise_to(env, policy, obs, LEVEL_HEIGHTS[2])
     pose = (*env.position, env.state.theta)
     for action in (Action.AVANZAR, Action.GIRAR_IZQUIERDA, Action.GIRAR_DERECHA):
         env.step(action)
@@ -59,24 +65,26 @@ def test_cannot_reach_from_base_or_drive_with_lift_up():
         assert env.state.v == 0
         assert env.inventory.total[sku] == 1
     assert env.blocked_lift_moves == 3
-    env.step(Action.INTERACTUAR)
-    assert env.inventory.total[sku] == 0 and env.lift_phase == 'lowering'
+    env.step(Action.CARGAR)
+    assert env.inventory.total[sku] == 0 and env.lift_phase == 'ready'   # la bandeja sigue arriba
+    env.step(Action.DESCARGAR)                                           # no se descarga con la bandeja arriba
+    assert env.state.entregas == 0 and env.carried_lines
     while env.lift_phase != 'idle':
-        env.step(Action.AVANZAR)
+        env.step(Action.BAJAR)
         assert (*env.position, env.state.theta) == pose
     assert env.inventory.total[sku] == 0
 
 
-def test_abort_lift_before_pickup_preserves_stock_and_reservation():
+def test_lowering_before_pickup_preserves_stock_and_reservation():
     sku = 'TMP-E01-L3'
     env = MakeupMissionEnv(inventory=Inventory({sku: 1}))
     obs, _ = env.reset(seed=0)
     policy = HeuristicPolicy()
-    while env.lift_phase != 'ready':
-        obs, _, _, _, _ = env.step(policy.action(obs, env))
-    env.step(Action.FRENAR)
+    raise_to(env, policy, obs, LEVEL_HEIGHTS[2])
+    env.step(Action.FRENAR)        # frenar ya no aborta: la bandeja sigue arriba
+    assert env.lift_phase == 'ready'
     while env.lift_phase != 'idle':
-        env.step(Action.FRENAR)
+        env.step(Action.BAJAR)
     assert env.inventory.total[sku] == env.inventory.reserved(sku) == 1
     assert not env.carried_lines
 
@@ -97,14 +105,14 @@ def test_loaded_robot_returns_before_trying_another_product_on_low_battery():
     env = MakeupMissionEnv()
     obs, _ = env.reset(seed=42)
     policy = HeuristicPolicy()
-    while env.lift_phase != 'ready':
-        obs, _, _, _, _ = env.step(policy.action(obs, env))
+    line = env.lines[env.state.pedido_actual]
+    raise_to(env, policy, obs, line['height_m'])
     env.state.bateria = 30.
-    env.step(Action.INTERACTUAR)
+    env.step(Action.CARGAR)
     assert env.carried_lines
     assert env.state.objetivo == 'DELIVERY'
     assert env.plan['reason'] == 'battery_or_time'
-    assert env.lift_phase == 'lowering'
+    assert env.lift_phase == 'ready'
 
 
 @pytest.mark.parametrize('blocked', [False, True])
@@ -117,7 +125,7 @@ def test_nearby_lower_shelf_selected_before_distant_high_one(blocked):
     assert env.plan['next_sku'] == 'TMP-E04-L1'
 
 
-@pytest.mark.parametrize('phase', ['raising', 'lowering'])
+@pytest.mark.parametrize('phase', ['ready'])
 def test_signed_snapshot_restores_mid_lift_without_stock_duplication(phase):
     session = ViewerSession(settings={'makeup': True, 'seed': 42})
     while session.env.lift_phase != phase:
@@ -153,3 +161,77 @@ def test_pre_lift_cookie_upgrades_level_metadata():
     assert all('height_m' in l for l in restored.env.lines)
     assert restored.env.lift_phase == 'idle'
     assert restored.step()['state']['tiempo'] == 1
+
+
+# --- Contrato v2: observación de 27 valores y acciones SUBIR/BAJAR/CARGAR/DESCARGAR ---
+
+@pytest.mark.parametrize('level', [1, 2, 3])
+def test_tray_moves_one_position_per_action(level):
+    sku = f'TMP-E01-L{level}'
+    env = MakeupMissionEnv(inventory=Inventory({sku: 1}))
+    obs, _ = env.reset(seed=0)
+    policy = HeuristicPolicy()
+    ups = downs = 0
+    while not env._done:
+        action = policy.action(obs, env)
+        ups += action == Action.SUBIR
+        downs += action == Action.BAJAR
+        obs, *_ = env.step(action)
+    assert ups == downs == level           # una posición por acción: balda 3 = 3 SUBIR desde la posición de viaje
+
+
+def test_observation_v2_layout():
+    env = MakeupMissionEnv(inventory=Inventory({'TMP-E02-L3': 1}))
+    obs, _ = env.reset(seed=0)
+    w, h = env.layout.width - 1, env.layout.height - 1
+    tx, ty = env.layout.stations[env.state.objetivo]
+    assert obs.shape == (27,) and env.action_space.n == 8
+    assert obs[8] == pytest.approx(env.state.x / w) and obs[9] == pytest.approx(env.state.y / h)
+    assert obs[10] == pytest.approx(tx / w) and obs[11] == pytest.approx(ty / h)
+    assert obs[24] == 0 and obs[25] == 0                       # lejos de todo, bandeja abajo
+    assert obs[26] == pytest.approx(1.0)                        # balda 3 = elevación objetivo máxima
+    env.state.x, env.state.y, env.state.theta, env.state.v = tx, ty + 2, 0, 0.   # al sur del estante, mirándolo
+    env.state.y = ty + 1
+    obs = env._observation()
+    assert obs[24] == 1                                         # mira un objeto interactuable
+    env.step(Action.SUBIR)
+    assert env._observation()[25] == pytest.approx((.99 - .55) / (2.60 - .55))
+
+
+def test_invalid_lift_and_load_actions_cost_and_change_nothing():
+    sku = 'TMP-E01-L2'
+    env = MakeupMissionEnv(inventory=Inventory({sku: 1}))
+    obs, _ = env.reset(seed=0)
+    for action in (Action.BAJAR, Action.SUBIR, Action.CARGAR, Action.DESCARGAR):
+        _, reward, *_ = env.step(action)
+        assert reward < 0 and env.lift_phase == 'idle'
+    assert env.state.interacciones_invalidas == 4
+    assert env.inventory.total[sku] == 1 and not env.carried_lines
+    policy = HeuristicPolicy()
+    raise_to(env, policy, obs, LEVEL_HEIGHTS[0])
+    before = env.inventory.total[sku]
+    env.step(Action.CARGAR)                                      # nivel equivocado: la balda es la 2
+    assert env.inventory.total[sku] == before and not env.carried_lines
+    while env.lift_height != LEVEL_HEIGHTS[2]:
+        env.step(Action.SUBIR)
+    n = env.state.interacciones_invalidas
+    env.step(Action.SUBIR)                                       # ya está arriba del todo
+    assert env.state.interacciones_invalidas == n + 1
+
+
+def test_three_item_training_orders_differ_and_restock():
+    from envs import make_env
+    env = make_env(orders=3)
+    seen = set()
+    policy = HeuristicPolicy()
+    for _ in range(6):
+        obs, _ = env.reset()
+        assert len(env.lines) == 3 and all(l['quantity'] == 1 for l in env.lines)
+        seen.add(tuple(l['sku'] for l in env.lines))
+        done = False
+        while not done:
+            obs, _, term, trunc, info = env.step(policy.action(obs, env))
+            done = term or trunc
+        assert info['success']
+    assert len(seen) > 1
+    assert sum(env.inventory.total.values()) == 90 - 3          # stock repuesto en cada episodio

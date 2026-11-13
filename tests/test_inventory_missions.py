@@ -71,7 +71,7 @@ def test_navigable_orders_capacity_and_observation_contract(seed, blocked):
     obs, _ = env.reset(seed=seed)
     policy = HeuristicPolicy()
     while True:
-        assert env.observation_space.contains(obs) and obs.shape == (22,)
+        assert env.observation_space.contains(obs) and obs.shape == (27,)
         assert sum(l['quantity'] for l in env.snapshot()['cargo_lines']) <= env.capacity
         obs, _, done, truncated, info = env.step(policy.action(obs, env))
         assert env.position not in env._obstacles[blocked]

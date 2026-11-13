@@ -9,14 +9,14 @@ from pathlib import Path
 import numpy as np
 
 from envs import __version__
-from envs.env import WarehouseRushEnv
+from envs import make_env
 from pipelines.baselines import RandomPolicy, make_policy
 from pipelines.train import default_model, plot_training_curve, write_json
 
 METRICS = ("total_reward", "steps", "distance", "battery_used", "collisions", "invalid_interactions", "deliveries")
 EPISODE_FIELDS = ["policy", "scenario", "orders", "seed", "success", "end_reason", *METRICS,
                   "pickups", "final_x", "final_y", "final_stage",
-                  *[f"action_{i}_count" for i in range(5)]]
+                  *[f"action_{i}_count" for i in range(8)]]
 
 
 def evaluate(*, policies=("random", "heuristic", "ppo"), orders=1, episodes=20,
@@ -30,7 +30,7 @@ def evaluate(*, policies=("random", "heuristic", "ppo"), orders=1, episodes=20,
     output.mkdir(parents=True, exist_ok=True)
     model_path = Path(model_path) if model_path else default_model(orders)
     rows, summaries, errors = [], [], []
-    probe = WarehouseRushEnv(orders, layout_path=layout_path)
+    probe = make_env(layout_path=layout_path, orders=orders)
     configuration = {"environment_version": __version__, "orders": orders,
                      "episodes_per_combination": episodes,
                      "seeds": list(range(seed_start, seed_start + episodes)),
@@ -59,7 +59,7 @@ def evaluate(*, policies=("random", "heuristic", "ppo"), orders=1, episodes=20,
                 raise ValueError("El mapa de evaluación difiere del mapa de entrenamiento")
     for blocked in scenarios:
         for policy_name in policies:
-            env = WarehouseRushEnv(orders, blocked, layout_path)
+            env = make_env(blocked, layout_path, orders)
             combination = []
             try:
                 policy = make_policy(policy_name, seed_start, model_path)
@@ -89,7 +89,7 @@ def evaluate(*, policies=("random", "heuristic", "ppo"), orders=1, episodes=20,
                            "reward_std": float(np.std([r["total_reward"] for r in combination], ddof=0)),
                            **{f"mean_{key}": float(np.mean([r[key] for r in combination])) for key in METRICS},
                            "mean_pickups": float(np.mean([r["pickups"] for r in combination])),
-                           "action_counts": {str(i): sum(r[f"action_{i}_count"] for r in combination) for i in range(5)},
+                           "action_counts": {str(i): sum(r[f"action_{i}_count"] for r in combination) for i in range(8)},
                            "end_reasons": {reason: sum(r["end_reason"] == reason for r in combination)
                                            for reason in sorted({r["end_reason"] for r in combination})}}
                 summaries.append(summary)
@@ -173,7 +173,7 @@ def report(result: dict) -> str:
         if row["policy"] in ("ppo", "dqn"):
             lines.append(f"- {row['policy'].upper()} en {row['scenario']}: éxito **{100 * row['success_rate']:.0f}%**, "
                          f"{row['mean_pickups']:.2f} recogidas medias, finales {row['end_reasons']}, "
-                         f"conteos de acciones 0–4: {row['action_counts']}.")
+                         f"conteos de acciones 0–7: {row['action_counts']}.")
             if row["action_counts"].get("3", 0) == row["episodes"] * config["simulation"]["max_steps"]:
                 lines.append("- La política final elige FRENAR en todos los pasos, permanece en BASE y "
                              "evita penalizaciones mayores sin cumplir la misión. Es el comportamiento "
@@ -191,7 +191,7 @@ def report(result: dict) -> str:
               "la dinámica es determinista; heurística y PPO determinista repiten la trayectoria.",
               "- La evaluación prueba perturbación fija al inicio, no cierres inesperados durante la navegación.",
               "- BFS usa mapa y estado completos: es una referencia privilegiada, no una política aprendida. "
-              "PPO sólo usa 22 observaciones normalizadas y no recibe rutas ni acciones de BFS.",
+              "PPO sólo usa 27 observaciones normalizadas y no recibe rutas ni acciones de BFS.",
               "- Cinemática discreta de 1 m y 1 s: no representa inercia, frenado industrial, ruido ni carga física.",
               "- Siguientes experimentos: más pasos y semillas de entrenamiento, análisis de exploración "
               "y entrenamiento de dos pedidos. Comparar cualquier ajuste con esta configuración fija."]

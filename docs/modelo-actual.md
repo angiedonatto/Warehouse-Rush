@@ -1,3 +1,5 @@
+> **Actualización 2026-11-13 (`warehouse-v2`).** El ambiente de entrenamiento es ahora `warehouse-v2` (solo maquillaje): observación `Box(27)`, acciones `Discrete(8)`, mapa 25 × 19, batería 180 y 400 pasos (contrato: `envs/CONTRATO.md`). El modelo descrito abajo (experiment-001) y los runs `n1-c0…c6` pertenecen a `warehouse-v1` (Box(22), Discrete(5)) y **no son compatibles** con v2. El primer run v2 es `m1-c0-seed0` (`configs/experiments/m1_c0_makeup3.yaml`, mismos hiperparámetros que C0); sus resultados están en `docs/experimentos.md`. Nivel `m1`: 3 productos aleatorios por episodio.
+
 # Modelo actual, reentrenamiento e hiperparámetros
 
 ## Qué es el modelo (experimento 001, `models/experiment-001/ppo-orders1-seed42.zip`)

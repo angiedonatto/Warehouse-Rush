@@ -7,16 +7,17 @@ import subprocess
 import sys
 import time
 
-from envs.env import Action, WarehouseRushEnv
+from envs import make_env
+from envs.env import Action
 from pipelines.baselines import make_policy
 from pipelines.train import default_model, train_ppo
 
 
 def demo_transitions(steps=5, orders=1, blocked=False, layout_path=None):
-    env = WarehouseRushEnv(orders, blocked, layout_path)
+    env = make_env(blocked, layout_path, orders)
     observation, _ = env.reset(seed=42)
-    # Colisión, giro, avance, frenado e interacción inválida, ejecutados en ese orden.
-    actions = [Action.AVANZAR, Action.GIRAR_DERECHA, Action.AVANZAR, Action.FRENAR, Action.INTERACTUAR]
+    # v2 desde BASE (3,16) mirando al norte: avance, choque con el muro interior, frenado y dos acciones inválidas.
+    actions = [Action.AVANZAR, Action.AVANZAR, Action.FRENAR, Action.SUBIR, Action.CARGAR]
     transitions = []
     for index in range(steps):
         action = actions[index % len(actions)]
@@ -81,7 +82,7 @@ def main(argv=None):
 
         serve_viewer(args.port, not args.no_open, args.layout)
     elif args.command == "map":
-        env = WarehouseRushEnv(args.orders, args.blocked, args.layout)
+        env = make_env(args.blocked, args.layout, args.orders)
         env.reset(seed=42)
         print(env.render())
         print("# pared; R rack; B base; 1/2 recogidas; D entrega; : paso abierto; X bloqueo; ^>v< robot")
@@ -90,7 +91,7 @@ def main(argv=None):
     elif args.command == "validate":
         from stable_baselines3.common.env_checker import check_env
 
-        env = WarehouseRushEnv(args.orders, args.blocked, args.layout)
+        env = make_env(args.blocked, args.layout, args.orders)
         check_env(env, warn=True)
         print(json.dumps(env.layout.validate_routes(), indent=2))
         env.close()
@@ -107,7 +108,7 @@ def main(argv=None):
     elif args.command == "play":
         if args.delay < 0:
             raise ValueError("delay no puede ser negativo")
-        env = WarehouseRushEnv(args.orders, args.blocked, args.layout)
+        env = make_env(args.blocked, args.layout, args.orders)
         policy = make_policy(args.policy, args.seed, args.model or default_model(args.orders))
         observation, info = env.reset(seed=args.seed)
         if not args.no_render:

@@ -18,11 +18,25 @@ class RandomPolicy:
 
 
 class HeuristicPolicy:
+    """Referencia privilegiada: BFS por pose y secuencia explícita de SUBIR/CARGAR/BAJAR/DESCARGAR."""
+
     def action(self, observation, env: WarehouseRushEnv) -> int:
-        if getattr(env, 'lift_phase', None) in ('raising', 'lowering'):
+        state = env.state
+        if state.etapa == "completada":
             return int(Action.FRENAR)
+        lift = getattr(env, "lift_config", None)
+        index = lift.index(env.lift_height) if lift else 0
+        if index > 0:  # bandeja arriba: no hay movimiento posible
+            if state.etapa == "recoger" and env.facing_target():
+                goal = lift.index(env.lines[state.pedido_actual]["height_m"])
+                return int(Action.SUBIR if index < goal else Action.CARGAR if index == goal else Action.BAJAR)
+            return int(Action.BAJAR)
         if env.facing_target():
-            return int(Action.FRENAR if env.state.v else Action.INTERACTUAR)
+            if state.v:
+                return int(Action.FRENAR)
+            if state.etapa == "recoger":
+                return int(Action.SUBIR if lift else Action.CARGAR)
+            return int(Action.DESCARGAR)
         target = env.layout.stations[env.state.objetivo]
         approaches = env.layout.approaches(env.state.objetivo, env.state.pasillo_bloqueado)
         start = (*env.position, env.state.theta)

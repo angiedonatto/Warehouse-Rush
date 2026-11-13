@@ -286,3 +286,47 @@ La heurística BFS logra 100% en 71 pasos bajo los tres coeficientes (retorno +1
 - Llegan y miran al estante pronto (d2: 38/50 episodios, mediana paso 8; d3: 12/50, mediana paso 13), pero parados y mirando con la bandeja abajo **no eligen SUBIR**: d2 elige GIRAR_IZQUIERDA en 864 de 870 pasos (probabilidad de SUBIR 0.26) y d3 GIRAR_DERECHA en 528 de 528 (probabilidad de SUBIR 0.001). Giran sobre la celda de acceso y dejan de mirar al estante (32 y 35 episodios terminan en una celda de acceso sin mirar). La bandeja se sube en 6/50 episodios en d2 y en 0/50 en d3; nunca se carga.
 - Medición del incentivo (recompensas con la heurística guionizada, 20 semillas, mapa abierto): tras la primera recogida el siguiente objetivo queda a ≈ 10.1 celdas Manhattan y la bandeja arriba bloquea el movimiento. Retorno de «acercarse al estante y quedarse» frente a «recoger el primer producto y quedarse»: `distance` 0 → −38.0 / −28.0 (recoger gana +10); −0.005 → −40.3 / −47.7; −0.01 → −42.5 / −67.4; −0.02 → −47.1 / −106.7. Con el término, **recoger el primer producto empeora el retorno** salvo que el robot también baje la bandeja y recorra la distancia (completar el pedido da +106 a +115). Esa recompensa solo aparece tras una secuencia larga que ninguna política exploró.
 - Lectura: con el término, la señal empuja a quedarse cerca del estante y **en contra** de la recogida; además, en el estado clave (parado, mirando, bandeja abajo) todas las acciones cuestan casi lo mismo, así que nada favorece SUBIR. Es una medición del incentivo, no una prueba de que esa sea la única causa; no se ha probado una variante que lo corrija.
+
+
+## Barrido de diferencia de distancia + penalización por altura (escrito antes de entrenar, 2026-11-13)
+**Contexto:** `m1o-d1`–`d3` (distancia Manhattan por estado) dieron 0% y 0 recogidas. El diagnóstico midió que ese término hacía peor recoger el primer producto que quedarse junto al estante
+y que, en el estado clave (parado, mirando, bandeja abajo), todas las acciones costaban casi lo mismo. Instrucción del equipo: (1) la penalización por distancia pasa a ser una **diferencia**; (2) se añade una **penalización
+mientras la distancia al destino es 0 (celda de interacción) pero la altura de la bandeja es distinta**. Mapa abierto, `collision` −1, `invalid_interaction` −0.2. Código `env/warehouse-v5`.
+
+**Hipótesis:** la diferencia de distancia (sin salto al cambiar de objetivo) y la penalización por altura distinta en la celda de interacción hacen que subir la bandeja hasta la altura correcta y cargar sea la conducta mejor
+pagada, y el agente supera al control del mismo mapa (`m1o-c0`).
+**Qué la refutaría:** que ningún run supere a `m1o-c0` en ≥ 5 pp de éxito en `suite-m1o-v1`.
+
+**Retornos de referencia medidos antes de entrenar** (conductas guionizadas, 15 semillas 10000–10014, mapa abierto; no son resultados del modelo):
+
+| Conjunto de coeficientes | quieto en la base | aleatoria | ir al estante y quedarse | subir a la altura y quedarse | recoger el 1.º y quedarse | completar el pedido |
+|---|---:|---:|---:|---:|---:|---:|
+| control `m1o-c0` | −40.8 | −88.9 | −38.1 | −38.1 | −28.1 | +115.0 |
+| e1: Manhattan 0.3 | −40.8 | −88.6 | −35.3 | −35.3 | −25.3 | +127.8 |
+| e2: altura −0.1 | −40.8 | −89.2 | −105.9 | −38.8 | −31.3 | +113.2 |
+| e3: ambos 0.3 / −0.1 | −40.8 | −88.9 | −103.1 | −35.9 | −28.5 | +126.0 |
+| e4: ambos 0.3 / −0.02 | −40.8 | −88.7 | −48.9 | −35.4 | −26.0 | +127.4 |
+
+- **Corregido respecto de v4:** con los cinco conjuntos «recoger el primer producto» rinde más que «ir al estante y quedarse» (en v4 con −0.02 era 60 puntos peor). En e2–e4 el orden es ir y quedarse < subir a la altura < recoger < completar: hay gradiente en el estado clave.
+- **Riesgo de evitación (medido):** en e2 y e3 quedarse en el estante con la altura equivocada (−106, −103) es **peor que no ir** (−40.8); solo compensa si el agente sube la bandeja. En e4 la diferencia es pequeña (−48.9). Una política podría aprender a evitar el estante; los runs lo dirán.
+- **Límite declarado:** el término de altura no empuja a BAJAR la bandeja tras cargar (el objetivo pasa al siguiente estante). Solo la diferencia Manhattan paga cuando el robot puede volver a moverse.
+
+| Run | `manhattan_progress` | `height_mismatch` | Config |
+|---|---:|---:|---|
+| m1o-c0-seed0 (control, ya entrenado en v4) | 0 | 0 | `m1o_c0_control.yaml` |
+| m1o-e1-seed0 | 0.3 | 0 | `m1o_e1_manhattan_dif.yaml` |
+| m1o-e2-seed0 | 0 | −0.1 | `m1o_e2_altura_01.yaml` |
+| m1o-e3-seed0 | 0.3 | −0.1 | `m1o_e3_ambos_01.yaml` |
+| m1o-e4-seed0 | 0.3 | −0.02 | `m1o_e4_ambos_002.yaml` |
+
+(En los cinco: `invalid_interaction` −0.2, `collision` −1, sin `distance`.) Igual en todos: PPO, hiperparámetros de C0, 200 000 pasos, semilla 0, 3 productos aleatorios, mapa `layout_v0.5`, `suite-m1o-v1` (50 episodios).
+El control se entrenó con el código v4; su recompensa es idéntica y los términos nuevos valen 0 por defecto (verificado por prueba). Se reentrenó el mismo control bajo v3→v4 con resultado idéntico en el barrido anterior (`m1-c0b` = `m1-c0`).
+Son cuatro runs porque el término de distancia y el de altura se separan (e1, e2) además de combinarse (e3, e4), para saber cuál aporta.
+
+### Presupuesto real por run (barrido v5)
+| Run | Nivel | Pasos | Minutos | Estado |
+|---|---|---|---|---|
+| m1o-e1-seed0 | m1o | (pendiente) | (pendiente) | en curso |
+| m1o-e2-seed0 | m1o | (pendiente) | (pendiente) | en curso |
+| m1o-e3-seed0 | m1o | (pendiente) | (pendiente) | en curso |
+| m1o-e4-seed0 | m1o | (pendiente) | (pendiente) | en curso |

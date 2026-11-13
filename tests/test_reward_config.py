@@ -18,7 +18,7 @@ def raw(name):
 
 
 def test_default_reward_equals_v2_coefficients():
-    assert asdict(reward_config()) == {"pickup": 10.0, "delivery": 30.0, "completion": 50.0, "progress": 0.3, "distance": 0.0,
+    assert asdict(reward_config()) == {"pickup": 10.0, "delivery": 30.0, "completion": 50.0, "progress": 0.3, "distance": 0.0, "manhattan_progress": 0.0, "height_mismatch": 0.0,
                                        "time": -0.1, "battery": -0.02, "collision": -5.0, "invalid_interaction": -2.0}
     assert make_env(orders=3).reward_config == reward_config()
 
@@ -158,13 +158,120 @@ def test_open_layout_has_no_interior_wall_or_gap_and_heuristic_completes_orders(
 
 
 def test_distance_sweep_configs_change_one_dimension_from_control():
-    control = load_config("configs/experiments/m1o_c0_control.yaml")
-    assert control["layout"] == OPEN and control["recompensa"] == {"invalid_interaction": -0.2, "collision": -1.0, "distance": 0.0}
+    control = raw("m1o_c0_control")
+    assert control["environment_version"] == "warehouse-v4" and control["layout"] == OPEN and control["recompensa"] == {"invalid_interaction": -0.2, "collision": -1.0, "distance": 0.0}
     seen = []
     for name in ("m1o_d1_distancia_0005", "m1o_d2_distancia_001", "m1o_d3_distancia_002"):
-        cfg = load_config(f"configs/experiments/{name}.yaml")
+        cfg = raw(name)
         assert cfg["layout"] == OPEN and cfg["nivel"] == "m1o"
         assert {k: v for k, v in cfg["recompensa"].items() if k != "distance"} == {"invalid_interaction": -0.2, "collision": -1.0}
         assert cfg["recompensa"]["distance"] < 0
         seen.append(cfg["recompensa"]["distance"])
     assert seen == sorted(seen, reverse=True) and len(set(seen)) == 3
+
+
+# --- v5: diferencia de distancia Manhattan y penalización por altura de bandeja distinta ---
+NEW = {"manhattan_progress": 0.3, "height_mismatch": -0.1, "invalid_interaction": -0.2, "collision": -1.0}
+
+
+def to_pickup_pose(env, policy, obs):
+    """Lleva al robot a la celda de interacción, mirando al estante, detenido y con la bandeja abajo."""
+    while not (env.state.etapa == "recoger" and env.facing_target() and env.state.v == 0 and env.tray_level() == 0):
+        obs, *_ = env.step(policy.action(obs, env))
+    return obs
+
+
+def test_new_terms_default_off_and_signs_validated():
+    env = make_env(layout_path=OPEN, orders=3)
+    env.reset(seed=0)
+    comp = env.step(Action.AVANZAR)[4]["reward_components"]
+    assert comp["manhattan_progress"] == 0.0 and comp["height_mismatch"] == 0.0
+    for bad in ({"manhattan_progress": -0.1}, {"height_mismatch": 0.1}):
+        with pytest.raises(ValueError):
+            reward_config(bad)
+
+
+def test_manhattan_difference_rewards_approach_penalizes_retreat_and_loops_net_zero():
+    env = make_env(layout_path=OPEN, orders=3, reward_overrides=NEW)
+    env.reset(seed=0)
+    env.state.x, env.state.y, env.state.theta, env.state.v = 3, 16, 1, 0.0    # al este; celda (4,16) libre
+    tx, ty = env.layout.stations[env.state.objetivo]
+    before = abs(3 - tx) + abs(16 - ty)
+    gains = []
+    for action in (Action.AVANZAR, Action.GIRAR_DERECHA, Action.GIRAR_DERECHA, Action.AVANZAR):
+        info = env.step(action)[4]
+        gains.append(info["reward_components"]["manhattan_progress"])
+    after = abs(env.state.x - tx) + abs(env.state.y - ty)
+    assert (env.state.x, env.state.y) == (3, 16) and after == before
+    assert sum(gains) == pytest.approx(0.0)                       # ida y vuelta no rinde
+    assert gains[0] == pytest.approx(-gains[3]) and gains[0] != 0   # alejarse resta lo que acercarse suma
+
+
+def test_manhattan_difference_has_no_jump_when_the_target_changes():
+    from pipelines.baselines import HeuristicPolicy
+    env = make_env(layout_path=OPEN, orders=3, reward_overrides=NEW)
+    obs, _ = env.reset(seed=10002)
+    policy = HeuristicPolicy()
+    done = False
+    while not done:
+        before = env.state.objetivo
+        obs, _, term, trunc, info = env.step(policy.action(obs, env))
+        done = term or trunc
+        if info["reward_components"]["pickup"]:
+            assert env.state.objetivo != before
+            # La distancia Manhattan al objetivo NUEVO es muy distinta (el término por estado de v4 saltaba aquí)...
+            assert abs(env.manhattan_to(env.state.objetivo) - env.manhattan_to(before)) >= 3
+            # ...pero la diferencia usa el mismo objetivo antes y después del paso: no paga ni cobra el cambio.
+            assert info["reward_components"]["manhattan_progress"] == 0.0
+            return
+    pytest.fail("no hubo recogida")
+
+
+def test_height_mismatch_only_at_the_interaction_cell_and_scales_with_levels():
+    from pipelines.baselines import HeuristicPolicy
+    env = make_env(layout_path=OPEN, orders=3, reward_overrides=NEW)
+    obs, _ = env.reset(seed=10020)                     # primer producto en E05, nivel 1 o 2
+    assert env.step(Action.FRENAR)[4]["reward_components"]["height_mismatch"] == 0.0   # lejos del estante
+    obs = to_pickup_pose(env, HeuristicPolicy(), obs)
+    needed = env.needed_tray_level()
+    assert needed >= 1
+    comp = env.step(Action.FRENAR)[4]["reward_components"]
+    assert comp["height_mismatch"] == pytest.approx(-0.1 * needed)
+    while env.tray_level() < needed:                   # SUBIR reduce la penalización hasta anularla
+        env.step(Action.SUBIR)
+    assert env.step(Action.FRENAR)[4]["reward_components"]["height_mismatch"] == 0.0
+
+
+def test_height_mismatch_at_dispatch_requires_the_tray_down():
+    env = make_env(layout_path=OPEN, orders=3, reward_overrides=NEW)
+    env.reset(seed=0)
+    env.state.etapa, env.state.objetivo = "entregar", "DELIVERY"
+    env.state.x, env.state.y, env.state.theta, env.state.v = 21, 16, 1, 0.0
+    env.lift_height, env.lift_target, env.lift_phase = 0.99, 0.99, "ready"
+    comp = env.step(Action.FRENAR)[4]["reward_components"]
+    assert comp["height_mismatch"] == pytest.approx(-0.1)
+
+
+def test_raising_and_lowering_at_the_rack_is_never_profitable():
+    from pipelines.baselines import HeuristicPolicy
+    env = make_env(layout_path=OPEN, orders=3, reward_overrides=NEW)
+    obs, _ = env.reset(seed=10020)
+    obs = to_pickup_pose(env, HeuristicPolicy(), obs)
+    total = 0.0
+    for _ in range(20):
+        for action in (Action.SUBIR, Action.BAJAR):
+            _, reward, term, trunc, _ = env.step(action)
+            total += reward
+    assert total < 0
+
+
+def test_v5_experiment_configs_change_only_the_new_terms():
+    control = raw("m1o_c0_control")["recompensa"]
+    assert control == {"invalid_interaction": -0.2, "collision": -1.0, "distance": 0.0}
+    for name, expect in (("m1o_e1_manhattan_dif", (0.3, 0.0)), ("m1o_e2_altura_01", (0.0, -0.1)),
+                         ("m1o_e3_ambos_01", (0.3, -0.1)), ("m1o_e4_ambos_002", (0.3, -0.02))):
+        cfg = load_config(f"configs/experiments/{name}.yaml")
+        assert cfg["layout"] == OPEN and cfg["nivel"] == "m1o"
+        rec = cfg["recompensa"]
+        assert rec["invalid_interaction"] == -0.2 and rec["collision"] == -1.0 and "distance" not in rec
+        assert (rec["manhattan_progress"], rec["height_mismatch"]) == expect

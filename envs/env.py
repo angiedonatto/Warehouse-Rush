@@ -129,6 +129,20 @@ class WarehouseRushEnv(gym.Env):
         tx, ty = self.layout.stations[station]
         return abs(self.state.x - tx) + abs(self.state.y - ty)
 
+    def tray_level(self) -> int:
+        """Posición discreta de la bandeja (0 = viaje); sin elevador siempre 0."""
+        return 0
+
+    def needed_tray_level(self) -> int:
+        """Posición de bandeja que exige el objetivo actual (0 al entregar o sin objetivo)."""
+        return 0
+
+    def height_gap(self, station: str | None, needed: int) -> int:
+        """Puestos de diferencia entre la bandeja y la exigida, solo si el robot está en una celda de interacción de `station`."""
+        if station is None or self.route_distance(station) != 0:
+            return 0
+        return abs(self.tray_level() - needed)
+
     def facing_target(self) -> bool:
         if self.state.objetivo is None:
             return False
@@ -199,6 +213,8 @@ class WarehouseRushEnv(gym.Env):
         state = self.state
         old_target = state.objetivo
         old_distance = self.route_distance(old_target)
+        old_manhattan = self.manhattan_to(old_target)
+        needed_level = self.needed_tray_level()
         costs = (self.config.forward_cost, self.config.turn_cost, self.config.turn_cost,
                  self.config.brake_cost, self.config.interact_cost, self.config.interact_cost,
                  self.config.brake_cost, self.config.brake_cost)
@@ -215,10 +231,13 @@ class WarehouseRushEnv(gym.Env):
         delta = float(old_distance - new_distance) if old_distance is not None and new_distance is not None else 0.0
         success = state.entregas == self.orders
         target_distance = self.manhattan_to(old_target)
+        manhattan_delta = float(old_manhattan - target_distance)   # mismo objetivo antes y después: sin salto al cambiar de etapa
+        height_gap = float(self.height_gap(old_target, needed_level))
         components = reward_components(self.reward_config, distance_delta=delta,
                                        battery_used=used, pickup=pickup, delivery=delivery,
                                        completion=success, collision=collision, invalid=invalid,
-                                       target_distance=target_distance)
+                                       target_distance=target_distance, manhattan_delta=manhattan_delta,
+                                       height_gap=height_gap)
         reward = float(sum(components.values()))
         state.recompensa_total += reward
         unreachable = not success and self.route_distance() is None

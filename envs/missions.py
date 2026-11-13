@@ -131,6 +131,15 @@ class MakeupMissionEnv(WarehouseRushEnv):
             return self.position in self.layout.approaches('DELIVERY', self.state.pasillo_bloqueado)
         return True
 
+    def tray_level(self):
+        return self.lift_config.index(self.lift_height)
+
+    def needed_tray_level(self):
+        s = self.state
+        if s.etapa != 'recoger' or s.objetivo is None or not self.lines:
+            return 0
+        return self.lift_config.index(self.lines[s.pedido_actual]['height_m'])
+
     def elevation(self):
         return self.lift_config.normalized(self.lift_height)
 

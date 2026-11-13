@@ -1,10 +1,10 @@
-# Contrato del ambiente · `warehouse-v4` (ficha 0.4.0)
+# Contrato del ambiente · `warehouse-v5` (ficha 0.5.0)
 
 Contrato congelado entre ambiente, entrenamiento, evaluación, API y web. Cualquier cambio de orden,
-unidades, rangos, acciones, dt, física o recompensa **sube la versión** (`warehouse-v5`), abre una nueva
-familia de modelos y se anota en `docs/decisiones.md`. Ficha completa: [docs/ambiente-v0.2.md](../docs/ambiente-v0.2.md) (base) [docs/ambiente-v0.3.md](../docs/ambiente-v0.3.md) (v3: recompensa por run) y [docs/ambiente-v0.4.md](../docs/ambiente-v0.4.md) (v4: término de distancia Manhattan y mapa abierto).
+unidades, rangos, acciones, dt, física o recompensa **sube la versión** (`warehouse-v6`), abre una nueva
+familia de modelos y se anota en `docs/decisiones.md`. Ficha completa: [docs/ambiente-v0.2.md](../docs/ambiente-v0.2.md) (base) [docs/ambiente-v0.3.md](../docs/ambiente-v0.3.md) (v3: recompensa por run) y [docs/ambiente-v0.4.md](../docs/ambiente-v0.4.md) (v4: término de distancia Manhattan y mapa abierto) y [docs/ambiente-v0.5.md](../docs/ambiente-v0.5.md) (v5: diferencia de distancia y penalización por altura).
 
-- Código: `envs/` (`ENV_VERSION = "warehouse-v4"`, `__version__ = "0.4.0"`). Fábrica: `envs.make_env(blocked, layout_path, orders, reward_overrides)`.
+- Código: `envs/` (`ENV_VERSION = "warehouse-v5"`, `__version__ = "0.5.0"`). Fábrica: `envs.make_env(blocked, layout_path, orders, reward_overrides)`.
 - Clase: `envs.missions.MakeupMissionEnv` (hereda `envs.env.WarehouseRushEnv`). **v2 solo ofrece el modo maquillaje.**
 - Mapa por defecto: `configs/layout_v0.4.json` (25 × 19 celdas de 1 m). `configs/layout_v0.5.json` es la misma bodega **sin muro interior ni paso cerrable** (se elige con `layout:` en el YAML del run; nivel `m1o`).
 - Paso de decisión: 1 acción = 1 s simulado. Una sola política decide en cada paso; la animación no cambia las reglas.
@@ -60,6 +60,10 @@ máscara de acciones, bloqueo del pasillo ni recompensa del paso. La heurística
 
 `M` = distancia Manhattan |dx|+|dy| (en celdas, sin tener en cuenta obstáculos) entre la posición del robot **después** del paso y la estación del objetivo **anterior** al paso (la misma convención que el progreso). `c_dist` ≤ 0 (**v4**; por defecto 0, es decir, sin término): cuanto más lejos del destino, mayor la penalización por paso.
 
+**v5 añade dos términos más (ambos por defecto 0):** `+ c_man·(M_antes − M_después) + c_alt·H`, con
+- `M_antes`, `M_después`: distancia Manhattan al **mismo** objetivo (el anterior al paso) antes y después de la acción, de modo que acercarse suma, alejarse resta y el cambio de objetivo no paga ni cobra (`c_man ≥ 0`, clave `manhattan_progress`). Una ida y vuelta suma cero.
+- `H`: |posición de la bandeja − posición que exige el objetivo| (en puestos de bandeja: 0 = viaje, 1–3 = balda), contado **solo si el robot está en una celda de interacción del objetivo** (distancia BFS a la estación = 0). La posición exigida es la de la balda del producto en curso, o 0 al entregar (`c_alt ≤ 0`, clave `height_mismatch`). Se evalúa con el objetivo y la posición exigida anteriores al paso.
+
 - Hitos una sola vez por línea; recompensa de entrega una vez por acción DESCARGAR aunque descargue varias líneas.
 - La energía vertical de la bandeja se descuenta como batería y se penaliza con el mismo coeficiente (−0.02).
 - El progreso usa la distancia transitable a una celda de acceso del objetivo anterior (no se paga por cambiar de objetivo).
@@ -84,4 +88,4 @@ En `m1` son 3 productos de 1 unidad, sorteados en cada episodio, y el stock se r
 
 Los modelos `warehouse-v2` comparten observación y acciones con v3 y se cargan, pero se entrenaron con la recompensa por defecto. `warehouse-v1` (Box(22), Discrete(5)) **no es compatible**: sus checkpoints (`experiment-001`, `n1-c*`) siguen siendo
 historia y no se cargan con v2. Un modelo declara su `environment_version` y su recompensa efectiva en el manifiesto.
-Etiquetas de código del ambiente: `env/warehouse-v2`, `env/warehouse-v3`, `env/warehouse-v4`. Los modelos v2 y v3 comparten observación y acciones con v4 y se cargan; se entrenaron sin el término de distancia.
+Etiquetas de código del ambiente: `env/warehouse-v2`, `env/warehouse-v3`, `env/warehouse-v4`, `env/warehouse-v5`. Los modelos v2 y v3 comparten observación y acciones con v4 y se cargan; se entrenaron sin el término de distancia.

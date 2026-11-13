@@ -123,7 +123,32 @@ con coeficientes distintos: se compara éxito, pasos, batería, choques e invál
 ### Presupuesto real por run (barrido)
 | Run | Nivel | Pasos | Minutos | Estado |
 |---|---|---|---|---|
-| m1-c0b-seed0 | m1 | (pendiente) | (pendiente) | en curso |
-| m1-r1-seed0 | m1 | (pendiente) | (pendiente) | en curso |
-| m1-r2-seed0 | m1 | (pendiente) | (pendiente) | en curso |
-| m1-r3-seed0 | m1 | (pendiente) | (pendiente) | en curso |
+| m1-c0b-seed0 | m1 | 204 800 | 10.0 (4 runs en paralelo, ~400-550 pasos/s cada uno) | candidato (control) |
+| m1-r1-seed0 | m1 | 204 800 | 10.0 (4 runs en paralelo, ~400-550 pasos/s cada uno) | rechazado |
+| m1-r2-seed0 | m1 | 204 800 | 10.1 (4 runs en paralelo, ~400-550 pasos/s cada uno) | rechazado |
+| m1-r3-seed0 | m1 | 204 800 | 9.9 (4 runs en paralelo, ~400-550 pasos/s cada uno) | rechazado |
+
+### Resultados del barrido (2026-11-13, semilla 0, `suite-m1-v1`: 50 episodios, semillas 10000–10049, acciones deterministas, pasillo abierto)
+Código: commit `30c34fb`, tag `env/warehouse-v3`. Los cuatro runs se entrenaron en paralelo (por eso ~10 min cada uno frente a 7.9 min del run solo). Manifiestos en `manifests/m1-{c0b,r1,r2,r3}-seed0.json`; evidencia por episodio en `docs/resultados/eval/<run>/`.
+`git_dirty` figura `true` en los metadatos de r1–r3 solo porque las carpetas de salida de los runs hermanos aún no estaban versionadas; ningún archivo versionado cambió.
+
+| Run | `invalid_interaction` | Éxito | Retorno medio | Retorno medio de los primeros 10 episodios de entrenamiento | FRENAR en la evaluación | Éxitos en entrenamiento | Estado |
+|---|---:|---:|---:|---:|---:|---:|---|
+| m1-c0b-seed0 | −2 (control) | 0% | −41.0 | −503.1 | 93.4% | 0 / 512 | candidato (control) |
+| m1-r1-seed0 | −1 | 0% | −40.0 | −302.3 | 98.5% | 0 / 512 | **rechazado** |
+| m1-r2-seed0 | −0.2 | 0% | −40.2 | −141.6 | 99.2% | 0 / 512 | **rechazado** |
+| m1-r3-seed0 | −0.05 | 0% | −40.0 | −111.5 | 98.3% | 0 / 512 | **rechazado** |
+
+La heurística BFS obtiene 100% (retorno +115.9) bajo los cuatro conjuntos de coeficientes; los retornos entre runs con recompensas distintas no son comparables, la tasa de éxito sí.
+
+**Decisión:** ningún run supera al control en ≥ 5 pp de éxito (todos 0 pp), así que r1, r2 y r3 se **rechazan** según `configs/criterios.yaml`; se conservan con su evidencia. **La hipótesis «bajar la penalización por interacción inválida permite descubrir la tarea» se rechaza** en el rango −1 a −0.05 con 200 000 pasos y una semilla.
+
+**Hechos medidos:**
+- **El control reproduce a `m1-c0-seed0` (v2) exactamente** (retorno −41.0, FRENAR 93.4%, 0 / 512): la comparación entre versiones es válida y el entrenamiento es determinista.
+- Bajar la penalización **sí redujo el costo de explorar**: el retorno medio de los primeros 10 episodios pasó de −503 a −302, −142 y −112.
+- Aun así, **la política colapsó más** hacia quedarse quieta: FRENAR pasó de 93.4% a 98.5%, 99.2% y 98.3%. Ningún run tuvo una sola entrega en entrenamiento y ninguno usó CARGAR, DESCARGAR, SUBIR ni BAJAR en la evaluación.
+- Con −0.05, el retorno inicial (−111) sigue por debajo de quedarse quieto (−40): la diferencia (~−70) corresponde sobre todo a los choques (15.3 × −5 ≈ −77 en la política aleatoria).
+
+**Lectura (hipótesis de diagnóstico, no causa demostrada):** las inválidas no eran el cuello de botella. Mientras ninguna conducta explorada produzca recompensa positiva, quedarse quieto (≈ −40, la penalización por tiempo) sigue siendo la mejor política y PPO converge a ella; reducir un costo de explorar no crea una señal que seguir. Quedan dos candidatos a probar, uno por experimento: (1) bajar el castigo de choques (−5), que es el costo restante; (2) **bonos por sub-pasos pagados una vez por línea** (llegar de frente al estante, alcanzar la altura correcta, bajar tras cargar), que dan señal positiva antes de la primera entrega y respetan la regla de «hitos una sola vez». La opción A (clonar la heurística y afinar con RL) sigue pendiente. No se tocaron modelo ni hiperparámetros.
+
+**Limitaciones:** una semilla por configuración (sin medir la variación entre semillas), presupuesto de 200 000 pasos y evaluación solo con pasillo abierto.

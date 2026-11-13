@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "run_id": "m1-r2-seed0",
+  "level_id": "m1",
+  "environment_version": "warehouse-v3",
+  "git_commit": "30c34fbaad6e9b2bbb5880e1b80c18ca9fcecd8d",
+  "config_sha256": "f5dd2e27a4e98b79462045f5686fb0d6804f8d79054bf27f661140962b6634bf",
+  "model_uri": "models/m1-r2-seed0/model.zip",
+  "model_sha256": "96bc7c412c8eaa607f5105ac8a1896b29e8701fc5301887a28491e14b6f8dcca",
+  "normalization_uri": null,
+  "runtime_ref": "env/warehouse-v3",
+  "evaluation_suite_id": "suite-m1-v1",
+  "seed": 0,
+  "parent_run_id": null,
+  "estado": "rechazado",
+  "created_at": "2026-11-13T21:44:27.152878+00:00",
+  "author": "lis",
+  "algorithm": "PPO",
+  "policy": "MlpPolicy",
+  "budget_steps": 204800,
+  "budget_minutes": 10.06,
+  "mlflow_run_id": "d404e3d191f742849ac95d2974e4023b",
+  "mlflow_experiment": "warehouse-m1",
+  "config_uri": "configs/experiments/m1_r2_invalida_02.yaml",
+  "obs_spec": "envs/CONTRATO.md@env/warehouse-v3 (Box(27), todo en [0,1], sin VecNormalize)",
+  "action_spec": "envs/CONTRATO.md@env/warehouse-v3 (Discrete(8): AVANZAR, GIRAR_I, GIRAR_D, FRENAR, CARGAR, DESCARGAR, SUBIR, BAJAR)",
+  "rules_ref": "docs/ambiente-v0.3.md",
+  "reward": {
+    "pickup": 10.0,
+    "delivery": 30.0,
+    "completion": 50.0,
+    "progress": 0.3,
+    "time": -0.1,
+    "battery": -0.02,
+    "collision": -5.0,
+    "invalid_interaction": -0.2
+  },
+  "reward_overrides": {
+    "invalid_interaction": -0.2
+  },
+  "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
+  "results_uri": "docs/resultados/eval/m1-r2-seed0/evaluation.json",
+  "training_metadata_uri": "docs/resultados/training/m1-r2-seed0/metadata.json",
+  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "git_dirty_note": "git_dirty puede figurar true en metadata.json: solo por las carpetas de salida sin versionar de los runs hermanos lanzados en paralelo; ningún archivo versionado cambió (commit 30c34fb)",
+  "evaluation": {
+    "suite": "suite-m1-v1",
+    "episodes": 50,
+    "seeds": "10000-10049",
+    "scenario": "pasillo abierto",
+    "deterministic": true,
+    "policies": {
+      "heuristic": {
+        "success_rate": 1.0,
+        "mean_total_reward": 115.85822079999998,
+        "mean_steps": 79.92,
+        "mean_battery_used": 49.68896000000024,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 3.0,
+        "mean_pickups": 3.0,
+        "end_reasons": {
+          "success": 50
+        },
+        "action_counts": {
+          "0": 2474,
+          "1": 308,
+          "2": 278,
+          "3": 186,
+          "4": 150,
+          "5": 50,
+          "6": 275,
+          "7": 275
+        }
+      },
+      "ppo": {
+        "success_rate": 0.0,
+        "mean_total_reward": -40.22999999999982,
+        "mean_steps": 400.0,
+        "mean_battery_used": 41.499999999997755,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 0.0,
+        "mean_pickups": 0.0,
+        "end_reasons": {
+          "time_limit": 50
+        },
+        "action_counts": {
+          "0": 100,
+          "1": 0,
+          "2": 50,
+          "3": 19850,
+          "4": 0,
+          "5": 0,
+          "6": 0,
+          "7": 0
+        }
+      }
+    }
+  },
+  "decision": "rechazado",
+  "decision_reason": "No supera al control en >=5 pp de éxito (0 pp). La política colapsa a FRENAR (99.2%). Se conserva la evidencia."
+}

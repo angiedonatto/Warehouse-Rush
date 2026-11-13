@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "run_id": "m1-c0b-seed0",
+  "level_id": "m1",
+  "environment_version": "warehouse-v3",
+  "git_commit": "30c34fbaad6e9b2bbb5880e1b80c18ca9fcecd8d",
+  "config_sha256": "5f8479ed16538564c6c562da1baf13c4faebe14d45959de9d23bae1f3dcf0c71",
+  "model_uri": "models/m1-c0b-seed0/model.zip",
+  "model_sha256": "bcd2f76858b0c38ba3c88359c947ffb01f4bfd9fcdf58da2bd77d3f2d2f9cb1a",
+  "normalization_uri": null,
+  "runtime_ref": "env/warehouse-v3",
+  "evaluation_suite_id": "suite-m1-v1",
+  "seed": 0,
+  "parent_run_id": null,
+  "estado": "candidato",
+  "created_at": "2026-11-13T21:43:38.521897+00:00",
+  "author": "lis",
+  "algorithm": "PPO",
+  "policy": "MlpPolicy",
+  "budget_steps": 204800,
+  "budget_minutes": 9.96,
+  "mlflow_run_id": "211241c829294bdeb4cdf7e28ab7a224",
+  "mlflow_experiment": "warehouse-m1",
+  "config_uri": "configs/experiments/m1_c0b_control_v3.yaml",
+  "obs_spec": "envs/CONTRATO.md@env/warehouse-v3 (Box(27), todo en [0,1], sin VecNormalize)",
+  "action_spec": "envs/CONTRATO.md@env/warehouse-v3 (Discrete(8): AVANZAR, GIRAR_I, GIRAR_D, FRENAR, CARGAR, DESCARGAR, SUBIR, BAJAR)",
+  "rules_ref": "docs/ambiente-v0.3.md",
+  "reward": {
+    "pickup": 10.0,
+    "delivery": 30.0,
+    "completion": 50.0,
+    "progress": 0.3,
+    "time": -0.1,
+    "battery": -0.02,
+    "collision": -5.0,
+    "invalid_interaction": -2.0
+  },
+  "reward_overrides": {},
+  "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
+  "results_uri": "docs/resultados/eval/m1-c0b-seed0/evaluation.json",
+  "training_metadata_uri": "docs/resultados/training/m1-c0b-seed0/metadata.json",
+  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "evaluation": {
+    "suite": "suite-m1-v1",
+    "episodes": 50,
+    "seeds": "10000-10049",
+    "scenario": "pasillo abierto",
+    "deterministic": true,
+    "policies": {
+      "heuristic": {
+        "success_rate": 1.0,
+        "mean_total_reward": 115.85822079999998,
+        "mean_steps": 79.92,
+        "mean_battery_used": 49.68896000000024,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 3.0,
+        "mean_pickups": 3.0,
+        "end_reasons": {
+          "success": 50
+        },
+        "action_counts": {
+          "0": 2474,
+          "1": 308,
+          "2": 278,
+          "3": 186,
+          "4": 150,
+          "5": 50,
+          "6": 275,
+          "7": 275
+        }
+      },
+      "ppo": {
+        "success_rate": 0.0,
+        "mean_total_reward": -40.95899999999981,
+        "mean_steps": 400.0,
+        "mean_battery_used": 42.84999999999759,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 0.0,
+        "mean_pickups": 0.0,
+        "end_reasons": {
+          "time_limit": 50
+        },
+        "action_counts": {
+          "0": 17,
+          "1": 284,
+          "2": 1022,
+          "3": 18677,
+          "4": 0,
+          "5": 0,
+          "6": 0,
+          "7": 0
+        }
+      }
+    }
+  },
+  "decision": "candidato",
+  "decision_reason": "Control del barrido en warehouse-v3 con la recompensa por defecto. Reproduce m1-c0 (v2) exactamente (retorno -41.0, FRENAR 93.4%), lo que confirma el determinismo. 0% de éxito: no es un modelo útil."
+}

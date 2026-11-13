@@ -20,8 +20,9 @@ import zlib
 from urllib.parse import parse_qs, urlsplit
 
 from warehouse_rush.env import WorldState
+from warehouse_rush.layout import DEFAULT_LAYOUT, WIDE_LAYOUT, PACKING_LAYOUT
 from warehouse_rush.missions import MakeupMissionEnv
-from warehouse_rush.inventory import Inventory
+from warehouse_rush.inventory import CATALOG, Inventory
 from warehouse_rush.policies import make_policy
 from warehouse_rush.viewer import ViewerSession, WEB_ROOT
 
@@ -46,6 +47,7 @@ class SignedSessions:
 
     def dump(self, session):
         record = {
+            "layout_version": session.env.layout.data["version"],
             "v": 1, "expires": int(time.time()) + MAX_AGE,
             "orders": session.env.orders, "policy": session.policy_name, "seed": session.seed,
             "state": asdict(session.env.state), "picked": sorted(session.env.picked_packages),
@@ -59,6 +61,7 @@ class SignedSessions:
             record['makeup'] = True
             record['inventory'] = dict(initial=session.inventory.initial, total=session.inventory.total, orders=session.inventory.orders)
             record['order_id'] = session.env.order_id
+            record['mechanism'] = session.env.mechanism_snapshot()
             record['orders'] = 1  # Parámetro legacy constructor; líneas se restauran aparte.
         raw = json.dumps(record, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode()
         encoded = urlsafe_b64encode(zlib.compress(raw) if record.get("makeup") else raw).decode().rstrip("=")
@@ -70,7 +73,7 @@ class SignedSessions:
 
     def load(self, token):
         if not token:
-            return ViewerSession(policy_factory=cloud_policy)
+            return ViewerSession(policy_factory=cloud_policy, settings={"makeup": True, "orders": 1})
         if len(token) > 3800 or "." not in token:
             raise ValueError("Sesión inválida; reinicia la misión")
         encoded, signature = token.rsplit(".", 1)
@@ -84,13 +87,21 @@ class SignedSessions:
             record = json.loads(raw)
             if record["v"] != 1 or record["expires"] < time.time():
                 raise ValueError("Sesión expirada; reinicia la misión")
-            session = ViewerSession(policy_factory=cloud_policy,
+            version = record.get('layout_version', '0.1.0')
+            layouts = {'0.1.0': DEFAULT_LAYOUT, '0.3.0': WIDE_LAYOUT, '0.4.0': PACKING_LAYOUT}
+            if version not in layouts:
+                raise ValueError('Versión de mapa no compatible')
+            session = ViewerSession(layout_path=layouts[version],
+                                    policy_factory=cloud_policy,
                                     settings={"orders": record["orders"], "blocked": record["state"]["pasillo_bloqueado"],
                                               "policy": record["policy"], "seed": record["seed"], "makeup": record.get("makeup", False)})
             if record.get('makeup'):
                 saved = record['inventory']
                 inventory = Inventory(saved['initial'])
                 inventory.total, inventory.orders = saved['total'], saved['orders']
+                for order in inventory.orders.values():
+                    for line in order['lines']:
+                        line.setdefault('height_m', CATALOG[line['sku']]['height_m'])
                 inventory.check()
                 session.inventory = session.env.inventory = inventory
                 session.env.order_id = record['order_id']
@@ -98,6 +109,8 @@ class SignedSessions:
                 session.env.orders = len(session.env.lines)
                 session.env.packages = tuple(l['sku'] for l in session.env.lines)
             session.env.state = WorldState(**record["state"])
+            if record.get('makeup'):
+                session.env.restore_mechanism(record.get('mechanism'))
             session.env.picked_packages = set(record["picked"])
             session.env.completed_packages = set(record["completed"])
             session.env._done = session.done = record["done"]
@@ -110,6 +123,7 @@ class SignedSessions:
             if session.policy_name == "random":
                 # Random elige una acción por segundo. Restituir la misma secuencia.
                 session.policy.rng.integers(5, size=session.env.state.tiempo)
+            session.layout_path = None  # Los pedidos nuevos usan el mapa actual.
             return session
         except (KeyError, TypeError, json.JSONDecodeError) as exc:
             raise ValueError("Snapshot inválido; reinicia la misión") from exc
@@ -125,7 +139,11 @@ class CloudAPI:
                     "session_mode": "signed-per-visitor",
                     "commit": os.getenv("VERCEL_GIT_COMMIT_SHA", "local")}, None
         if method == "GET" and endpoint == "layout":
-            return ViewerSession(policy_factory=cloud_policy).layout_payload(), None
+            try:
+                session = self.sessions.load(token)
+            except ValueError:
+                session = self.sessions.load(None)
+            return session.layout_payload(), None
         if method == "GET" and endpoint == "state":
             try:
                 session = self.sessions.load(token)

@@ -14,6 +14,9 @@ DEFAULT_LAYOUT = Path(__file__).resolve().parents[2] / "configs/layout_v0.1.json
 if not DEFAULT_LAYOUT.is_file():  # Instalaciones wheel: un enlace al JSON canónico se empaqueta.
     DEFAULT_LAYOUT = Path(__file__).parent / "configs/layout_v0.1.json"
 
+WIDE_LAYOUT = DEFAULT_LAYOUT.with_name("layout_v0.3.json")
+PACKING_LAYOUT = DEFAULT_LAYOUT.with_name("layout_v0.4.json")
+
 
 @dataclass(frozen=True)
 class Layout:
@@ -61,9 +64,17 @@ class Layout:
                 | {(x, y) for y in range(self.height) for x in (0, self.width - 1)}
                 | {tuple(c) for c in self.data["internal_walls"]})
 
+    @property
+    def dispatch_cells(self) -> set[Cell]:
+        area = self.data.get('dispatch_area')
+        if not area:
+            return set()
+        x0, y0, x1, y1 = area['bounds']
+        return {(x, y) for x in range(x0, x1 + 1) for y in range(y0, y1 + 1)}
+
     def obstacles(self, blocked: bool = False) -> set[Cell]:
         # Las estaciones tienen huella física; se interactúa desde la celda adyacente.
-        return (self.walls | self.racks | set(self.stations.values())
+        return (self.walls | self.racks | self.dispatch_cells | set(self.stations.values())
                 | ({tuple(c) for c in self.data["blockable_cells"]} if blocked else set()))
 
     def free(self, cell: Cell, blocked: bool = False) -> bool:
@@ -77,6 +88,9 @@ class Layout:
                 yield candidate
 
     def approaches(self, station: str, blocked: bool = False) -> set[Cell]:
+        if station == 'DELIVERY' and self.data.get('dispatch_area'):
+            cell = tuple(self.data['dispatch_area']['approach'])
+            return {cell} if self.free(cell, blocked) else set()
         return set(self.neighbors(self.stations[station], blocked))
 
     def distance_field(self, station: str, blocked: bool = False) -> dict[Cell, int]:
@@ -103,6 +117,19 @@ class Layout:
                 raise ValueError("Base/estaciones fuera del interior del mapa")
             if (x, y) in self.walls | self.racks:
                 raise ValueError("Base/estaciones solapadas con obstáculos")
+        if self.data.get('dispatch_area'):
+            area = self.data['dispatch_area']
+            x0, y0, x1, y1 = area['bounds']
+            if not (0 < x0 <= x1 < self.width - 1 and 0 < y0 <= y1 < self.height - 1):
+                raise ValueError('Estación de empaque fuera del mapa')
+            if self.dispatch_cells & (self.walls | self.racks | {self.base, self.stations['P1'], self.stations['P2']}):
+                raise ValueError('Estación de empaque solapada con obstáculos o estaciones')
+            if self.stations['DELIVERY'] not in self.dispatch_cells:
+                raise ValueError('El despacho debe estar dentro de la estación de empaque')
+            approach = tuple(area['approach'])
+            target = self.stations['DELIVERY']
+            if not self.free(approach) or abs(approach[0] - target[0]) + abs(approach[1] - target[1]) != 1:
+                raise ValueError('Punto de descarga inválido')
         for cell in map(tuple, self.data["blockable_cells"]):
             if not self.free(cell) or cell in locations:
                 raise ValueError("El bloqueo debe ocupar un tramo inicialmente libre")
@@ -132,6 +159,8 @@ class Layout:
             grid[y][x] = "#"
         for x, y in self.racks:
             grid[y][x] = "R"
+        for x, y in self.dispatch_cells:
+            grid[y][x] = 'C'
         for name, (x, y) in self.stations.items():
             grid[y][x] = {"P1": "1", "P2": "2", "DELIVERY": "D"}.get(name, "E")
         x, y = self.base

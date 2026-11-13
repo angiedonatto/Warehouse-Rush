@@ -7,13 +7,13 @@ from warehouse_rush.policies import HeuristicPolicy
 from warehouse_rush.env import SimulationConfig
 from warehouse_rush.viewer import ViewerSession
 
-SKU = 'TRD-01-04'
+SKU = 'TMP-E01-L3'
 
 
 def test_catalog_and_seed():
-    assert len(CATALOG) == 27
+    assert len(CATALOG) == 18
     for i in range(1, 7):
-        assert all(p['level'] in {f'E{i:02d}-L{j}' for j in range(1, 4)} for p in CATALOG.values() if p['rack'] == f'E{i:02d}')
+        assert {p['level'] for p in CATALOG.values() if p['rack'] == f'E{i:02d}'} == {f'E{i:02d}-L{j}' for j in range(1, 4)}
     a, b = Inventory().generate(42), Inventory().generate(42)
     assert a['lines'] == b['lines']
     assert 1 <= len(a['lines']) <= 3
@@ -23,8 +23,8 @@ def test_catalog_and_seed():
 
 
 def test_atomic_reservation_and_concurrent_overselling():
-    inv = Inventory({SKU: 5, 'TRD-01-01': 1})
-    order = inv.reserve({SKU: 4, 'TRD-01-01': 2})
+    inv = Inventory({SKU: 5, 'TMP-E01-L1': 1})
+    order = inv.reserve({SKU: 4, 'TMP-E01-L1': 2})
     assert order['state'] == 'REJECTED' and inv.available(SKU) == 5
     with ThreadPoolExecutor(2) as pool:
         orders = list(pool.map(lambda _: inv.reserve({SKU: 4}), range(2)))
@@ -72,7 +72,7 @@ def test_navigable_orders_capacity_and_observation_contract(seed, blocked):
     policy = HeuristicPolicy()
     while True:
         assert env.observation_space.contains(obs) and obs.shape == (22,)
-        assert env.state.carga is None or next(l for l in env.lines if l['sku'] == env.state.carga)['quantity'] <= env.capacity
+        assert sum(l['quantity'] for l in env.snapshot()['cargo_lines']) <= env.capacity
         obs, _, done, truncated, info = env.step(policy.action(obs, env))
         assert env.position not in env._obstacles[blocked]
         env.inventory.check()
@@ -84,11 +84,13 @@ def test_navigable_orders_capacity_and_observation_contract(seed, blocked):
 
 
 def test_failure_with_cargo_remains_traceable():
-    env = MakeupMissionEnv(simulation=SimulationConfig(max_steps=20))
+    env = MakeupMissionEnv()
     obs, _ = env.reset(seed=3)
     policy = HeuristicPolicy()
-    while not env._done:
+    while not env.carried_lines:
         obs, _, _, _, info = env.step(policy.action(obs, env))
+    env.state.bateria = .01  # Fallo de batería después de una recogida real.
+    obs, _, _, _, info = env.step(3)
     assert info['state']['order']['state'] == 'FAILED'
     assert sum(l['pending_return'] for l in info['state']['order']['lines']) > 0
     env.inventory.check()
@@ -141,3 +143,39 @@ def test_makeup_ansi_and_reset_after_invalid_cookie():
     assert 'E' in env.render()
     payload, token = CloudAPI('test-session-key-with-32-characters').handle('POST', 'reset', {'makeup': True}, 'invalid.cookie')
     assert payload['state']['tiempo'] == 0 and token
+
+
+def test_collects_shelf_products_before_dispatch_when_capacity_allows():
+    env = MakeupMissionEnv(blocked=True)
+    obs, info = env.reset(seed=42)
+    assert sum(l['quantity'] for l in env.lines) == 3
+    policy = HeuristicPolicy()
+    seen_targets = set()
+    while not env._done:
+        if env.state.etapa == 'recoger':
+            seen_targets.add(env.state.objetivo)
+        obs, _, _, _, info = env.step(policy.action(obs, env))
+        if env.carried_lines and env.state.etapa == 'recoger':
+            assert env.state.entregas == 0
+        for line in info['state']['order']['lines']:
+            assert env.inventory.total[line['sku']] == 5 - line['picked']
+    events = info['state']['order']['events']
+    pickups = [e['time'] for e in events if e['kind'].startswith('PICK:')]
+    deliveries = [e['time'] for e in events if e['kind'].startswith('DELIVER:')]
+    assert info['success'] and info['collisions'] == 0
+    assert seen_targets == {l['rack'] for l in env.lines}
+    assert max(pickups) < min(deliveries)
+    assert len(set(deliveries)) == 1  # Un único despacho de las tres líneas.
+    assert info['state']['cargo_lines'] == []
+
+
+def test_batches_split_without_exceeding_capacity():
+    env = MakeupMissionEnv(blocked=True)
+    seed = next(s for s in range(100) if sum(l['quantity'] for l in Inventory().generate(s)['lines']) > 3)
+    obs, _ = env.reset(seed=seed)
+    policy = HeuristicPolicy()
+    while not env._done:
+        obs, _, _, _, info = env.step(policy.action(obs, env))
+        assert sum(l['quantity'] for l in info['state']['cargo_lines']) <= 3
+    assert info['success']
+    assert len({e['time'] for e in info['state']['order']['events'] if e['kind'].startswith('DELIVER:')}) > 1

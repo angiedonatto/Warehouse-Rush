@@ -1,5 +1,7 @@
 # Warehouse Rush v0.2 — visor 3D y ambiente v0.1
 
+> **Antes de modificar el proyecto:** lee [AGENTS.md](AGENTS.md). Incluye el relevo de Naomi, el alcance visual, las funcionalidades que deben conservarse y cómo actualizarse desde GitHub y comprobar producción antes de subir cambios.
+
 Demo del experimento 001: **https://warehouse-rush-experiment-001.vercel.app**
 
 Un robot recoge y entrega paquetes en una bodega 2D mediante un entorno
@@ -154,3 +156,16 @@ Las misiones conservan Gymnasium y el inventario real por sesión.
 
 Ver [entrega Naomi](docs/entrega-naomi.md) para el catálogo completo, referencias,
 ubicaciones, regeneración de assets y verificaciones.
+
+
+## Versión integrada de Naomi
+
+`dev/naomi` reúne la interfaz rosa y el catálogo visual de 27 productos con el
+mapa amplio, elevador, planificación de carga y cinta/caja de Angie. Las misiones
+mantienen sus 18 identificadores TMP y las cookies existentes. Los modelos se
+asocian visualmente sin cambiar las transacciones; el catálogo permite consultar
+los 27 assets. Ver [integración y alcance](docs/integracion-rosa.md).
+
+Esta rama desactiva sus despliegues automáticos de Vercel en `vercel.json`.
+Para verla en el Mac: actualizar `dev/naomi`, compilar con `npm run build --prefix web`
+y ejecutar `python -m warehouse_rush.cli view --no-open` desde el entorno Python.

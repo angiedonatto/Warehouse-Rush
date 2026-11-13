@@ -1,17 +1,21 @@
-"""Catálogo de productos del PDF y libro de inventario local, independiente de Three.js."""
+"""Catálogo provisional y libro de inventario local, independiente de Three.js."""
 from copy import deepcopy
 from random import Random
 from threading import RLock
 from uuid import uuid4
+from warehouse_rush.handling import LEVEL_HEIGHTS
 
-# Catálogo canónico compartido con el visor Three.js.
-import json
-from pathlib import Path
-
-PRODUCTS = json.loads((Path(__file__).parent / 'configs' / 'products.json').read_text())
-CATALOG = {product['sku']: product for product in PRODUCTS}
-CATEGORIES = [(category, list(dict.fromkeys(p['subcategory'] for p in PRODUCTS if p['category'] == category)))
-              for category in dict.fromkeys(p['category'] for p in PRODUCTS)]
+CATEGORIES = [
+    ('Maquillaje', ['Ojos', 'Rostro', 'Labios']),
+    ('Cuidado de la piel', ['Corporal', 'Cuidado facial', 'Facial hombres']),
+    ('Brochas y esponjas', ['Brochas individuales', 'Esponjas', 'Kits de brochas']),
+    ('Accesorios', ['Bolsos y cosmetiqueras', 'Espejos', 'Pestañas']),
+    ('Capilar', ['Accesorios para cabello', 'Peines', 'Mascarillas capilares']),
+    ('Disney', ['Princesas', 'Villanos', 'Toy Story']),
+]
+CATALOG = {f'TMP-E{i:02d}-L{j}': dict(sku=f'TMP-E{i:02d}-L{j}', rack=f'E{i:02d}',
+           level=f'E{i:02d}-L{j}', height_m=LEVEL_HEIGHTS[j - 1], category=category, subcategory=sub, temporary=True)
+           for i, (category, subs) in enumerate(CATEGORIES, 1) for j, sub in enumerate(subs, 1)}
 
 
 class Inventory:

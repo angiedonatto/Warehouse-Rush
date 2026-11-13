@@ -4,7 +4,13 @@ test('PDF catalogue, GLB downloads, real stock meshes and responsive viewer', as
   await request.post('/api/reset',{data:{makeup:true,seed:42,orders:1,policy:'heuristic',blocked:false}});
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.goto('/');await expect(page.locator('#scene-loading')).toBeHidden();
-  expect(await page.evaluate(()=>window.warehouseViewer.scene.productSlots.size)).toBe(27);
+  expect(await page.evaluate(()=>window.warehouseViewer.scene.stockVisuals.products.size)).toBe(18);
+  const appearances=await page.evaluate(()=>[...window.warehouseViewer.scene.stockVisuals.products.values()].map(p=>({
+    shelf:p.shelf.count,asset:p.shelf.userData.assetSku,
+    shared:p.shelf.geometry===p.cargo.geometry&&p.shelf.geometry===p.avatar.geometry&&p.shelf.geometry===p.delivered.geometry
+  })));
+  expect(appearances.filter(p=>p.asset)).toHaveLength(12);
+  expect(appearances.every(p=>p.shared)).toBe(true);
   await page.screenshot({path:'/workspace/work/naomi-warehouse.png',fullPage:true});
   await page.locator('#open-catalog').click();await expect(page.locator('.product-card')).toHaveCount(27);
   await page.locator('#catalog-category').selectOption('Disney');await expect(page.locator('.product-card')).toHaveCount(3);

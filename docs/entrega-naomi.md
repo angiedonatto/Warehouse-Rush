@@ -1,3 +1,5 @@
+> Documento histórico de la primera versión `df7c28b`. Para el estado integrado de `dev/naomi`, consultar [integración rosa](integracion-rosa.md). El catálogo operativo actual conserva 18 SKU TMP; los 27 TRD se mantienen como catálogo visual, sin migración de inventario implícita.
+
 # Entrega Naomi — catálogo y dirección visual Trendy
 
 Implementación en `dev/naomi`, sobre la base funcional de `dev/angie` (commit `860e188`).

@@ -399,4 +399,18 @@ Con 600 000 pasos pedidos el presupuesto efectivo será 606 208 (múltiplo de 8 
 | m1o-e4l-seed1 | m1o | (pendiente) | (pendiente) | en curso |
 | m1o-e4l-seed2 | m1o | (pendiente) | (pendiente) | en curso |
 | m1o-c0l-seed0 | m1o | (pendiente) | (pendiente) | en curso |
-| m1o-e5-seed0 | m1o | (pendiente) | (pendiente) | en curso |
+| m1o-e5-seed0 | m1o | 204 800 | 8.0 (5 runs en paralelo, ~530 pasos/s cada uno) | rechazado |
+
+### Resultado del experimento 3: altura −0.05 (`m1o-e5-seed0`, 2026-11-13, `suite-m1o-v1`, 50 episodios, acciones deterministas)
+Código `env/warehouse-v5`, commit `835cf68`. Manifiesto: `manifests/m1o-e5-seed0.json`. 200 000 pasos pedidos (204 800 efectivos), 8.0 min.
+
+| Run | `height_mismatch` | Éxito | Recogidas/ep | Llegan a una celda de interacción | FRENAR | Éxitos en entrenamiento | Estado |
+|---|---:|---:|---:|---:|---:|---:|---|
+| m1o-c0 (control) | 0 | 0% | 0.14 | 48/50 | 61.2% | 0 / 512 | candidato |
+| m1o-e4 | −0.02 | 0% | 0.30 | 35/50 | 7.4% | 1 / 512 | rechazado |
+| **m1o-e5** | **−0.05** | **0%** | **0.00** | **0/50** | **98.6%** | **0 / 512** | **rechazado** |
+| m1o-e3 / e2 | −0.1 | 0% | 0.00 | 0/50 | 22.2% / 0.0% | 0 / 512 | rechazado |
+
+**Decisión:** no supera al control en ≥ 5 pp (0 pp); se **rechaza** y se conserva la evidencia. **La hipótesis «−0.05 mantiene el gradiente de e4 sin crear la zona a evitar» se rechaza**: con −0.05 aparece la evitación.
+**Hechos medidos:** la política avanza ≈ 5.6 celdas desde la base (la distancia Manhattan media al primer estante baja de 10.7 a 5.1, es decir, a la mitad del camino) y se queda frenando; los 50 episodios terminan «sin llegar» y ninguno entra en una celda de interacción. Cobra la recompensa por acercarse y se detiene antes de la zona donde la altura equivocada cuesta, como se había advertido (ir y quedarse −70.6 frente a −40.8).
+**Lectura (hipótesis):** el punto de transición entre gradiente útil y zona a evitar está entre −0.02 y −0.05 en este diseño; e4 (−0.02) queda en el lado útil. Una penalización que se aplica solo dentro de la celda de interacción castiga estar donde hay que estar; un diseño distinto (p. ej. premiar el acierto de altura en lugar de castigar el error) no tiene ese efecto, pero sería otra versión.

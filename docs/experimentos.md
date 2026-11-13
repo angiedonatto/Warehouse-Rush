@@ -97,3 +97,33 @@ el criterio de ≥5 pp; **no es un modelo útil** y no se recomienda. Las refere
 **Lectura (hipótesis de diagnóstico, no causa demostrada):** el problema de v1 reaparece en v2. Con una secuencia más larga (navegar, detenerse, orientarse, SUBIR 1–3 veces, CARGAR, BAJAR varias veces, ir a despacho, DESCARGAR) una política aleatoria casi nunca llega a la primera recogida, no ve señal positiva y las penalizaciones de explorar dominan. Más posición y objetivo no cambian eso. Opciones sin tocar la recompensa: clonar el comportamiento de la heurística BFS con demostraciones versionadas (DVC) y afinar con RL; más pasos o semillas; reducir la secuencia en un nivel previo (p. ej. un producto en balda 1). Cambiar la recompensa o el arranque del episodio es una decisión de R1 y una nueva versión (`warehouse-v3`). **No se ajustó la recompensa para aparentar éxito.**
 
 **Limitaciones:** una semilla de entrenamiento; sin finalistas ni 3 semillas; sin suite de incidente (pasillo cerrado) para v2 todavía; el modelo no ve el SKU ni el nivel de la línea, solo la elevación objetivo; evaluación solo en pasillo abierto.
+
+
+## Barrido de penalización por interacción inválida (escrito antes de entrenar, 2026-11-13)
+**Contexto:** `m1-c0-seed0` (v2, 0% de éxito, FRENAR en 93% de los pasos). En la evaluación aleatoria, una interacción inválida cuesta −2 y ocurre
+199.6 veces por episodio (≈ −399 de ≈ −518).
+
+**Hipótesis (opción B, una dimensión):** bajar `invalid_interaction` hace que explorar acciones como CARGAR/SUBIR/BAJAR deje de ser mucho peor que
+quedarse quieto (≈ −41), y el agente descubre la secuencia.
+**Qué la refutaría:** que ningún run con penalización menor supere al control en ≥ 5 pp de éxito en `suite-m1-v1` (criterio de `configs/criterios.yaml`).
+**Cuentas previas (aritmética, no resultados):** con −0.2 una política aleatoria pasaría de ≈ −518 a ≈ −160 por episodio y con −0.05 a ≈ −130;
+ambas siguen por debajo de quedarse quieto (−41), de modo que no se garantiza que bajar solo esta penalización quite el colapso.
+
+| Run | `invalid_interaction` | Cambio | Config |
+|---|---:|---|---|
+| m1-c0b-seed0 | −2 (por defecto) | control en warehouse-v3 | `m1_c0b_control_v3.yaml` |
+| m1-r1-seed0 | −1 | única diferencia | `m1_r1_invalida_1.yaml` |
+| m1-r2-seed0 | −0.2 | única diferencia | `m1_r2_invalida_02.yaml` |
+| m1-r3-seed0 | −0.05 | única diferencia | `m1_r3_invalida_005.yaml` |
+
+Igual en los cuatro: PPO, hiperparámetros de C0, 200 000 pasos, semilla 0, ambiente de 3 productos aleatorios, `suite-m1-v1` (50 episodios).
+`m1-c0-seed0` (v2) queda como referencia histórica; el control v3 evita comparar entre versiones. Retornos no comparables entre runs
+con coeficientes distintos: se compara éxito, pasos, batería, choques e inválidas.
+
+### Presupuesto real por run (barrido)
+| Run | Nivel | Pasos | Minutos | Estado |
+|---|---|---|---|---|
+| m1-c0b-seed0 | m1 | (pendiente) | (pendiente) | en curso |
+| m1-r1-seed0 | m1 | (pendiente) | (pendiente) | en curso |
+| m1-r2-seed0 | m1 | (pendiente) | (pendiente) | en curso |
+| m1-r3-seed0 | m1 | (pendiente) | (pendiente) | en curso |

@@ -1,10 +1,10 @@
-# Contrato del ambiente · `warehouse-v2` (ficha 0.2.0)
+# Contrato del ambiente · `warehouse-v3` (ficha 0.3.0)
 
 Contrato congelado entre ambiente, entrenamiento, evaluación, API y web. Cualquier cambio de orden,
-unidades, rangos, acciones, dt, física o recompensa **sube la versión** (`warehouse-v3`), abre una nueva
-familia de modelos y se anota en `docs/decisiones.md`. Ficha completa: [docs/ambiente-v0.2.md](../docs/ambiente-v0.2.md).
+unidades, rangos, acciones, dt, física o recompensa **sube la versión** (`warehouse-v4`), abre una nueva
+familia de modelos y se anota en `docs/decisiones.md`. Ficha completa: [docs/ambiente-v0.2.md](../docs/ambiente-v0.2.md) (base) y [docs/ambiente-v0.3.md](../docs/ambiente-v0.3.md) (cambio de v3: recompensa por run).
 
-- Código: `envs/` (`ENV_VERSION = "warehouse-v2"`, `__version__ = "0.2.0"`). Fábrica: `envs.make_env(blocked, layout_path, orders)`.
+- Código: `envs/` (`ENV_VERSION = "warehouse-v3"`, `__version__ = "0.3.0"`). Fábrica: `envs.make_env(blocked, layout_path, orders, reward_overrides)`.
 - Clase: `envs.missions.MakeupMissionEnv` (hereda `envs.env.WarehouseRushEnv`). **v2 solo ofrece el modo maquillaje.**
 - Mapa por defecto: `configs/layout_v0.4.json` (25 × 19 celdas de 1 m).
 - Paso de decisión: 1 acción = 1 s simulado. Una sola política decide en cada paso; la animación no cambia las reglas.
@@ -54,14 +54,18 @@ No hay recorte (clip) que oculte errores: cada observación se valida con `isfin
 máscara de acciones, bloqueo del pasillo ni recompensa del paso. La heurística BFS sí conoce el estado completo
 (referencia privilegiada, no política aprendida).
 
-## Recompensa (sin cambios de coeficientes respecto de v1)
+## Recompensa (v3: coeficientes como parámetro versionado del run)
 
 `r = 10·recogida + 30·entrega + 50·misión + 0.3·(d_antes − d_después) − 0.1 − 0.02·batería − 5·choque − 2·inválida`
 
 - Hitos una sola vez por línea; recompensa de entrega una vez por acción DESCARGAR aunque descargue varias líneas.
 - La energía vertical de la bandeja se descuenta como batería y se penaliza con el mismo coeficiente (−0.02).
 - El progreso usa la distancia transitable a una celda de acceso del objetivo anterior (no se paga por cambiar de objetivo).
-- Los retornos solo se comparan dentro de la misma misión y recompensa; no son comparables con `warehouse-v1`.
+- **v3:** los coeficientes de arriba son los **valores por defecto** (los del mapa, idénticos a v1/v2). Un experimento puede cambiar
+  uno o más con el bloque `recompensa:` de su YAML (`envs.reward_config`); el bloque entra en `config_sha256`, en los metadatos del
+  entrenamiento (`reward_overrides`, `rewards`) y en el tag MLflow `recompensa`. Se rechazan claves desconocidas, premios negativos,
+  tiempo ≥ 0 y penalizaciones positivas, de modo que repetir acciones inválidas nunca sea rentable.
+- Los retornos solo se comparan entre runs con **los mismos coeficientes**; entre recompensas distintas se compara la tasa de éxito. No son comparables con `warehouse-v1`.
 
 ## Episodio
 
@@ -76,6 +80,6 @@ En `m1` son 3 productos de 1 unidad, sorteados en cada episodio, y el stock se r
 
 ## Compatibilidad
 
-`warehouse-v1` (Box(22), Discrete(5)) **no es compatible**: sus checkpoints (`experiment-001`, `n1-c*`) siguen siendo
-historia y no se cargan con v2. Un modelo v2 declara `environment_version = warehouse-v2` en su manifiesto.
-Etiqueta de código del ambiente: `env/warehouse-v2`.
+Los modelos `warehouse-v2` comparten observación y acciones con v3 y se cargan, pero se entrenaron con la recompensa por defecto. `warehouse-v1` (Box(22), Discrete(5)) **no es compatible**: sus checkpoints (`experiment-001`, `n1-c*`) siguen siendo
+historia y no se cargan con v2. Un modelo declara su `environment_version` y su recompensa efectiva en el manifiesto.
+Etiquetas de código del ambiente: `env/warehouse-v2`, `env/warehouse-v3`.

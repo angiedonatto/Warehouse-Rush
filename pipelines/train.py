@@ -40,7 +40,8 @@ DEFAULT_DQN = dict(learning_rate=5e-4, buffer_size=100_000, learning_starts=5_00
 
 def train_ppo(*, timesteps=20_000, seed=42, orders=1, blocked=False, layout_path=None,
               n_steps=None, batch_size=None, run_name=None, ppo=None, n_envs=1,
-              eval_every=5_000, eval_episodes=5, parent_model=None, algo="ppo") -> dict:
+              eval_every=5_000, eval_episodes=5, parent_model=None, algo="ppo",
+              reward_overrides=None) -> dict:
     """Entrena PPO (referencia del plan) o DQN con el mismo ambiente, recompensa y trazabilidad."""
     import torch
     from stable_baselines3 import DQN, PPO
@@ -71,8 +72,8 @@ def train_ppo(*, timesteps=20_000, seed=42, orders=1, blocked=False, layout_path
     model_dir = Path("models") / name
     run_dir.mkdir(parents=True, exist_ok=False)
     model_dir.mkdir(parents=True, exist_ok=False)
-    env = make_env(blocked, layout_path, orders)  # referencia para metadatos
-    eval_env = Monitor(make_env(blocked, layout_path, orders))
+    env = make_env(blocked, layout_path, orders, reward_overrides)  # referencia para metadatos
+    eval_env = Monitor(make_env(blocked, layout_path, orders, reward_overrides))
     eval_env.reset(seed=20_000)
     net_arch = params.pop("net_arch")
     arch = {"pi": list(net_arch), "vf": list(net_arch)} if algo == "ppo" else list(net_arch)
@@ -86,6 +87,7 @@ def train_ppo(*, timesteps=20_000, seed=42, orders=1, blocked=False, layout_path
         "hyperparameters": hyperparameters, "n_envs": n_envs, "parent_model": str(parent_model) if parent_model else None, "device": "cpu", "torch_threads": 1,
         "scenario": env.layout.data, "layout_sha256": env.layout.digest,
         "simulation": asdict(env.config), "rewards": asdict(env.reward_config),
+        "reward_overrides": dict(reward_overrides or {}),
         "python": platform.python_version(), "platform": platform.platform(),
         "versions": {p: version(p) for p in ("numpy", "gymnasium", "torch", "stable-baselines3", "matplotlib")},
         "git_revision": revision.stdout.strip(), "git_dirty": bool(dirty.stdout.strip()),
@@ -95,7 +97,7 @@ def train_ppo(*, timesteps=20_000, seed=42, orders=1, blocked=False, layout_path
     write_json(run_dir / "metadata.json", metadata)
     from stable_baselines3.common.vec_env import DummyVecEnv, VecMonitor
 
-    vec_env = DummyVecEnv([lambda: make_env(blocked, layout_path, orders) for _ in range(n_envs)])
+    vec_env = DummyVecEnv([lambda: make_env(blocked, layout_path, orders, reward_overrides) for _ in range(n_envs)])
     monitor = VecMonitor(vec_env, str(run_dir / "episodes"),
                          info_keywords=("success", "deliveries", "collisions", "end_reason"))
     started = time.perf_counter()
@@ -216,6 +218,9 @@ def load_config(path) -> dict:
     if config["environment_version"] != ENV_VERSION:
         raise ValueError(f"El config pide {config['environment_version']} pero el ambiente es {ENV_VERSION}: "
                          "otra versión implica otra familia de modelos")
+    from envs import reward_config
+
+    reward_config(config.get("recompensa"))  # valida claves y signos antes de entrenar
     levels = yaml.safe_load(Path("configs/niveles.yaml").read_text())
     if config["nivel"] not in levels:
         raise ValueError(f"nivel desconocido: {config['nivel']}")
@@ -253,12 +258,14 @@ def train_from_config(path, *, tipo="candidato", timesteps=None) -> dict:
     tags = {"nivel": config["nivel"], "hipotesis": config["hipotesis"].strip(), "tipo": tipo,
             "estado": "candidato", "algoritmo": algo, "environment_version": ENV_VERSION, "config_sha256": config_hash,
             "parent_run_id": parent or "none", "config_id": config["id"], "seed": config["seed"],
-            "suite_final": evaluation.get("final", ""), "runtime_ref": f"env/{ENV_VERSION}"}
+            "suite_final": evaluation.get("final", ""), "runtime_ref": f"env/{ENV_VERSION}",
+            "recompensa": json.dumps(config.get("recompensa") or {}, sort_keys=True)}
     with mlflow_run(experiment=f"warehouse-{config['nivel']}", run_name=name,
                     config={**config, "presupuesto_efectivo": budget}, tags=tags):
         meta = train_ppo(timesteps=budget, seed=config["seed"], orders=level["orders"],
                          blocked=level["blocked"], run_name=name, ppo=ppo, n_envs=n_envs,
-                         eval_every=evaluation.get("cada_pasos", 5_000), parent_model=parent_model, algo=algo)
+                         eval_every=evaluation.get("cada_pasos", 5_000), parent_model=parent_model, algo=algo,
+                         reward_overrides=config.get("recompensa"))
         model_path = Path(meta["model_path"])
         mlflow.log_artifact(str(model_path), artifact_path="modelo")
         mlflow.set_tags({"model_sha256": sha256_file(model_path), "pasos_reales": meta["effective_timesteps"]})

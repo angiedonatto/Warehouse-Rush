@@ -21,7 +21,7 @@ EPISODE_FIELDS = ["policy", "scenario", "orders", "seed", "success", "end_reason
 
 def evaluate(*, policies=("random", "heuristic", "ppo"), orders=1, episodes=20,
              seed_start=10_000, scenarios=(False, True), model_path=None,
-             layout_path=None, output_dir="docs/resultados") -> dict:
+             layout_path=None, output_dir="docs/resultados", reward_overrides=None) -> dict:
     if episodes < 1 or seed_start < 0 or seed_start <= 42 < seed_start + episodes:
         raise ValueError("episodes > 0 y semillas no negativas distintas de entrenamiento (42)")
     if not policies or len(set(policies)) != len(policies):
@@ -30,13 +30,14 @@ def evaluate(*, policies=("random", "heuristic", "ppo"), orders=1, episodes=20,
     output.mkdir(parents=True, exist_ok=True)
     model_path = Path(model_path) if model_path else default_model(orders)
     rows, summaries, errors = [], [], []
-    probe = make_env(layout_path=layout_path, orders=orders)
+    probe = make_env(layout_path=layout_path, orders=orders, reward_overrides=reward_overrides)
     configuration = {"environment_version": __version__, "orders": orders,
                      "episodes_per_combination": episodes,
                      "seeds": list(range(seed_start, seed_start + episodes)),
                      "layout_sha256": probe.layout.digest, "scenario": probe.layout.data,
                      "simulation": asdict(probe.config), "rewards": asdict(probe.reward_config),
-                     "ppo_deterministic": True, "reward_std_ddof": 0}
+                     "ppo_deterministic": True, "reward_std_ddof": 0,
+                     "reward_overrides": dict(reward_overrides or {})}
     probe.close()
     training = None
     if any(p in policies for p in ("ppo", "dqn")) and model_path.is_file():
@@ -59,7 +60,7 @@ def evaluate(*, policies=("random", "heuristic", "ppo"), orders=1, episodes=20,
                 raise ValueError("El mapa de evaluación difiere del mapa de entrenamiento")
     for blocked in scenarios:
         for policy_name in policies:
-            env = make_env(blocked, layout_path, orders)
+            env = make_env(blocked, layout_path, orders, reward_overrides)
             combination = []
             try:
                 policy = make_policy(policy_name, seed_start, model_path)

@@ -354,3 +354,49 @@ Código: commit `2b80031` (tag `env/warehouse-v5`). `git_dirty` figura `true` en
 **Lectura (hipótesis, no causa demostrada):** el término de altura débil (−0.02) funciona como gradiente sin crear una zona prohibida; el fuerte (−0.1) la crea. La diferencia Manhattan sola no basta (e1). Falta señal directa para los pasos intermedios (subir exactamente hasta la altura, cargar, bajar). Candidatos: (a) el mismo e4 con más pasos y 3 semillas (e4 es el único con un éxito en entrenamiento; con una semilla no se sabe cuánto varía), (b) bonos únicos por línea al alcanzar la altura correcta y al bajar tras cargar, (c) una penalización de altura intermedia (−0.05) para ver el punto entre −0.02 y −0.1.
 
 **Limitaciones:** una semilla por configuración; presupuesto de 200 000 pasos; el control se entrenó bajo el código v4 con recompensa idéntica; evaluación en mapa abierto; el éxito en entrenamiento de e4 es un único episodio.
+
+
+## e4 con más pasos y 3 semillas, y penalización de altura intermedia (escrito antes de entrenar, 2026-11-13)
+**Contexto:** en el barrido v5 todos los runs dieron 0% de éxito, pero `m1o-e4` (diferencia Manhattan 0.3, altura −0.02) fue el más avanzado: recogió en 12/50 episodios, bajó la bandeja en 6/50 y tuvo 1/512 episodios de entrenamiento con 3 entregas.
+Instrucción del equipo: (1) repetir e4 con más pasos y 3 semillas; (3) probar una penalización de altura intermedia (−0.05). Código `env/warehouse-v5` sin cambios.
+
+### Experimento 1: e4 con 3 veces los pasos y 3 semillas
+- **Hipótesis:** con 600 000 pasos la política de e4 completa la cadena (subir hasta la altura, cargar, bajar, entregar) y supera al control del **mismo presupuesto**.
+- **Control del mismo presupuesto:** `m1o-c0l` (recompensa base `invalid` −0.2 y `collision` −1, sin términos v4/v5), 600 000 pasos, semilla 0. Sin él no se distingue el efecto de los pasos extra del de la recompensa. Solo una semilla de control.
+- **Criterio (fijado ahora, antes de ver resultados):** adoptar si el éxito **medio de las 3 semillas** de `m1o-e4l` en `suite-m1o-v1` supera al de `m1o-c0l` en ≥ 5 pp; si no, rechazar. Se reportan la media, la desviación y cada semilla.
+- **Qué la refutaría:** media de éxito de las 3 semillas < control + 5 pp.
+- **Métricas secundarias descriptivas (no deciden):** recogidas por episodio, entregas por episodio, episodios con la bandeja bajada tras cargar, inválidas por episodio, episodios de entrenamiento con éxito.
+
+### Experimento 3: altura −0.05 con 200 000 pasos
+- **Hipótesis:** −0.05 mantiene el gradiente de e4 (−0.02) sin crear la zona a evitar de e2/e3 (−0.1) y supera al control `m1o-c0` (200 000 pasos).
+- **Medición previa (conductas guionizadas, 10 semillas, mapa abierto; no son resultados del modelo):**
+
+| `height_mismatch` | quieto en la base | ir al estante y quedarse | subir a la altura y quedarse | recoger el 1.º y quedarse | completar el pedido |
+|---:|---:|---:|---:|---:|---:|
+| −0.02 (e4) | −40.8 | −49.5 | −35.6 | −26.3 | +127.6 |
+| −0.05 (e5) | −40.8 | −70.6 | −35.8 | −27.7 | +127.0 |
+| −0.10 (e2/e3) | −40.8 | −105.8 | −36.1 | −30.0 | +126.0 |
+
+  Con −0.05 ir al estante y quedarse sigue costando ≈ 30 más que quedarse en la base (con −0.02: ≈ 9; con −0.1: ≈ 65), de modo que **queda un riesgo moderado de evitación**.
+- **Criterio:** éxito en `suite-m1o-v1` ≥ 5 pp por encima de `m1o-c0`; si no, rechazar.
+- **Métricas secundarias descriptivas:** episodios que llegan a una celda de interacción (e2/e3: 0/50; e4: 35/50), recogidas por episodio (e4: 0.30), uso de SUBIR/CARGAR/BAJAR.
+
+| Run | Pasos pedidos | Semilla | `manhattan_progress` | `height_mismatch` | Config |
+|---|---:|---:|---:|---:|---|
+| m1o-e4l-seed0 | 600 000 | 0 | 0.3 | −0.02 | `m1o_e4l_seed0.yaml` |
+| m1o-e4l-seed1 | 600 000 | 1 | 0.3 | −0.02 | `m1o_e4l_seed1.yaml` |
+| m1o-e4l-seed2 | 600 000 | 2 | 0.3 | −0.02 | `m1o_e4l_seed2.yaml` |
+| m1o-c0l-seed0 (control 600k) | 600 000 | 0 | 0 | 0 | `m1o_c0l_control_600k.yaml` |
+| m1o-e5-seed0 | 200 000 | 0 | 0.3 | −0.05 | `m1o_e5_altura_005.yaml` |
+
+Igual en todos: PPO, hiperparámetros de C0, `invalid_interaction` −0.2, `collision` −1, 3 productos aleatorios, mapa `layout_v0.5`, `suite-m1o-v1` (50 episodios), código `env/warehouse-v5`.
+Con 600 000 pasos pedidos el presupuesto efectivo será 606 208 (múltiplo de 8 192).
+
+### Presupuesto real por run (e4l, c0l, e5)
+| Run | Nivel | Pasos | Minutos | Estado |
+|---|---|---|---|---|
+| m1o-e4l-seed0 | m1o | (pendiente) | (pendiente) | en curso |
+| m1o-e4l-seed1 | m1o | (pendiente) | (pendiente) | en curso |
+| m1o-e4l-seed2 | m1o | (pendiente) | (pendiente) | en curso |
+| m1o-c0l-seed0 | m1o | (pendiente) | (pendiente) | en curso |
+| m1o-e5-seed0 | m1o | (pendiente) | (pendiente) | en curso |

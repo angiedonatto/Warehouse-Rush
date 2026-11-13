@@ -275,3 +275,18 @@ def test_v5_experiment_configs_change_only_the_new_terms():
         rec = cfg["recompensa"]
         assert rec["invalid_interaction"] == -0.2 and rec["collision"] == -1.0 and "distance" not in rec
         assert (rec["manhattan_progress"], rec["height_mismatch"]) == expect
+
+
+def test_e4_long_seeds_control_and_e5_configs():
+    e4 = raw("m1o_e4_ambos_002")
+    for s in (0, 1, 2):
+        cfg = load_config(f"configs/experiments/m1o_e4l_seed{s}.yaml")
+        assert cfg["seed"] == s and cfg["presupuesto_pasos"] == 600000 and cfg["id"] == "e4l"
+        assert cfg["recompensa"] == e4["recompensa"] and cfg["ppo"] == e4["ppo"] and cfg["layout"] == OPEN
+    ctrl = load_config("configs/experiments/m1o_c0l_control_600k.yaml")
+    assert ctrl["presupuesto_pasos"] == 600000 and ctrl["seed"] == 0
+    assert ctrl["recompensa"] == {"invalid_interaction": -0.2, "collision": -1.0}
+    e5 = load_config("configs/experiments/m1o_e5_altura_005.yaml")
+    assert e5["presupuesto_pasos"] == 200000 and e5["seed"] == 0
+    assert e5["recompensa"] == {**e4["recompensa"], "height_mismatch": -0.05}
+    assert e5["ppo"] == e4["ppo"] and e5["layout"] == OPEN

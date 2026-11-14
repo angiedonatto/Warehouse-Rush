@@ -62,6 +62,14 @@ Findings: a height penalty applied only on the interaction cell punishes standin
 | `m1o-f3-seed0` (ablation) | -0.1 | 1.0 | 0 | 0% | 2.38 | 0 | rejected |
 Findings: (1) e4l-seed0's successful episodes already take 71.8 steps (heuristic 71.3); the long mean (95) came from 4 failures (3 time_limit at 400 steps). (2) The bonus does what it targets (f1-seed0 and f3 raise, load and lower the tray in 50/50) but the policy then spins instead of driving to the dispatch (0 deliveries in about 7 600 training episodes of f1/f3). The bottleneck moved to the leg with cargo to the dispatch. (3) time -0.2 alone did not shorten successes (73.6 steps) and cut success 92% -> 44% (seed 0). (4) f1 seeds 1 and 2 reproduce the e4l-seed1/2 failures. Scripted returns before training showed no new perverse incentive at -0.2, so the loss is not an avoidance trap of that kind. Do not raise `time` further; next idea: a milestone for progress with cargo toward the dispatch, and more e4l seeds first.
 
+## warehouse-v7: `carry_milestone` 5.0 (600k steps, 3 seeds; control e4l; lower_bonus removed, time back to -0.1)
+| Run | Seed | Success | Pickups/ep | Deliveries/ep | Training successes | Status |
+|---|---:|---:|---:|---:|---:|---|
+| `m1o-g1-seed0` | 0 | 94% | 2.94 | 2.82 | 2 184 / 3 120 | rejected (mean criterion) |
+| `m1o-g1-seed1` | 1 | 0% | 0.00 | 0 | 0 / 1 512 | rejected |
+| `m1o-g1-seed2` | 2 | 0% | 2.44 | 0 | 268 / 1 673 | rejected |
+Mean 31.3% vs e4l 30.7% (+0.7 pp < 5 pp): hypothesis rejected. Findings: seed 1 is bit-identical to e4l-seed1 (never loads, so a milestone after the last pickup is never paid: it cannot help seeds that never load). seed 2 went from 2 to 268 training successes but still spins with cargo under the deterministic policy (turns about 0.24 each vs AVANZAR about 0.01 after loading): the stochastic policy completes the leg, the argmax one does not. seed 0 successes take 72.4 steps (e4l 71.8). Next: more seeds for e4l/g1, evaluate g1-seed2 with a stochastic policy, a signal before the pickup (for seeds like 1).
+
 ## Lessons (use these when designing the next experiment)
 1. The bottleneck is a **missing positive signal before the first delivery**, not exploration cost or algorithm (PPO, DQN, entropy sweep 0-0.1 and penalty sweeps all failed alike).
 2. Shaping must keep **pick-up the best move**: a per-step state penalty that jumps when the target changes inverts the incentive. Use differences measured against the same target.

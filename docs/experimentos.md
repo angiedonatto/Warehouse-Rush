@@ -585,4 +585,33 @@ El control es e4l: con el hito en 0 v7 reproduce el retorno de v5 (prueba `test_
 ### Presupuesto real por run (g1)
 | Run | Nivel | Pasos | Minutos | Estado |
 |---|---|---|---|---|
-| m1o-g1-seed0/1/2 | m1o | (pendiente) | (pendiente) | (pendiente) |
+| m1o-g1-seed0 | m1o | 606 208 | 30.8 (3 runs en paralelo, nada más corriendo) | rechazado |
+| m1o-g1-seed1 | m1o | 606 208 | 28.0 | rechazado |
+| m1o-g1-seed2 | m1o | 606 208 | 30.4 | rechazado |
+
+
+### Resultados de `g1` (2026-11-13, `suite-m1o-v1`: 50 episodios, semillas 10000–10049, acciones deterministas, mapa abierto)
+Código: commit `c152c42` (tag `env/warehouse-v7`). Manifiestos `manifests/m1o-g1-seed*.json`; evidencia en `docs/resultados/eval/m1o-g1-seed*/`. Choques: 0 en todos.
+
+| Run | `carry_milestone` | Éxito | Recogidas/ep | Entregas/ep | Inválidas/ep | Pasos de los éxitos | Éxitos en entrenamiento | Estado |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| m1o-e4l-seed0 (control) | 0 | 92% | 2.92 | 2.76 | 3.8 | 71.8 | 2 395 / 3 278 | candidato |
+| m1o-g1-seed0 | 5.0 | **94%** | 2.94 | 2.82 | 0.8 | 72.4 | 2 184 / 3 120 | **rechazado** (criterio) |
+| m1o-e4l-seed1 (control) | 0 | 0% | 0.00 | 0 | 258.3 | – | 0 / 1 512 | candidato |
+| m1o-g1-seed1 | 5.0 | 0% | 0.00 | 0 | 258.3 | – | 0 / 1 512 | **rechazado** |
+| m1o-e4l-seed2 (control) | 0 | 0% | 2.42 | 0 | 20.1 | – | 2 / 1 515 | candidato |
+| m1o-g1-seed2 | 5.0 | 0% | 2.44 | 0 | 104.0 | – | 268 / 1 673 | **rechazado** |
+
+**Decisión:** el éxito medio de `g1` es **31.3%** (94 / 0 / 0) frente a **30.7%** de e4l (92 / 0 / 0): **+0.7 pp**, por debajo de los 5 pp exigidos; los choques no suben (0 en ambos). La hipótesis «un hito en el tramo con carga hace que más semillas entreguen» se **rechaza** con el criterio fijado antes, que no se cambió. Los tres g1 quedan `rechazado` y se conservan con su evidencia.
+
+**Diagnóstico** (`trace_policy.py`, repetición determinista de las 50 semillas):
+- **seed 0:** 47/50 éxitos, 72.4 pasos de media (máximo 83), igual que e4l-seed0; los 3 fallos tienen la bandeja arriba con carga. El +2 pp (47 frente a 46 éxitos) no es distinguible de la variación entre episodios con 50 semillas de evaluación; menos inválidas por episodio (0.8 frente a 3.8).
+- **seed 1: resultado idéntico bit a bit al de e4l-seed1** (retorno −88.8, 258.3 inválidas, 0/50 miran al estante). El agente nunca llega a cargar, así que el hito, que solo existe tras la última recogida, nunca se paga y la trayectoria de entrenamiento es la misma (el entrenamiento es determinista). Este tipo de semilla no puede mejorar con ningún término que actúe tras cargar.
+- **seed 2:** carga en 50/50 y baja la bandeja, pero con la carga **gira en el sitio** (GIRAR_IZQUIERDA 1 819, GIRAR_DERECHA 1 197 pasos) y no entrega en evaluación determinista. En entrenamiento (política estocástica) **268/1 673 episodios sí tuvieron éxito** (e4l-seed2: 2/1 515): el hito sí cambió algo, pero la política determinista aprendida no completa el tramo. Es el mismo patrón que f1/f3 (bajan la bandeja y giran).
+- Los fallos de seed 0 y los de seed 2 son de tipo distinto: en seed 0 la bandeja queda arriba (no se baja), en seed 2 queda abajo y no se avanza.
+
+**Lectura (hipótesis, no causa demostrada):** (a) el hito mueve algo en la semilla que ya cargaba (seed 2: de 2 a 268 éxitos de entrenamiento) pero no basta para que la política **determinista** avance; la acción más probable tras cargar sigue siendo girar (probabilidad media ≈ 0.24 por giro frente a ≈ 0.01 de AVANZAR), de modo que evaluar con la acción más probable esconde que una política estocástica sí completa el tramo; (b) la varianza entre semillas es mayor que cualquier efecto de recompensa probado hasta ahora (92/0/0 en e4l, 94/0/0 en g1): para atribuir un efecto hacen falta más semillas; (c) el límite declarado se cumple: el hito solo actúa tras la última recogida y no puede ayudar a una semilla que nunca llega a cargar (seed 1).
+
+**Limitaciones:** una configuración, tres semillas; presupuesto de 606 208 pasos; el control (e4l) se entrenó con código v5 con recompensa idéntica (verificado por prueba y, en seed 1, por el resultado idéntico); evaluación solo determinista.
+
+**Siguiente (no iniciado):** (1) replicar e4l y g1 en más semillas (3–7) para estimar la tasa real de semillas que funcionan; (2) evaluar g1-seed2 con política estocástica en la suite para ver si el éxito de entrenamiento (268/1 673) se reproduce; (3) para semillas como la 1 (nunca cargan) hace falta señal antes de la recogida, por ejemplo un hito al llegar a una celda de interacción del primer estante.

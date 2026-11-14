@@ -843,4 +843,19 @@ Código `env/warehouse-v8` (nuevo término `face_bonus`, por defecto 0; ver `doc
 - **Limitaciones declaradas:** una semilla por ajuste (la variación entre semillas fue enorme: 0/0/80% en e4x), sin control de ablación; no se sabe cuánto de un resultado positivo es del ajuste y cuánto de la semilla. Una diferencia en la conducta (llega al estante, carga, entrega) es evidencia descriptiva.
 - **Métricas secundarias descriptivas:** episodios que llegan a la celda de interacción / miran al estante / suben la bandeja / cargan (`trace_policy.py`), recogidas y entregas por episodio, inválidas, choques, episodios de entrenamiento con éxito.
 
-Presupuesto efectivo 606 208 pasos por run. Presupuesto real: (pendiente).
+Presupuesto efectivo 606 208 pasos por run.
+
+### Presupuesto real y resultados (j1–j3, `suite-m1-v1`, determinista, semillas 10000–10049; heurística 100%)
+| Run | Minutos | Éxito | Llegan a celda / miran al estante / suben bandeja / cargan (de 50) | Inválidas/ep | Choques/ep | Estado |
+|---|---:|---:|---|---:|---:|---|
+| m1-e4l-seed0 (base) | 34.3 | 0% | 21 / 0 / 0 / 0 | 63.0 | 0.0 | rechazado |
+| m1-j1-seed0 (`face_bonus` 10) | 28.7 | 0% | 40 / **40** / 0 / 0 | 0.0 | **2.56** | rechazado |
+| m1-j2-seed0 (`carry_milestone` 5) | 28.1 | 0% | 21 / 0 / 0 / 0 | 63.0 | 0.0 | rechazado |
+| m1-j3-seed0 (`ent_coef` 0.01) | 28.4 | 0% | 22 / 0 / 0 / 0 | 8.0 | 0.0 | rechazado |
+Entrenamiento con éxito: 0 en los tres (0 / ≈1 512 episodios).
+- **Decisión por el criterio fijado antes:** los tres con 0% < 5% → `rechazado` (evidencia conservada). Con una sola semilla no descartan la idea.
+- **j1 (`face_bonus`):** el único que cambia la conducta como se predijo: 40/50 episodios llegan a la celda y miran al estante (base: 0/50). Pero ninguno sube la bandeja ni carga: se queda quieto mirando, que es lo que anticipaba la medición guionizada (ir, mirar y quedarse −37.8 > quieto −40.8, < recoger el 1.º y quedarse −26.3) y además sube los choques a 2.56/ep (condición de choques también incumplida). El cuello de botella pasa al siguiente paso: subir la bandeja con la penalización `height_mismatch` −0.02 acumulándose por paso mientras está mirando con la bandeja a otra altura.
+- **j2 (`carry_milestone`):** **pesos idénticos a los de `m1-e4l-seed0`** (verificado tensor a tensor): como la política nunca carga, el hito no se cobra jamás y el entrenamiento sigue la misma trayectoria (mismo fenómeno que g1-seed1 en el mapa abierto). La prueba no era informativa para una semilla que no carga; el hito solo puede ayudar a semillas que ya cargan (seed2 de e4l/c0l/e4x).
+- **j3 (`ent_coef` 0.01):** sin cambio útil (22/50 llegan a una celda, 0 miran, 8 inválidas/ep): la entropía por sí sola no descubre el primer paso.
+- **Limitaciones:** una semilla por ajuste y semilla 0 elegida por ser la más difícil; j2 no probó el hito donde sí cargan; j1 no se probó con una recompensa para subir la bandeja.
+- **Código:** `env/warehouse-v8` (suite 175/176 en la primera pasada; el fallo, un test que fijaba v7, se corrigió y pasa; reporte `docs/resultados/pytest-warehouse-v8.xml` conserva el fallo original).

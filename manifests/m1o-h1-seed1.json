@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "run_id": "m1o-h1-seed1",
+  "level_id": "m1o",
+  "environment_version": "warehouse-v7",
+  "git_commit": "d1d91c9a8df86e4ab3d100257a8f34af72f67a0b",
+  "config_sha256": "c81c42e56cc15313588d17e1ee96d02c21e1e8e96435dc747e22dd98bc839aea",
+  "model_uri": "models/m1o-h1-seed1/model.zip",
+  "model_sha256": "8d642b4edf97146781a9a881097acb4fb61cf80fa0326eaf0889c67162be1906",
+  "normalization_uri": null,
+  "runtime_ref": "env/warehouse-v7",
+  "evaluation_suite_id": "suite-m1o-v1",
+  "seed": 1,
+  "parent_run_id": "m1o-h0-seed1",
+  "estado": "rechazado",
+  "created_at": "2026-11-14T05:09:09.697162+00:00",
+  "author": "lis",
+  "algorithm": "PPO desde clonación de comportamiento",
+  "policy": "MlpPolicy",
+  "budget_steps": 606208,
+  "budget_minutes": 34.4,
+  "mlflow_run_id": "8af3405fbdb948e79ba21102cbba810f",
+  "mlflow_experiment": "warehouse-m1o",
+  "config_uri": "configs/experiments/m1o_h1_bcppo_seed1.yaml",
+  "obs_spec": "envs/CONTRATO.md@env/warehouse-v7 (Box(27), todo en [0,1], sin VecNormalize)",
+  "action_spec": "envs/CONTRATO.md@env/warehouse-v7 (Discrete(8): AVANZAR, GIRAR_I, GIRAR_D, FRENAR, CARGAR, DESCARGAR, SUBIR, BAJAR)",
+  "rules_ref": "docs/ambiente-v0.7.md",
+  "reward": {
+    "pickup": 10.0,
+    "delivery": 30.0,
+    "completion": 50.0,
+    "progress": 0.3,
+    "time": -0.1,
+    "battery": -0.02,
+    "collision": -1.0,
+    "invalid_interaction": -0.2,
+    "distance": 0.0,
+    "manhattan_progress": 0.3,
+    "height_mismatch": -0.02,
+    "carry_milestone": 0.0
+  },
+  "reward_overrides": {
+    "invalid_interaction": -0.2,
+    "collision": -1.0,
+    "manhattan_progress": 0.3,
+    "height_mismatch": -0.02
+  },
+  "layout_path": "configs/layout_v0.5.json",
+  "layout_sha256": "0bd1788a5daf4cd0857d62ef86ed48a4b2145ea6f2e050aa37eb901845e4bbca",
+  "results_uri": "docs/resultados/eval/m1o-h1-seed1/evaluation.json",
+  "training_metadata_uri": "docs/resultados/training/m1o-h1-seed1/metadata.json",
+  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "git_dirty_note": "git_dirty puede figurar true por carpetas de salida sin versionar de runs hermanos; ningún archivo versionado cambió respecto del commit indicado",
+  "evaluation": {
+    "suite": "suite-m1o-v1",
+    "episodes": 50,
+    "seeds": "10000-10049",
+    "scenario": "mapa abierto layout_v0.5",
+    "deterministic": true,
+    "policies": {
+      "heuristic": {
+        "success_rate": 1.0,
+        "mean_total_reward": 127.29630080000004,
+        "mean_steps": 71.32,
+        "mean_battery_used": 44.464960000000225,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 3.0,
+        "mean_pickups": 3.0,
+        "end_reasons": {
+          "success": 50
+        },
+        "action_counts": {
+          "0": 2182,
+          "1": 191,
+          "2": 257,
+          "3": 186,
+          "4": 150,
+          "5": 50,
+          "6": 275,
+          "7": 275
+        }
+      },
+      "ppo": {
+        "success_rate": 0.92,
+        "mean_total_reward": 110.76492640000004,
+        "mean_steps": 133.78,
+        "mean_battery_used": 55.99367999999981,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 2.8,
+        "mean_pickups": 2.92,
+        "end_reasons": {
+          "insufficient_budget": 1,
+          "success": 46,
+          "time_limit": 3
+        },
+        "action_counts": {
+          "0": 2119,
+          "1": 1988,
+          "2": 1684,
+          "3": 180,
+          "4": 146,
+          "5": 47,
+          "6": 264,
+          "7": 261
+        }
+      }
+    }
+  },
+  "decision": "rechazado",
+  "decision_reason": "92% de éxito (e4l-seed1: 0%; h0-seed1: 100%), 0 choques. Rechazado por el criterio del grupo (choques medios 2.25/ep por la semilla 0). Éxitos más lentos (110.7 pasos de media, máximo 395) que h0 (71)."
+}

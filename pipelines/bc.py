@@ -11,6 +11,7 @@ El modelo resultante se evalúa solo (política BC) o se usa como `parent_run_id
 Las semillas de demostración (40000+) y de validación (50000+) no coinciden con la suite (10000-10049), dev (1000-1009),
 la evaluación periódica (20000) ni el diagnóstico estocástico (20000-20049).
 """
+from dataclasses import asdict
 from datetime import datetime, timezone
 from hashlib import sha256
 import json
@@ -174,10 +175,12 @@ def run_bc(config_path, *, workers=8) -> dict:
         model.save(final_path)
         env.close()
         revision = git_info()
+        probe = make_env(layout_path=layout_path, orders=level["orders"], reward_overrides=reward_overrides)
         metadata = {"status": "completed", "algorithm": "PPO (clonación de comportamiento)", "policy": "MlpPolicy",
                     "environment_version": ENV_VERSION, "seed": config["seed"], "orders": level["orders"],
                     "blocked": level["blocked"], "requested_timesteps": 0, "effective_timesteps": 0,
-                    "layout_path": str(layout_path) if layout_path else None,
+                    "layout_path": str(layout_path) if layout_path else None, "layout_sha256": probe.layout.digest,
+                    "simulation": asdict(probe.config), "rewards": asdict(probe.reward_config),
                     "reward_overrides": dict(reward_overrides or {}), "hyperparameters": hyper, "n_envs": n_envs,
                     "parent_model": None, "model_path": str(final_path),
                     "bc": {**bc, "demo_seed_start": DEMO_SEED_START, "val_seed_start": VAL_SEED_START,

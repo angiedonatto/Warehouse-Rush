@@ -704,4 +704,42 @@ Es la única repetición permitida; los intentos se anotan abajo.
 ### Presupuesto real por run (h0 / h1)
 | Run | Nivel | Pasos de PPO | Minutos | Estado |
 |---|---|---|---|---|
-| m1o-h0-seed0/1/2, m1o-h1-seed0/1/2 | m1o | (pendiente) | (pendiente) | (pendiente) |
+| m1o-h0-seed0 | m1o | 0 (≈ 84 000 pasos de demostración) | 10.2 (generación de demostraciones y ajuste) | candidato (referencia) |
+| m1o-h0-seed1 | m1o | 0 | 9.9 | candidato (referencia) |
+| m1o-h0-seed2 | m1o | 0 | 9.9 | candidato (referencia) |
+| m1o-h1-seed0 | m1o | 606 208 | 34.9 (3 runs en paralelo) | rechazado (criterio: choques) |
+| m1o-h1-seed1 | m1o | 606 208 | 34.4 | rechazado (criterio: choques) |
+| m1o-h1-seed2 | m1o | 606 208 | 34.9 | rechazado (criterio: choques) |
+
+
+### Resultados de h0 / h1 (2026-11-14, `suite-m1o-v1`: 50 episodios, semillas 10000–10049, acciones deterministas, mapa abierto)
+Código: commit `d1d91c9` (+ parche del metadato de h0, ver límites). Los parámetros de BC no se ajustaron: la precisión de validación en estados limpios fue 100% en las tres semillas (regla: ajustar solo si < 90%). Manifiestos `manifests/m1o-h{0,1}-seed*.json`; evidencia en `docs/resultados/eval/m1o-h*/`.
+
+| Run | Éxito | Pasos de los éxitos | Entregas/ep | Choques/ep | Inválidas/ep | Fin de episodio | Estado |
+|---|---:|---:|---:|---:|---:|---|---|
+| m1o-e4l-seed0 / 1 / 2 (control) | 92 / 0 / 0% (media 30.7%) | 71.8 / – / – | 2.76 / 0 / 0 | 0 / 0 / 0 | 3.8 / 258 / 20 | – | candidato |
+| m1o-h0-seed0 / 1 / 2 (solo imitación) | 100 / 100 / 100% | 71.3 | 3.00 | 0 / 0 / 0 | 0 | 50 éxito | candidato (referencia) |
+| m1o-h1-seed0 (PPO desde h0) | 88% | 74.8 | 2.64 | **6.74** | 30.3 | 44 éxito, 4 tiempo, 2 batería | **rechazado** |
+| m1o-h1-seed1 | 92% | 110.7 (máx. 395) | 2.80 | 0 | 0 | 46 éxito, 3 tiempo, 1 presupuesto | **rechazado** |
+| m1o-h1-seed2 | **100%** | 79.8 (máx. 124) | 3.00 | 0 | 0 | 50 éxito | **rechazado** |
+
+**Decisión según el criterio fijado antes (`h1` frente a e4l):** (1) éxito medio de h1 **93.3%** (88 / 92 / 100) frente a 30.7%: **+62.7 pp**, supera los 5 pp. (2) Choques por episodio: media de h1 **2.25** frente a 0 de e4l, y el límite era +0.1 por episodio: **no se cumple**.
+El criterio exige ambas condiciones, así que **h1 se rechaza**, aunque el éxito sea mucho mayor. Todo el exceso de choques viene de la semilla 0 (6.74 por episodio; las semillas 1 y 2 tienen 0). No se cambió el criterio: si el equipo considera que la condición de choques debe medirse de otra forma, es una decisión del equipo y no afecta a este veredicto.
+
+**Hallazgos:**
+- **La imitación sola completa la misión en las 3 semillas** (h0: 100%, 71.3 pasos, 0 choques, 0 inválidas: el mismo desempeño que la heurística). La observación `Box(27)` contiene lo necesario para decidir bien; el cuello de botella de e4l/g1 era **el descubrimiento de la tarea por exploración**, no la capacidad de la red ni la observación.
+- **El ajuste fino con PPO empeoró al imitador.** La evaluación periódica (5 episodios deterministas en la semilla 20000) arranca con el retorno de la heurística (≈ 127) en h0, pero ya en el primer punto de h1 (20 000 pasos) cae a 6 / 1 / −19, y oscila durante los 600 000 pasos entre ≈ 127 y valores negativos (seed0: 126 en 100 000 pasos, −113 en 540 000, 81 al final).
+  El modelo final es solo el estado en que se detuvo el entrenamiento. Causa probable (no demostrada): el crítico llega con varianza explicada de solo 0.38–0.40 y lr 3e-4 con `ent_coef` 0 mueve el actor con ventajas ruidosas; PPO desarma una política buena antes de ajustar el crítico.
+- **Los éxitos de h1 son más lentos que los de h0** (74.8 / 110.7 / 79.8 pasos frente a 71.3) y h1-seed0 y -seed1 fallan 6 y 4 episodios que h0 no falla.
+- **Evaluación estocástica exploratoria** (semillas 20000–20049, 3 muestreos): h1 100 / 100 / 100% en las tres semillas, 77–81 pasos, ≤ 0.42 choques por episodio. La política muestreada es mejor que la determinista oficial (88 / 92 / 100% en 10000–10049); las dos evaluaciones usan semillas de episodio distintas, así que no son directamente comparables.
+- **Trazas (determinista):** h1-seed0 se queda en CARGAR repetido en el estado de carga con la bandeja a la altura (1 440 pasos, probabilidad media de CARGAR 0.71 en ese estado) y por eso acumula inválidas y choques; h1-seed1 gira en el estado de subida (GIRAR_IZQUIERDA 453 pasos, probabilidad 0.45).
+
+**Lectura (hipótesis, no causa demostrada):** (a) arrancar desde la heurística resuelve el problema de las semillas que no descubren la tarea; (b) el paso de PPO, tal como está configurado, es perjudicial desde el primer punto, no una mejora: para conservar la política hay que cambiar el ajuste fino (lr menor, calentar el crítico sin tocar el actor, KL objetivo, o quedarse con el mejor punto de la evaluación periódica); (c) como todas las semillas de h0 son idénticas en éxito (100%), con esta suite h0 no se distingue de la heurística.
+
+**Limitaciones y avisos:**
+- **h0 es una copia de un controlador privilegiado.** La heurística usa estado interno del ambiente; h0 solo usa la observación al decidir, pero no demuestra aprendizaje por refuerzo. Se registra como referencia, no como finalista, y no se recomienda.
+- **Presupuesto no idéntico:** h1 tuvo 606 208 pasos de PPO más ≈ 84 000 de demostración (≈ 14%).
+- **Parche de metadatos:** `bc.py` se ejecutó sin escribir `layout_sha256`, `simulation` y `rewards` en el `metadata.json` de h0 (el evaluador los exige); se añadieron después con el mismo ambiente y se dejó constancia en el campo `patched_fields`. El modelo no cambia; el código se corrigió para los runs siguientes.
+- 3 semillas; la media de choques de h1 la determina una sola semilla; evaluación oficial determinista con 50 episodios; el diagnóstico estocástico es exploratorio y usa otras semillas de episodio.
+
+**Siguiente (no iniciado):** (1) ajuste fino que no destruya la política: lr menor (p. ej. 3e-5), calentamiento del crítico con el actor congelado durante los primeros pasos o `target_kl`; criterio fijado antes y 3 semillas; (2) guardar y evaluar el mejor punto de la evaluación periódica (`models/<run>/best`) además del último; (3) decidir con el equipo si una política copiada de la heurística es un resultado aceptable para el proyecto o solo una referencia.

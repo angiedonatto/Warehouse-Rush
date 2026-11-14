@@ -9,6 +9,7 @@ Branch: `dev/lis` (all work goes here; `main` only by PR with review). Not pushe
 | Reward/config tests only (about 40 s) | `.venv/bin/python -m pytest tests/test_reward_config.py -q -p no:cacheprovider` |
 | Train a run | `.venv/bin/python -m pipelines.train --config configs/experiments/<file>.yaml` (writes `models/<run>/`, `docs/resultados/training/<run>/`, logs to MLflow `warehouse-<nivel>`; fails if the run already exists; rejects a config whose `environment_version` differs from `ENV_VERSION`) |
 | Evaluate with the run's own map and reward | `.venv/bin/python -I .claude/skills/warehouse-rush/scripts/eval_run.py <run>` |
+| Behaviour cloning (imitate the heuristic, saves a PPO-compatible model; use it as `parent_run_id` of a PPO config): `.venv/bin/python -m pipelines.bc --config configs/experiments/m1o_h0_bc_seed0.yaml` (about 10 min, mostly demo generation) |
 | Stochastic diagnostic (sampled actions, 3 repeats): `.venv/bin/python -I .claude/skills/warehouse-rush/scripts/eval_stochastic.py <run>` (writes `stochastic.json`; diagnostic only, official eval is deterministic) |
 | Diagnose a policy (final states, key-state probabilities) | `.venv/bin/python -I .claude/skills/warehouse-rush/scripts/trace_policy.py <run>` |
 

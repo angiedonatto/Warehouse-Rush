@@ -670,3 +670,38 @@ Se entrena en dos tandas de 5 runs en paralelo (g1 primero, luego e4l) por memor
 Por instrucción del equipo se detuvieron las 5 corridas de `g1` (semillas 3–7) al ≈ 50% de los pasos (≈ 300 000 de 606 208) para probar antes el arranque con clonación de comportamiento. **No hay resultados ni evaluación** de ese experimento, y las `e4l` 3–7 nunca se lanzaron.
 El criterio escrito arriba nunca se aplicó. Los runs `m1o-g1-seed3`…`7` quedan con estado MLflow `interrumpido` (detenidos con SIGTERM; `sin_checkpoint`: solo hay checkpoints intermedios en `models/<run>/checkpoints`, no modelo final) y sus carpetas parciales en `docs/resultados/training/` no se versionan.
 Los configs `m1o_{e4l,g1_hito}_seed{3..7}.yaml` siguen en el repositorio por si se retoma.
+
+
+## Arranque con clonación de comportamiento + ajuste fino con PPO (`h0` / `h1`, escrito antes de entrenar, 2026-11-13)
+**Contexto:** con la recompensa de e4l, 2 de 3 semillas nunca descubren la tarea (92 / 0 / 0%); g1 (hito) tampoco rescata la semilla 1 (nunca carga). La heurística de referencia completa el 100% de la suite en ≈ 71 pasos. Ninguna recompensa probada hace que *todas* las semillas arranquen; se prueba cambiar la **inicialización**.
+Sin cambio de ambiente ni de recompensa (`warehouse-v7`, `carry_milestone` 0 = e4l; no hay subida de versión).
+
+**Método:** (1) `pipelines/bc.py`: la heurística genera 1000 episodios de demostración en el mapa abierto (semillas 40000–40999; la mitad con ruido de 25% de acciones al azar, etiquetadas con lo que haría la heurística en ese estado); una red idéntica a la de PPO ([64,64], actor y crítico separados) se entrena por entropía cruzada (actor) y regresión de los retornos descontados (crítico). Validación: 100 episodios (semillas 50000–50099).
+Ninguna semilla de demostración coincide con la suite (10000–10049), dev (1000–1009), la evaluación periódica (20000) ni el diagnóstico estocástico (20000–20049) (prueba `test_demo_seeds_do_not_overlap_the_evaluation_suites`). (2) `h1`: PPO desde ese modelo (`parent_run_id`) con exactamente el PPO y la recompensa de e4l, 600 000 pasos (606 208 efectivos).
+**Cambia solo la inicialización frente a e4l.** Parámetros de BC fijados antes: 30 épocas, lr 1e-3, lote 256.
+
+**Regla de ajuste de BC (fijada antes):** los parámetros de BC se pueden ajustar **solo** con la precisión de validación sobre las demostraciones de validación (nunca con la suite ni con resultados de h1). Si la precisión de validación en estados limpios es < 90%, se duplican las épocas (máximo dos veces) y se registra cada intento.
+Es la única repetición permitida; los intentos se anotan abajo.
+
+**Hipótesis:** (1) el modelo BC solo (`h0`, referencia descriptiva) ya completa la misión en una fracción apreciable de episodios de la suite; (2) el ajuste fino (`h1`) mantiene o mejora eso y funciona en **las tres semillas** (no solo en la 0), de modo que el éxito medio supera al de e4l.
+**Criterio principal (sin cambios, `configs/criterios.yaml`):** h1 gana si el éxito medio de las 3 semillas en `suite-m1o-v1` (evaluación determinista oficial) es ≥ 5 pp mayor que el de e4l (30.7%: 92 / 0 / 0) y los choques por episodio no suben más de 0.1 (e4l: 0). Si no, se rechaza.
+**Métricas secundarias, descriptivas:** éxito de `h0` en la suite; precisión del actor y varianza explicada del crítico en validación; pasos de los éxitos (e4l-seed0: 71.8; heurística: 71.3); entregas y recogidas por episodio; éxito en entrenamiento durante el ajuste fino (¿se degrada la política al empezar PPO?); evaluación estocástica en 20000–20049 (exploratoria).
+**Lo que lo refutaría:** que la media de h1 no supere a e4l en ≥ 5 pp.
+
+**Límites declarados antes de entrenar:**
+- **Experto privilegiado:** la heurística usa estado interno del ambiente (BFS por pose, alturas por línea). El modelo resultante solo usa la observación `Box(27)` al decidir, pero lo que imita no sale de la observación; si la observación no basta para reproducirla, la precisión de validación será baja.
+- **Presupuesto no idéntico:** h1 recibe 600 000 pasos de PPO como e4l **más** ≈ 85 000 pasos de demostración (≈ 14%) en la fase BC. Se declara y se reporta; no se compensa restando pasos de PPO.
+- **Desplazamiento de distribución:** las demostraciones vienen de la trayectoria de la heurística (más ruido); el modelo fallará en estados que ni la heurística ni el ruido visitan. El ajuste fino con PPO debe corregirlo.
+- **Crítico con retornos de la trayectoria ruidosa** (valor de la política con ruido, no de la heurística): aproximación; se reporta su varianza explicada.
+- **Datos:** las demostraciones se regeneran de forma determinista con el script y las semillas (hash SHA-256 en `metadata.json`); no se versionan (DVC sin remoto).
+
+| Run | Qué es | Semilla | Config |
+|---|---|---:|---|
+| m1o-e4l-seed0/1/2 (control, ya entrenados) | PPO desde cero, recompensa e4l | 0, 1, 2 | `m1o_e4l_seed{0,1,2}.yaml` |
+| m1o-h0-seed0/1/2 | solo imitación de la heurística (0 pasos de PPO) | 0, 1, 2 | `m1o_h0_bc_seed{0,1,2}.yaml` |
+| m1o-h1-seed0/1/2 | PPO 600 000 pasos desde h0 de la misma semilla | 0, 1, 2 | `m1o_h1_bcppo_seed{0,1,2}.yaml` |
+
+### Presupuesto real por run (h0 / h1)
+| Run | Nivel | Pasos de PPO | Minutos | Estado |
+|---|---|---|---|---|
+| m1o-h0-seed0/1/2, m1o-h1-seed0/1/2 | m1o | (pendiente) | (pendiente) | (pendiente) |

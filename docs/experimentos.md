@@ -743,3 +743,21 @@ El criterio exige ambas condiciones, así que **h1 se rechaza**, aunque el éxit
 - 3 semillas; la media de choques de h1 la determina una sola semilla; evaluación oficial determinista con 50 episodios; el diagnóstico estocástico es exploratorio y usa otras semillas de episodio.
 
 **Siguiente (no iniciado):** (1) ajuste fino que no destruya la política: lr menor (p. ej. 3e-5), calentamiento del crítico con el actor congelado durante los primeros pasos o `target_kl`; criterio fijado antes y 3 semillas; (2) guardar y evaluar el mejor punto de la evaluación periódica (`models/<run>/best`) además del último; (3) decidir con el equipo si una política copiada de la heurística es un resultado aceptable para el proyecto o solo una referencia.
+
+## e4l en el mapa con muro interior (`m1-e4l`, escrito antes de entrenar, 2026-11-14)
+**Contexto:** `m1o-e4l-seed0` (92%) y `m1o-h0` (100%) fallan por completo en el mapa con muro (`layout_v0.4`): evaluados sin reentrenar dieron 0/50 en `suite-m1`-semillas 10000–10049 (40–52 choques por episodio, 0 entregas), mientras la heurística da 50/50. Los modelos nunca vieron el muro. Instrucción del usuario: entrenar la misma configuración de e4 en el mapa con muro.
+- **Cambio (una dimensión):** mapa `layout_v0.4` y nivel `m1` en vez de `layout_v0.5` / `m1o`. Recompensa (`manhattan_progress` 0.3, `height_mismatch` −0.02, `collision` −1, `invalid_interaction` −0.2), PPO (bloque idéntico a `m1o_e4l_seed*.yaml`, verificado con `diff`) y 600 000 pasos iguales. Código `env/warehouse-v7` (e4l original corrió en v5; `carry_milestone` vale 0 por defecto, así que la recompensa efectiva es la misma). Sin cambio de ambiente ni de versión.
+- **Hipótesis:** la recompensa de e4 también permite completar el pedido con el muro y supera a la referencia de recompensa de choque/inválida sin términos de progreso (`m1-r5`, 200 000 pasos, 0%).
+- **Criterio (fijado ahora, antes de ver resultados):** adoptar si el éxito **medio de las 3 semillas** en `suite-m1-v1` supera en ≥ 5 pp a `m1-r5` (0%) sin que los choques por episodio suban > 10%; si no, rechazar. Se reportan media, desviación y cada semilla.
+- **Qué la refutaría:** media de éxito < 5%.
+- **Limitación conocida:** no hay control del mismo presupuesto en el mapa con muro (`m1-r5` usa 200 000 pasos); si la media es positiva, un control `c0l` a 600 000 pasos en `m1` distinguiría el efecto de los pasos del de la recompensa.
+- **Riesgo anticipado:** en el mapa abierto la política llegó al estante en línea recta; con el muro en y=14 (paso en x=20) la distancia Manhattan al objetivo no es monótona a lo largo de la ruta, así que `manhattan_progress` puede premiar acercarse al muro y quedarse atrapado.
+- **Métricas secundarias descriptivas (no deciden):** recogidas y entregas por episodio, choques e inválidas por episodio, pasos de los éxitos, episodios de entrenamiento con éxito.
+
+| Run | Pasos pedidos | Semilla | Config |
+|---|---:|---:|---|
+| m1-e4l-seed0 | 600 000 | 0 | `m1_e4l_seed0.yaml` |
+| m1-e4l-seed1 | 600 000 | 1 | `m1_e4l_seed1.yaml` |
+| m1-e4l-seed2 | 600 000 | 2 | `m1_e4l_seed2.yaml` |
+
+Presupuesto efectivo 606 208 pasos por run. Presupuesto real: (pendiente).

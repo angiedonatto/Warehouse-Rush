@@ -665,3 +665,8 @@ Se entrena en dos tandas de 5 runs en paralelo (g1 primero, luego e4l) por memor
 | Run | Nivel | Pasos | Minutos | Estado |
 |---|---|---|---|---|
 | m1o-g1-seed3…7, m1o-e4l-seed3…7 | m1o | (pendiente) | (pendiente) | (pendiente) |
+
+### Cancelado: más semillas de e4l y g1 (2026-11-13)
+Por instrucción del equipo se detuvieron las 5 corridas de `g1` (semillas 3–7) al ≈ 50% de los pasos (≈ 300 000 de 606 208) para probar antes el arranque con clonación de comportamiento. **No hay resultados ni evaluación** de ese experimento, y las `e4l` 3–7 nunca se lanzaron.
+El criterio escrito arriba nunca se aplicó. Los runs `m1o-g1-seed3`…`7` quedan con estado MLflow `interrumpido` (detenidos con SIGTERM; `sin_checkpoint`: solo hay checkpoints intermedios en `models/<run>/checkpoints`, no modelo final) y sus carpetas parciales en `docs/resultados/training/` no se versionan.
+Los configs `m1o_{e4l,g1_hito}_seed{3..7}.yaml` siguen en el repositorio por si se retoma.

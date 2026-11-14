@@ -1,0 +1,36 @@
+id: q2
+hipotesis: >
+  m1-q1 con factor 3 en lugar de 5 y las penalizaciones de contacto escaladas con el mismo factor: pickup 30, delivery 90, completion 150, potential 90, collision -3, invalid_interaction -0.6; time y battery sin escalar. Sin cambio de codigo (warehouse-v9). Parada por estancamiento 100, 600 000 pasos, mapa con muro, semillas 0-2.
+  Motivo: m1-p1 (x1) colapso a idle por senal debil (0.08 por celda); m1-q1 (x5, penalizaciones sin escalar) cayo en la trampa de choques (98.8 y 39.9 choques por episodio) porque la colision efectiva bajo a -0.2. Aqui la razon shaping/colision es la de p1 (que no choco) y el shaping de navegacion por celda vale 0.24 frente al coste de moverse (tiempo, bateria).
+  Hipotesis: con la senal 3 veces mayor y los contactos igual de caros en proporcion, la politica avanza y gira hacia el estante sin chocar y descubre las demas etapas del potencial.
+  Se refuta si el exito medio de las 3 semillas en suite-m1-v1 es < 5% o si los choques por episodio suben > 10% frente a m1-e4l (0).
+nivel: m1
+environment_version: warehouse-v9
+parent_run_id: null
+seed: 1
+presupuesto_pasos: 600000
+parada_estancamiento: 100   # solo entrenamiento: trunca tras 100 pasos sin superar el mejor potencial; la evaluación usa 400 pasos
+layout: configs/layout_v0.4.json   # mapa con muro interior (paso permanente x=20, paso cerrable x=6)
+recompensa:
+  invalid_interaction: -0.6
+  collision: -3.0
+  progress: 0.0
+  pickup: 30.0
+  delivery: 90.0
+  completion: 150.0
+  potential: 90.0
+ppo:
+  learning_rate: 3.0e-4
+  n_steps: 2048
+  n_envs: 4
+  batch_size: 64
+  n_epochs: 10
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_range: 0.2
+  ent_coef: 0.0
+  net_arch: [64, 64]
+evaluacion:
+  intermedia: dev-m1-v1
+  cada_pasos: 20000
+  final: suite-m1-v1

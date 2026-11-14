@@ -553,3 +553,15 @@ def test_q1_configs_are_p1_with_task_rewards_and_potential_scaled_by_five():
         assert q1["ppo"] == p1["ppo"] and q1["layout"] == p1["layout"] == WALLED
         assert q1["presupuesto_pasos"] == p1["presupuesto_pasos"] == 600000 and q1["parada_estancamiento"] == 100
         assert q1["recompensa"]["collision"] == p1["recompensa"]["collision"] == -1.0   # penalizaciones sin escalar
+
+
+def test_q2_configs_are_p1_with_everything_but_time_and_battery_scaled_by_three():
+    p1 = raw("m1_p1_potencial_seed0")
+    for seed in (0, 1, 2):
+        q2 = raw(f"m1_q2_escala3_seed{seed}")
+        assert q2["id"] == "q2" and q2["seed"] == seed and q2["environment_version"] == "warehouse-v9"
+        assert q2["recompensa"] == {"invalid_interaction": -0.6, "collision": -3.0, "progress": 0.0, "pickup": 30.0,
+                                    "delivery": 90.0, "completion": 150.0, "potential": 90.0}
+        assert "time" not in q2["recompensa"] and "battery" not in q2["recompensa"]
+        assert q2["ppo"] == p1["ppo"] and q2["layout"] == p1["layout"] == WALLED
+        assert q2["presupuesto_pasos"] == 600000 and q2["parada_estancamiento"] == 100

@@ -924,3 +924,20 @@ Presupuesto efectivo 606 208 pasos por run.
 - **Lectura de los dos factores:** ×1 (p1) → idle por señal débil; ×5 (q1) → trampa de choques y un idle. Subir todo por igual no mueve nada (SB3 normaliza ventajas); lo que decide es la razón entre el shaping por celda y el coste de los contactos (colisión −1, inválida −0.2) y de moverse. No probado: **escalar también `collision` e `invalid_interaction` ×5** (−5 y −1, que son los valores por defecto del ambiente) mantendría la razón shaping/colisión de p1 y subiría la razón shaping/tiempo ×5.
 - **Limitaciones:** un solo factor; sin ablación de las penalizaciones; la parada (100) está activa en todas, aunque p2 mostró que no es la causa del idle; el potencial navega con BFS (consciente del muro), por lo que el choque contra obstáculos no lo explica el potencial sino la exploración barata.
 
+
+## Potencial con todo ×3, incluidas las penalizaciones de contacto (`m1-q2`, escrito antes de entrenar, 2026-11-14)
+**Contexto:** `m1-p1` (×1) → idle por señal débil (0.08 por celda); `m1-q1` (×5, penalizaciones sin escalar) → trampa de choques en 2 de 3 semillas (98.8 y 39.9 choques por episodio) y un idle. Instrucción del usuario: factor menor (×3) y que `collision` e `invalid_interaction` escalen con él. Sin cambio de código (`warehouse-v9`).
+- **Cambio frente a `m1-p1`:** `pickup` 30, `delivery` 90, `completion` 150, `potential` 90, `collision` −3, `invalid_interaction` −0.6 (todo ×3); `time` y `battery` sin escalar. Parada 100, 600 000 pasos, mapa con muro, semillas 0–2, PPO idéntico (`diff` y prueba).
+- **Razón de diseño (medida):** coste de una colisión en celdas de shaping de navegación — p1 12.6, q1 **2.5**, q2 **12.6**. q2 conserva la razón de p1 (que no chocó) y sube la señal frente a `time`/`battery` ×3 (0.24 por celda frente a 0.08).
+- **Medición previa (retornos guionizados descontados, 8 semillas, mapa con muro):** quieto −14.3; ir, mirar y quedarse −14.3; recoger el 1.º y quedarse **+10.4**; pedido completo **195.8** (×1: −11.4 / −11.6 / −3.3 / 61.0; ×5: −17.2 / −17.1 / +24.2 / 330.6). Recoger y quedarse supera a quedarse quieto por ≈ 25.
+- **Hipótesis:** con la señal ×3 y los contactos igual de caros en proporción, la política avanza y gira hacia el estante sin chocar y descubre las demás etapas del potencial; más semillas despegan.
+- **Criterio (fijado ahora):** éxito medio de las 3 semillas en `suite-m1-v1` ≥ 5% (base `m1-e4l` 0%) y choques por episodio sin subir > 10% frente a `m1-e4l` (0). Se reporta cada semilla; un resultado llevado por una semilla es `candidato`.
+- **Qué la refutaría:** media < 5% o choques que suben > 10%.
+- **Métricas secundarias descriptivas:** episodios que llegan / miran / suben / cargan, entregas por episodio, choques, inválidas, mezcla de acciones.
+- **Limitaciones:** un solo factor; la razón shaping/colisión está igualada con la de p1 por construcción, pero la razón shaping/(tiempo+batería) solo mejora ×3; si falla, no se sabe si falta señal o sobran contactos caros. El potencial no premia orientarse hacia el objetivo (solo distancia BFS), por lo que los giros no tienen señal propia.
+
+| Run | Pasos | Semilla | Config |
+|---|---:|---:|---|
+| m1-q2-seed0/1/2 | 606 208 | 0/1/2 | `m1_q2_escala3_seed{0,1,2}.yaml` |
+
+Presupuesto real: (pendiente).

@@ -878,4 +878,18 @@ Entrenamiento con éxito: 0 en los tres (0 / ≈1 512 episodios).
 | m1-p1-seed0/1/2 | 606 208 | 0/1/2 | 100 pasos sin mejorar Φ | `m1_p1_potencial_seed{0,1,2}.yaml` |
 | m1-p2-seed0 | 606 208 | 0 | ninguna | `m1_p2_potencial_sinparada_seed0.yaml` |
 
-Presupuesto real: (pendiente).
+Presupuesto efectivo 606 208 pasos por run.
+
+### Presupuesto real y resultados (p1, p2; `suite-m1-v1`, determinista, semillas 10000–10049; heurística 100%)
+| Run | Minutos | Éxito | Llegan a celda / miran / suben / cargan (de 50) | Inválidas/ep | Choques/ep | Episodios de entrenamiento (éxitos) | Acciones: FRENAR | Estado |
+|---|---:|---:|---|---:|---:|---:|---:|---|
+| m1-e4l-seed0 (base) | 34.3 | 0% | 21 / 0 / 0 / 0 | 63.0 | 0.0 | 1 512 (0) | 72% | rechazado |
+| m1-p1-seed0 | 27.8 | 0% | 0 / 0 / 0 / 0 | 8.0 | 0.0 | 5 455 (0) | 95% | rechazado |
+| m1-p1-seed1 | 28.0 | 0% | 0 / 0 / 0 / 0 | 0.0 | 0.0 | 5 633 (0) | 100% | rechazado |
+| m1-p1-seed2 | 27.7 | 0% | 0 / 0 / 0 / 0 | 0.0 | 0.0 | 5 745 (0) | idle | rechazado |
+| m1-p2-seed0 (sin parada) | 27.5 | 0% | 0 / 0 / 0 / 0 | 53.2 | 0.0 | 1 512 (0) | 85% | rechazado |
+- **Decisión por el criterio fijado antes:** media 0% < 5% → hipótesis refutada, los 4 runs `rechazado` (evidencia conservada). Peor que la base (m1-e4l-seed0 llegaba a la celda en 21/50): ninguna semilla se acerca al estante.
+- **Diagnóstico:** las políticas colapsan a FRENAR (idle), como en los primeros runs (v1/v2). El shaping de navegación de `potential` 30.0 vale `30·0.40/(6·d_max)` ≈ **0.08 por celda** (d_max ≈ 25), unas **8 veces menos** que `manhattan_progress` + `progress` de e4 (0.6 por celda) y por debajo del coste de moverse (batería y exploración con inválidas/choques); quedarse quieto cuesta lo mismo en tiempo. La invarianza de la política óptima no dice nada sobre la magnitud de la señal: con W = 30 el shaping total de una misión (≈ 30) es pequeño frente a la dificultad de descubrir la cadena. Es una explicación coherente con la medición, **no probada** (no se corrió W mayor).
+- **Atribución (ablación p2 frente a p1-seed0):** misma conducta sin parada (0/50, idle), así que el fallo es del potencial con ese W, no de la parada. La parada hizo lo previsto en mecánica: **3.6–3.8 veces más episodios** de entrenamiento (5 455–5 745 frente a 1 512) con los mismos pasos y los mismos minutos (≈ 28 en ambos); no acorta el run.
+- **Limitaciones:** un solo valor de W (30), elegido para que el shaping total fuera una unidad; pesos internos de φ sin ajustar; `p2` con una semilla.
+- **Siguiente paso propuesto (no hecho):** subir W (por ejemplo 100–200) y/o concentrar la navegación, con la medición guionizada del shaping por celda antes de entrenar; criterio: ≥ 5%.

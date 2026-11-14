@@ -940,4 +940,17 @@ Presupuesto efectivo 606 208 pasos por run.
 |---|---:|---:|---|
 | m1-q2-seed0/1/2 | 606 208 | 0/1/2 | `m1_q2_escala3_seed{0,1,2}.yaml` |
 
-Presupuesto real: (pendiente).
+Presupuesto efectivo 606 208 pasos por run.
+
+### Presupuesto real y resultados (q2; `suite-m1-v1`, determinista, semillas 10000–10049; heurística 100%)
+| Run | Minutos | Éxito | Llegan a celda (de 50) | Choques/ep | Inválidas/ep | Acciones | Episodios de entrenamiento (éxitos) | Estado |
+|---|---:|---:|---:|---:|---:|---|---:|---|
+| m1-q2-seed0 | 27.1 | 0% | 0 | 0.0 | 0.0 | 99% FRENAR | 4 678 (0) | rechazado |
+| m1-q2-seed1 | 27.0 | 0% | 0 | 1.6 | 39.4 | 90% FRENAR, 6% SUBIR, 3% BAJAR | 5 018 (0) | rechazado |
+| m1-q2-seed2 | 27.1 | 0% | 0 | 0.0 | 7.1 | 97% FRENAR | 5 176 (0) | rechazado |
+- **Decisión por el criterio fijado antes:** media 0% < 5% → hipótesis refutada, los 3 runs `rechazado`. Los choques no suben (la trampa de q1 no reaparece: razón colisión/shaping igual a la de p1), pero las tres políticas vuelven a **idle**.
+- **Patrón en los 10 runs con potencial** (p1 ×3, p2, q1 ×3, q2 ×3; factores ×1, ×3, ×5, con y sin parada, penalizaciones escaladas o no): **0/10 llegan siquiera a la celda de interacción** (0/50 episodios en cada uno), mientras e4l y c0l llegaban en 21/50, 29/50 y 50/50 en la mitad de sus semillas (seed0: 21 y 29, seed2: 50; seed1: 29 y 0). Dos modos de fallo: idle (señal débil o contactos caros) y trampa de choques (contactos baratos).
+- **Diagnóstico de la señal (retorno descontado del término de shaping, 20 episodios, mapa con muro):** acciones aleatorias vs quieto — `progress` 0.3: +0.04 vs 0.00; potencial W = 90: −4.19 vs −4.20; W = 30: −1.40 vs −1.40. Con ambos, explorar al azar apenas rinde más que no hacer nada; la diferencia entre el potencial y `progress` no se ve en esta medición, por lo que **la causa de que ninguna semilla despegue no está establecida** (candidatas sin probar: la fuga γ del potencial en estados con Φ alto, la combinación con `time`/`battery`, o la varianza entre semillas).
+- **Control propuesto, no hecho (pruebas de ambiente antes que del modelo):** `m1-c0l` (progress 0.3, sin potencial) con el código v9 y la parada de 100, 3 semillas. Si vuelve a llegar al estante en ≈ la mitad de las semillas, el potencial es el problema; si da 0/3, el cambio de código o la parada rompen la línea base.
+- **Limitaciones:** el potencial se probó con pesos internos de φ fijos (0.10/0.40/0.20/0.30) y tres factores; los giros no tienen señal propia; solo se mide la señal por la política aleatoria, no la dificultad real de exploración.
+

@@ -50,9 +50,9 @@ def test_heuristic_missions_are_never_cut_and_still_succeed():
 def test_window_validated_and_config_key_checked(tmp_path):
     with pytest.raises(ValueError):
         StagnationStop(make_env(layout_path=WALLED, orders=3), window=0)
-    cfg = load_config("configs/experiments/m1_p1_potencial_seed0.yaml")
+    cfg = load_config("configs/experiments/m1_s1_etapas_seed0.yaml")
     assert cfg["parada_estancamiento"] == 100
     bad = tmp_path / "bad.yaml"
-    bad.write_text(open("configs/experiments/m1_p1_potencial_seed0.yaml").read().replace("parada_estancamiento: 100", "parada_estancamiento: -3"))
+    bad.write_text(open("configs/experiments/m1_s1_etapas_seed0.yaml").read().replace("parada_estancamiento: 100", "parada_estancamiento: -3"))
     with pytest.raises(ValueError):
         load_config(bad)

@@ -20,13 +20,14 @@ class RewardConfig:
     manhattan_progress: float = 0.0   # v5: por celda de DIFERENCIA de distancia Manhattan (>= 0): acercarse suma, alejarse resta
     height_mismatch: float = 0.0      # v5: por paso y por puesto de bandeja de diferencia con la altura exigida, solo en una celda de interacción del objetivo (<= 0)
     potential: float = 0.0            # v9: peso W del shaping basado en potencial, W*(gamma*Phi(s') - Phi(s)) con Phi en [0,1] (>= 0)
+    potential_nav: float = 0.40       # v10: peso de la parte de navegación (BFS) dentro de φ; 0 la quita y φ se renormaliza (>= 0)
     face_bonus: float = 0.0           # v8: una vez por estación objetivo y episodio, al estar en una celda de interacción mirando a la estación (>= 0)
     carry_milestone: float = 0.0      # v7: una vez por tramo de entrega, al recorrer la mitad de la distancia (BFS) al despacho con la carga (>= 0)
 
     def __post_init__(self):
         if not all(math.isfinite(value) for value in self.__dict__.values()):
             raise ValueError("Las recompensas deben ser finitas")
-        if min(self.pickup, self.delivery, self.completion, self.progress, self.manhattan_progress, self.carry_milestone, self.face_bonus, self.potential) < 0:
+        if min(self.pickup, self.delivery, self.completion, self.progress, self.manhattan_progress, self.carry_milestone, self.face_bonus, self.potential, self.potential_nav) < 0:
             raise ValueError("Los premios/progreso deben ser no negativos")
         if self.time >= 0 or max(self.battery, self.collision, self.invalid_interaction, self.distance, self.height_mismatch) > 0:
             raise ValueError("Tiempo negativo y penalizaciones no positivas previenen ciclos rentables")

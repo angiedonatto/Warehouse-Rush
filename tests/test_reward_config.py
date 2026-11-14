@@ -18,7 +18,7 @@ def raw(name):
 
 
 def test_default_reward_equals_v2_coefficients():
-    assert asdict(reward_config()) == {"pickup": 10.0, "delivery": 30.0, "completion": 50.0, "progress": 0.3, "distance": 0.0, "manhattan_progress": 0.0, "height_mismatch": 0.0, "carry_milestone": 0.0, "face_bonus": 0.0, "potential": 0.0,
+    assert asdict(reward_config()) == {"pickup": 10.0, "delivery": 30.0, "completion": 50.0, "progress": 0.3, "distance": 0.0, "manhattan_progress": 0.0, "height_mismatch": 0.0, "carry_milestone": 0.0, "face_bonus": 0.0, "potential": 0.0, "potential_nav": 0.40,
                                        "time": -0.1, "battery": -0.02, "collision": -5.0, "invalid_interaction": -2.0}
     assert make_env(orders=3).reward_config == reward_config()
 
@@ -432,7 +432,7 @@ V8 = {**NEW, "height_mismatch": -0.02, "face_bonus": 5.0}
 
 
 def test_face_bonus_default_off_sign_validated_and_version():
-    assert ENV_VERSION == "warehouse-v9"   # v9 solo añade `potential`; v8 sigue igual con potential = 0
+    assert ENV_VERSION == "warehouse-v10"   # v10 solo añade `potential_nav` (defecto = v9); v8 sigue igual con potential = 0
     assert asdict(reward_config())["face_bonus"] == 0.0
     with pytest.raises(ValueError):
         reward_config({"face_bonus": -1.0})
@@ -576,3 +576,41 @@ def test_c1_c2_controls_are_c0l_on_v9_with_and_without_the_stagnation_stop():
     c2, c0l = raw("m1_c2_repro_v9_seed0"), raw("m1_c0l_seed0")
     assert c2["environment_version"] == "warehouse-v9" and "parada_estancamiento" not in c2
     assert {k: v for k, v in c2.items() if k not in ("id", "hipotesis", "environment_version")} == {k: v for k, v in c0l.items() if k not in ("id", "hipotesis", "environment_version")}
+
+
+# --- v10: potential_nav (peso de la navegación dentro de φ) ---
+def test_potential_nav_default_equals_v9_and_zero_removes_navigation_only():
+    from pipelines.baselines import HeuristicPolicy
+    with pytest.raises(ValueError):
+        reward_config({"potential_nav": -0.1})
+    assert asdict(reward_config())["potential_nav"] == 0.40
+    base = {"invalid_interaction": -0.2, "collision": -1.0, "potential": 30.0}
+    for layout in (OPEN, WALLED):
+        a = make_env(layout_path=layout, orders=3, reward_overrides=base)
+        b = make_env(layout_path=layout, orders=3, reward_overrides={**base, "potential_nav": 0.40})
+        ra, ia = run_heuristic(a, 10003)
+        rb, ib = run_heuristic(b, 10003)
+        assert ia["total_reward"] == pytest.approx(ib["total_reward"])
+    env = make_env(layout_path=WALLED, orders=3, reward_overrides={**base, "potential_nav": 0.0})
+    obs, _ = env.reset(seed=10003)
+    n = 2 * env.orders
+    assert env.potential() == pytest.approx((0.10 / 0.60) / n)          # solo la parte «bandeja guardada»
+    policy, seen, ps = HeuristicPolicy(), [], []
+    while env.route_distance() > 0:
+        ps.append(env.potential())
+        obs, *_ = env.step(policy.action(obs, env))
+    assert max(ps) == pytest.approx(min(ps))                              # navegar no cambia Φ sin la parte de navegación
+    done = False
+    while not done:
+        obs, _, te, tr, info = env.step(policy.action(obs, env)); done = te or tr
+    assert info["success"] and env.potential() == pytest.approx(1.0)
+
+
+def test_s1_configs_are_c1_plus_potential_stages_without_navigation():
+    for seed in (0, 1, 2):
+        c1, s1 = raw(f"m1_c1_control_v9_seed{seed}"), raw(f"m1_s1_etapas_seed{seed}")
+        assert s1["environment_version"] == "warehouse-v10" and c1["environment_version"] == "warehouse-v9"
+        assert s1["recompensa"] == {**c1["recompensa"], "potential": 30.0, "potential_nav": 0.0}
+        assert "progress" not in s1["recompensa"]    # progress 0.3 por defecto, igual que en c1
+        assert s1["ppo"] == c1["ppo"] and s1["layout"] == c1["layout"] and s1["seed"] == c1["seed"] == seed
+        assert s1["parada_estancamiento"] == c1["parada_estancamiento"] == 100 and s1["presupuesto_pasos"] == 600000

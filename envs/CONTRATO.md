@@ -70,6 +70,8 @@ máscara de acciones, bloqueo del pasillo ni recompensa del paso. La heurística
 
 **v9 añade un término (por defecto 0):** `+ W·(γ·Φ(s') − Φ(s))`, clave `potential` (`W ≥ 0`), con γ = 0.99 y `Φ ∈ [0,1]` función solo del estado (`potential()`; ver `docs/ambiente-v0.9.md`): `Φ = (K + φ)/(2n)`, `K` = líneas recogidas + entregadas, `φ` = avance del tramo (bandeja guardada, distancia BFS, mirar la estación, altura de la bandeja). Shaping basado en potencial: no cambia la política óptima. Con `W` = 0, v9 es idéntico a v8. La parada por estancamiento es solo de entrenamiento (`pipelines/train.py`) y no cambia el ambiente.
 
+**v10 añade un parámetro (por defecto = v9):** `potential_nav` (≥ 0, 0.40): peso de la navegación dentro de φ; φ se divide entre la suma de pesos (stow 0.10, face 0.20, tray 0.30 + `potential_nav`). Con 0.40 es idéntico a v9; con 0 se quita la parte de navegación (ver `docs/ambiente-v0.10.md`).
+
 - Hitos una sola vez por línea; recompensa de entrega una vez por acción DESCARGAR aunque descargue varias líneas.
 - La energía vertical de la bandeja se descuenta como batería y se penaliza con el mismo coeficiente (−0.02).
 - El progreso usa la distancia transitable a una celda de acceso del objetivo anterior (no se paga por cambiar de objetivo).

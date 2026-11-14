@@ -1,7 +1,7 @@
 """Warehouse Rush: cinemática discreta, sin motor físico continuo."""
 
-__version__ = "0.9.0"          # versión de la ficha del ambiente (docs/ambiente-v0.9.md)
-ENV_VERSION = "warehouse-v9"   # v9 = v8 + `potential` (shaping basado en potencial por etapas, un solo peso, por defecto 0)
+__version__ = "0.10.0"         # versión de la ficha del ambiente (docs/ambiente-v0.10.md)
+ENV_VERSION = "warehouse-v10"   # v10 = v9 + `potential_nav` (peso de la navegación dentro de φ; 0 la quita; por defecto 0.40 = igual que v9)
 
 from dataclasses import asdict
 

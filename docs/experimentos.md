@@ -988,3 +988,20 @@ Presupuesto efectivo 606 208 pasos por run.
 - **Qué no se sabe:** por qué el potencial no despega mientras `progress` 0.3 sí en la mitad de las semillas. La medición de señal con política aleatoria no lo distinguía (ver q2). Una diferencia que no se ha aislado: `progress` paga la diferencia de BFS sin descuento y sin términos extra, mientras el potencial usa `γΦ' − Φ` con la fuga (γ−1)Φ y reparte el peso entre cuatro partes de φ.
 - **Limitaciones:** una semilla por celda en las comparaciones entre runs; `c0l` y `c1` no son comparables semilla a semilla (la parada cambia el camino).
 
+
+
+## `progress` 0.3 + etapas del potencial sin navegación (`m1-s1`, escrito antes de entrenar, 2026-11-14)
+**Contexto:** el control `m1-c1`/`c2` mostró que el fallo de los 10 runs con potencial es del potencial (no del código v9 ni de la parada). Instrucción del usuario: dejar `progress` 0.3 y añadir solo las etapas del potencial encima. Código `env/warehouse-v10` (`potential_nav`, ver `docs/ambiente-v0.10.md`).
+- **Cambio frente a `m1-c1` (misma semilla, mismo código salvo el parámetro):** `potential` 30.0 y `potential_nav` 0.0; el resto idéntico (invalid −0.2, collision −1, `progress` 0.3 por defecto, parada 100, PPO, mapa con muro, 600 000 pasos, semillas 0–2). Las semillas son pareables con `m1-c1` (v9, mismo resto): `potential` en 0 y `potential_nav` en 0.40 reproducen v9 por prueba.
+- **Hipótesis:** con la navegación de `progress` y las etapas del potencial encima (bandeja guardada, mirar, altura, avance por recoger/entregar), las semillas que llegan al estante pasan a subir la bandeja, cargar, bajarla y entregar. `m1-c1-seed0` llegaba 49/50, subía 41/50, cargaba 19/50 y nunca entregaba; la línea base no entrega con 600 000 pasos.
+- **Medición previa (conductas guionizadas, retorno descontado, 8 semillas):** quieto −10.0 → −10.8; ir, mirar y quedarse −6.6 → −7.3; recoger el 1.º y quedarse 1.7 → 0.9; pedido completo 59.9 → 72.1 (c1 → s1). El orden se conserva.
+- **Criterio (fijado ahora):** éxito medio de las 3 semillas en `suite-m1-v1` ≥ 5% (base 0%) y episodios que llegan a la celda sin caer frente a `m1-c1` (49 / 0 / 21 de 50 en las semillas 0 / 1 / 2). Se reporta cada semilla y las etapas alcanzadas (llegan / miran / suben / cargan / entregan).
+- **Qué la refutaría:** media < 5% de éxito, o pérdida de la llegada al estante.
+- **Qué se aprende aunque el éxito sea 0%:** si suben las etapas alcanzadas (cargan, entregan) frente a `m1-c1`, las etapas ayudan; si bajan las llegadas, el potencial interfiere con `progress`.
+- **Limitaciones:** una semilla por celda; `progress` más potencial no conserva en teoría la política óptima (solo la parte de potencial lo hace); pesos internos de φ sin ajustar.
+
+| Run | Pasos | Semilla | Config |
+|---|---:|---:|---|
+| m1-s1-seed0/1/2 | 606 208 | 0/1/2 | `m1_s1_etapas_seed{0,1,2}.yaml` |
+
+Presupuesto real: (pendiente).

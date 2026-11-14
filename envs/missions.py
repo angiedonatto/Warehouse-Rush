@@ -156,8 +156,11 @@ class MakeupMissionEnv(WarehouseRushEnv):
         phi_tramo = 0.10 bandeja guardada mientras se viaja + 0.40 (1 - d/d_max) por distancia BFS a la celda de interacción
         + 0.20 ya en la celda y mirando a la estación + 0.30 bandeja en la altura exigida (1 - |nivel - exigido|/3).
         En la celda de interacción la bandeja guardada cuenta como cumplida para que subirla no reste. Sin objetivo, phi_tramo = 0.
+        v10: `potential_nav` (0.40 por defecto) es el peso de la parte de navegación; φ se divide entre la suma de pesos, así que con 0 sigue en [0,1] sin navegación.
         """
-        s, w = self.state, self.POTENTIAL_WEIGHTS
+        s = self.state
+        w = {**self.POTENTIAL_WEIGHTS, 'navigate': self.reward_config.potential_nav}
+        norm = sum(w.values()) or 1.0   # con potential_nav = 0.40 (defecto) los pesos suman 1 y φ queda como en v9
         units = len(self.picked_packages) + s.entregas
         total = 2 * self.orders
         if s.objetivo is None or not self.lines:
@@ -169,7 +172,7 @@ class MakeupMissionEnv(WarehouseRushEnv):
         phi = w['navigate'] * max(0.0, nav) + (w['stow'] if (level == 0 or at_cell) else 0.0)
         if at_cell and self.facing_target():
             phi += w['face'] + w['tray'] * (1.0 - abs(level - self.needed_tray_level()) / 3.0)
-        return min(1.0, (units + min(1.0, phi)) / total)
+        return min(1.0, (units + min(1.0, phi / norm)) / total)
 
     def elevation(self):
         return self.lift_config.normalized(self.lift_height)

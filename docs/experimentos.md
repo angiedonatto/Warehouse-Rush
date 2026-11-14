@@ -395,10 +395,10 @@ Con 600 000 pasos pedidos el presupuesto efectivo será 606 208 (múltiplo de 8 
 ### Presupuesto real por run (e4l, c0l, e5)
 | Run | Nivel | Pasos | Minutos | Estado |
 |---|---|---|---|---|
-| m1o-e4l-seed0 | m1o | (pendiente) | (pendiente) | en curso |
-| m1o-e4l-seed1 | m1o | (pendiente) | (pendiente) | en curso |
-| m1o-e4l-seed2 | m1o | (pendiente) | (pendiente) | en curso |
-| m1o-c0l-seed0 | m1o | (pendiente) | (pendiente) | en curso |
+| m1o-e4l-seed0 | m1o | 606 208 | 25.8 (5 runs en paralelo, ~525 pasos/s cada uno) | candidato |
+| m1o-e4l-seed1 | m1o | 606 208 | 23.5 (5 runs en paralelo, ~525 pasos/s cada uno) | candidato |
+| m1o-e4l-seed2 | m1o | 606 208 | 26.0 (5 runs en paralelo, ~525 pasos/s cada uno) | candidato |
+| m1o-c0l-seed0 | m1o | 606 208 | 25.6 (5 runs en paralelo, ~525 pasos/s cada uno) | candidato |
 | m1o-e5-seed0 | m1o | 204 800 | 8.0 (5 runs en paralelo, ~530 pasos/s cada uno) | rechazado |
 
 ### Resultado del experimento 3: altura −0.05 (`m1o-e5-seed0`, 2026-11-13, `suite-m1o-v1`, 50 episodios, acciones deterministas)
@@ -414,3 +414,29 @@ Código `env/warehouse-v5`, commit `835cf68`. Manifiesto: `manifests/m1o-e5-seed
 **Decisión:** no supera al control en ≥ 5 pp (0 pp); se **rechaza** y se conserva la evidencia. **La hipótesis «−0.05 mantiene el gradiente de e4 sin crear la zona a evitar» se rechaza**: con −0.05 aparece la evitación.
 **Hechos medidos:** la política avanza ≈ 5.6 celdas desde la base (la distancia Manhattan media al primer estante baja de 10.7 a 5.1, es decir, a la mitad del camino) y se queda frenando; los 50 episodios terminan «sin llegar» y ninguno entra en una celda de interacción. Cobra la recompensa por acercarse y se detiene antes de la zona donde la altura equivocada cuesta, como se había advertido (ir y quedarse −70.6 frente a −40.8).
 **Lectura (hipótesis):** el punto de transición entre gradiente útil y zona a evitar está entre −0.02 y −0.05 en este diseño; e4 (−0.02) queda en el lado útil. Una penalización que se aplica solo dentro de la celda de interacción castiga estar donde hay que estar; un diseño distinto (p. ej. premiar el acierto de altura en lugar de castigar el error) no tiene ese efecto, pero sería otra versión.
+
+### Resultados del experimento 1: e4 con 600 000 pasos y 3 semillas (`m1o-e4l`), con control del mismo presupuesto (2026-11-13, `suite-m1o-v1`, 50 episodios, semillas 10000–10049, acciones deterministas)
+Código `env/warehouse-v5`, commit `835cf68`. Presupuesto efectivo 606 208 pasos por run (23.5–26.0 min con 5 runs en paralelo). Manifiestos `manifests/m1o-e4l-seed{0,1,2}.json` y `m1o-c0l-seed0.json`; evidencia por episodio en `docs/resultados/eval/<run>/`.
+
+| Run | Semilla | Éxito | Entregas/ep | Recogidas/ep | Pasos | Choques | Inválidas/ep | Entrenamiento: episodios con 3 entregas | Estado |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| m1o-e4l-seed0 | 0 | **92%** (46/50) | 2.76 | 2.92 | 95 | 0.0 | 3.8 | **2 395 / 3 278** | candidato |
+| m1o-e4l-seed1 | 1 | 0% | 0.00 | 0.00 | 400 | 0.0 | 258.3 | 0 / 1 512 | candidato (evidencia) |
+| m1o-e4l-seed2 | 2 | 0% | 0.00 | 2.42 | 397 | 0.0 | 20.1 | 2 / 1 515 | candidato (evidencia) |
+| **e4l, media ± desv. (3 semillas)** | | **30.7% ± 43.4 pp** (desviación poblacional, ddof = 0) | | | | | | | |
+| m1o-c0l-seed0 (control, 606 208 pasos) | 0 | 0% | 0.00 | 1.68 | 394 | 0.0 | 31.4 | 0 / 1 513 | candidato (control) |
+
+La heurística BFS logra 100% en ≈ 71 pasos en este mapa.
+
+**Decisión según el criterio fijado antes de entrenar** (adoptar si el éxito medio de las 3 semillas de e4l supera al control del mismo presupuesto en ≥ 5 pp, sin que los choques suban más de 10%): **se cumple** (30.7% − 0% = +30.7 pp; choques 0.0 frente a 0.0). La hipótesis «con 3 veces los pasos la política de e4 completa la cadena y supera al control» **se confirma en promedio**.
+**Cuidado con la lectura:** el promedio lo sostiene **una sola semilla de tres** (92%, 0%, 0%); la desviación entre semillas es de 43 pp y el control tiene una sola semilla. No es evidencia de que la configuración sea robusta; es evidencia de que **es alcanzable** (la semilla 0 lo logra con regularidad: 73% de éxito en entrenamiento). No se promueve ningún run a `recomendado` (el ciclo exige finalistas, más semillas y la suite final reservada); los tres e4l quedan `candidato`.
+
+**Diagnóstico (repetición determinista de las 50 semillas de evaluación):**
+- **e4l-seed0:** llega a la celda de interacción del primer estante en 50/50 episodios; primera recogida a mediana del paso 16; 46 episodios completan el pedido con la bandeja abajo y vacía. Los 4 fallos (semillas 10020, 10025, 10027, 10040) terminan con 2 productos cargados, 0 entregados y la bandeja arriba (3 por tiempo, 1 por batería agotada). Usa AVANZAR 44.1%, GIRAR 17.2%, FRENAR 14.9%, CARGAR 7.1%, SUBIR 8.0%, BAJAR 7.8%, DESCARGAR 1.0%: la cadena completa.
+- **e4l-seed1:** solo 10/50 episodios llegan a la celda de interacción y ninguno recoge; elige DESCARGAR (inválida) en 64.6% de los pasos (258 inválidas por episodio): colapso a una acción inválida, distinto de los colapsos a FRENAR anteriores.
+- **e4l-seed2:** llega al estante en 50/50 y recoge 2.42 productos por episodio (como seed0, primera recogida mediana en el paso 16), pero no entrega: 49/50 episodios terminan cargando (38 con la bandeja arriba) y gira en el sitio (GIRAR 83.5%). Tuvo 2 episodios de entrenamiento con éxito.
+- **Control c0l (más pasos, sin términos v4/v5):** también aprende a llegar y recoger (1.68 productos por episodio, 50/50 llegan al estante) pero **nunca entrega** (0 entregas): terminan 46/50 con carga (33 con la bandeja arriba). Es decir, más pasos por sí solos dan recogidas pero no entregas en este run; la recompensa de e4 es lo que permite entregar en la semilla 0.
+- Patrón común de los fallos (c0l, seed2, y los 4 fallos de seed0): tras cargar, la política se queda con la carga y no completa el trayecto a la cinta con la bandeja abajo.
+
+**Lectura (hipótesis):** la recompensa e4 más presupuesto bastan para resolver el problema en al menos una semilla, y las otras dos se atascan en puntos distintos (no llegar y spam de DESCARGAR; cargar y no entregar). Antes de afirmar que la configuración funciona hay que replicar con más semillas y presupuesto; los puntos de fallo sugieren bonos únicos por línea al bajar tras cargar y al llegar a la cinta con la bandeja abajo (nueva versión).
+**Limitaciones:** una semilla por control; 3 semillas por configuración; mapa abierto; 606 208 pasos; no se usó la suite final reservada.

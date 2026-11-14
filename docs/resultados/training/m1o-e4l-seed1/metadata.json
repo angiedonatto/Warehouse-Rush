@@ -1,5 +1,5 @@
 {
-  "status": "running",
+  "status": "completed",
   "algorithm": "PPO",
   "policy": "MlpPolicy",
   "environment_version": "warehouse-v5",
@@ -227,5 +227,10 @@
   "started_at_utc": "2026-11-13T23:45:45.675631+00:00",
   "periodic_eval_seed": 20000,
   "periodic_eval_episodes": 5,
-  "periodic_eval_every": 20000
+  "periodic_eval_every": 20000,
+  "effective_timesteps": 606208,
+  "duration_seconds": 1407.6683197830007,
+  "model_path": "models/m1o-e4l-seed1/model.zip",
+  "model_alias": "models/ppo_orders3_seed1.zip",
+  "completed_at_utc": "2026-11-14T00:09:19.826556+00:00"
 }

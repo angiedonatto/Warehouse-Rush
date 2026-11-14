@@ -909,4 +909,18 @@ Presupuesto efectivo 606 208 pasos por run.
 |---|---:|---:|---|
 | m1-q1-seed0/1/2 | 606 208 | 0/1/2 | `m1_q1_escala5_seed{0,1,2}.yaml` |
 
-Presupuesto real: (pendiente).
+Presupuesto efectivo 606 208 pasos por run.
+
+### Presupuesto real y resultados (q1; `suite-m1-v1`, determinista, semillas 10000–10049; heurística 100%)
+| Run | Minutos | Éxito | Llegan a celda (de 50) | Choques/ep | Inválidas/ep | Acciones | Episodios de entrenamiento (éxitos) | Estado |
+|---|---:|---:|---:|---:|---:|---|---:|---|
+| m1-e4l-seed0 (base) | 34.3 | 0% | 21 | 0.0 | 63.0 | 72% FRENAR | 1 512 (0) | rechazado |
+| m1-p1-seed0 (×1) | 27.8 | 0% | 0 | 0.0 | 8.0 | 95% FRENAR | 5 455 (0) | rechazado |
+| m1-q1-seed0 (×5) | 26.9 | 0% | 0 | **98.8** | 0.0 | 25% AVANZAR, 0% giros, 75% FRENAR | 5 786 (0) | rechazado |
+| m1-q1-seed1 (×5) | 26.7 | 0% | 0 | **39.9** | 0.0 | 12% AVANZAR, 0% giros, 88% FRENAR | 5 797 (0) | rechazado |
+| m1-q1-seed2 (×5) | 26.7 | 0% | 0 | 0.0 | 19.4 | 92% FRENAR, 8% CARGAR | 5 327 (0) | rechazado |
+- **Decisión por el criterio fijado antes:** media 0% < 5% y los choques suben de 0 a 0/39.9/98.8 por episodio → hipótesis refutada, los 3 runs `rechazado` (evidencia conservada).
+- **El riesgo declarado antes se materializó:** dos de tres semillas caen en la **trampa de choques** (conducción contra obstáculos sin giros, luego frenado), la misma conducta que `m1-r6`/`r7` con colisión barata. Con ×5 y penalizaciones sin escalar, la colisión efectiva (−0.2) y la invalidación (−0.04) quedaron baratas frente a un shaping de 0.40 por celda; la semilla 2 sigue en idle.
+- **Lectura de los dos factores:** ×1 (p1) → idle por señal débil; ×5 (q1) → trampa de choques y un idle. Subir todo por igual no mueve nada (SB3 normaliza ventajas); lo que decide es la razón entre el shaping por celda y el coste de los contactos (colisión −1, inválida −0.2) y de moverse. No probado: **escalar también `collision` e `invalid_interaction` ×5** (−5 y −1, que son los valores por defecto del ambiente) mantendría la razón shaping/colisión de p1 y subiría la razón shaping/tiempo ×5.
+- **Limitaciones:** un solo factor; sin ablación de las penalizaciones; la parada (100) está activa en todas, aunque p2 mostró que no es la causa del idle; el potencial navega con BFS (consciente del muro), por lo que el choque contra obstáculos no lo explica el potencial sino la exploración barata.
+

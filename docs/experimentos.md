@@ -893,3 +893,20 @@ Presupuesto efectivo 606 208 pasos por run.
 - **Atribución (ablación p2 frente a p1-seed0):** misma conducta sin parada (0/50, idle), así que el fallo es del potencial con ese W, no de la parada. La parada hizo lo previsto en mecánica: **3.6–3.8 veces más episodios** de entrenamiento (5 455–5 745 frente a 1 512) con los mismos pasos y los mismos minutos (≈ 28 en ambos); no acorta el run.
 - **Limitaciones:** un solo valor de W (30), elegido para que el shaping total fuera una unidad; pesos internos de φ sin ajustar; `p2` con una semilla.
 - **Siguiente paso propuesto (no hecho):** subir W (por ejemplo 100–200) y/o concentrar la navegación, con la medición guionizada del shaping por celda antes de entrenar; criterio: ≥ 5%.
+
+## Potencial con la recompensa de la tarea ×5 (`m1-q1`, escrito antes de entrenar, 2026-11-14)
+**Contexto:** `m1-p1`/`p2` (potencial W = 30) dieron 0% con política idle (FRENAR 85–100%); el shaping de navegación valía 0.08 por celda (e4: 0.6), por debajo del coste de moverse. Instrucción del usuario: W mayor con las recompensas de la tarea proporcionalmente mayores. Sin cambio de código (`warehouse-v9`); solo configs.
+- **Cambio frente a `m1-p1`:** `pickup` 50, `delivery` 150, `completion` 250 y `potential` 150 (×5); `invalid_interaction` −0.2, `collision` −1, `time` y `battery` sin escalar. Parada de estancamiento 100, 600 000 pasos, mapa con muro, semillas 0–2, PPO idéntico (verificado con `diff` y una prueba).
+- **Equivalencia (declarada antes):** SB3 normaliza las ventajas, así que escalar todo por igual no cambiaría nada; escalar solo los términos positivos equivale a dividir por 5 las penalizaciones: colisión efectiva −0.2, inválida −0.04, tiempo −0.02, batería −0.004. **Riesgo:** la trampa de choques vista con colisión −0.5/−0.1 (`m1-r6`, `r7`; 200 000 pasos, sin shaping, ver `experiment-log`). Si los choques por episodio suben, es la señal.
+- **Medición previa:** shaping de navegación por celda 0.08 (×1) → **0.40** (×5) (d_max ≈ 25; e4: 0.6). Retornos guionizados descontados, 8 semillas, mapa con muro, ×1 → ×5: quieto −11.4 → −17.2; ir, mirar y quedarse −11.6 → −17.1; recoger el 1.º y quedarse −3.3 → +24.2; pedido completo 61.0 → 330.6. El orden se conserva (invarianza) y recoger y quedarse ahora supera a quedarse quieto por ≈ 41.
+- **Hipótesis:** con el shaping de navegación por encima del coste de moverse la política se acerca al estante y descubre el resto de etapas del potencial; más semillas despegan.
+- **Criterio (fijado ahora):** éxito medio de las 3 semillas en `suite-m1-v1` ≥ 5% (base `m1-e4l` 0%) y choques por episodio sin subir > 10% frente a `m1-e4l` (0). Se reporta cada semilla; un resultado llevado por una semilla es `candidato`.
+- **Qué la refutaría:** media < 5% o choques que suben > 10%.
+- **Métricas secundarias descriptivas:** episodios que llegan / miran / suben / cargan, entregas por episodio, choques, inválidas, fracción de FRENAR.
+- **Limitaciones:** un solo factor (×5), sin barrido; el retorno de evaluación no es comparable con v8 ni con p1; no se separa el efecto del factor del de «penalizaciones más baratas» (son lo mismo).
+
+| Run | Pasos | Semilla | Config |
+|---|---:|---:|---|
+| m1-q1-seed0/1/2 | 606 208 | 0/1/2 | `m1_q1_escala5_seed{0,1,2}.yaml` |
+
+Presupuesto real: (pendiente).

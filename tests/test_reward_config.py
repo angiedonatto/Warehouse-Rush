@@ -541,3 +541,15 @@ def test_potential_cannot_be_farmed_by_standing_or_turning_away_and_back():
         for action in (Action.GIRAR_IZQUIERDA, Action.GIRAR_DERECHA):
             cycle += env.step(int(action))[4]["reward_components"]["potential"]
     assert cycle < 0.0
+
+
+def test_q1_configs_are_p1_with_task_rewards_and_potential_scaled_by_five():
+    p1 = raw("m1_p1_potencial_seed0")
+    for seed in (0, 1, 2):
+        q1 = raw(f"m1_q1_escala5_seed{seed}")
+        assert q1["id"] == "q1" and q1["seed"] == seed and q1["environment_version"] == "warehouse-v9"
+        expected = {**p1["recompensa"], "pickup": 50.0, "delivery": 150.0, "completion": 250.0, "potential": 150.0}
+        assert q1["recompensa"] == expected
+        assert q1["ppo"] == p1["ppo"] and q1["layout"] == p1["layout"] == WALLED
+        assert q1["presupuesto_pasos"] == p1["presupuesto_pasos"] == 600000 and q1["parada_estancamiento"] == 100
+        assert q1["recompensa"]["collision"] == p1["recompensa"]["collision"] == -1.0   # penalizaciones sin escalar

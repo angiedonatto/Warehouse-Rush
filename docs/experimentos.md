@@ -467,3 +467,47 @@ Pregunta del equipo: ¿qué habría pasado con la semilla 0 con el presupuesto o
 - Por tanto el presupuesto original quedaba **a mitad de camino**: la política aprendía a recoger pero aún no a entregar. El 3× del presupuesto no es un detalle: la curva solo despega pasado el doble del presupuesto original.
 
 **Cuidado:** es una sola semilla y la curva se evaluó con la suite de comparación (`suite-m1o-v1`); no debe usarse para escoger un checkpoint (sería ajustar sobre la suite). Los checkpoints están solo en local (`models/` ignorado por Git).
+
+
+## Penalización de tiempo −0.2 y bono por bajar la bandeja camino al despacho (escrito antes de entrenar, 2026-11-13)
+**Contexto:** `m1o-e4l-seed0` (92%) completa la misión, pero sus episodios exitosos duran 71.8 pasos de media (máximo 83), lo mismo que la heurística (71.3), y la media de 95.1 pasos del run viene de 4 fallos
+(3 por límite de tiempo a 400 pasos, 1 por batería a 251) que no entregaron nada. Las semillas 1 y 2 de e4l dieron 0%. Instrucción del equipo: subir la penalización de tiempo, añadir un bono por bajar la bandeja
+cuando la distancia al despacho es > 0 y la bandeja no está en 0, y comprobar que tras recoger todo el objetivo (x, y y distancia) apunta al despacho (ya era así; fijado por prueba). Código `env/warehouse-v6`.
+
+**Cambio (dos dimensiones, pedidas juntas; la ablación las separa):** `time` −0.1 → −0.2 y `lower_bonus` 0 → 1.0 (por puesto de bandeja bajado, una vez por tramo y puesto). Resto igual a e4l: Manhattan 0.3, altura −0.02,
+collision −1, invalid −0.2, mapa abierto `layout_v0.5`, PPO de C0, 606 208 pasos efectivos (600 000 pedidos), `suite-m1o-v1`.
+
+**Hipótesis:** (1) el bono da señal directa al paso «bajar la bandeja tras cargar», donde fallan las semillas 1 y 2, y más semillas completan la misión; (2) `time` −0.2 reduce los pasos por episodio. **Qué la refutaría:** que el éxito medio de las 3 semillas de `f1`
+no supere al de e4l (30.7%) en ≥ 5 pp, o que los choques suban > 10% (criterio de `configs/criterios.yaml`, sin cambios). Métricas secundarias (descriptivas): pasos de los episodios exitosos (e4l-seed0: 71.8), nº de fallos por límite de tiempo, inválidas por episodio, entregas y recogidas por episodio,
+BAJAR con objetivo DELIVERY y distancia > 0, retorno (no comparable con e4l: cambia la escala).
+
+**Retornos de referencia medidos antes de entrenar** (conductas guionizadas, 15 semillas 10000–10014, mapa abierto; no son resultados del modelo):
+
+| Conducta | e4 (control) | time −0.2 | bono 1.0 | time −0.2 + bono 1.0 | time −0.3 + bono 1.0 |
+|---|---:|---:|---:|---:|---:|
+| quieto en la base | −40.8 | −80.8 | −40.8 | −80.8 | −120.8 |
+| ir al estante y quedarse | −48.9 | −88.9 | −48.9 | −88.9 | −128.9 |
+| recoger el 1.º y quedarse | −26.0 | −66.0 | −26.0 | −66.0 | −106.0 |
+| recoger todo, bandeja arriba, quieto | 5.4 | −34.6 | 5.4 | −34.6 | −74.6 |
+| recoger todo, bajar la bandeja, quieto lejos | 5.4 | −34.6 | 7.3 | −32.7 | −72.7 |
+| completar el pedido | 127.4 | 120.3 | 129.3 | 122.1 | 115.0 |
+
+- El orden de las conductas no cambia con `time` −0.2: recoger sigue rindiendo más que ir al estante y que quedarse, y completar rinde +122 frente a −81 de no hacer nada (el control: +127 frente a −41). No aparece zona de evitación nueva por este término.
+- Elegimos −0.2 (no −0.3): el hueco entre completar e idle pasa de 168 a 203 puntos en términos absolutos, pero el retorno de un episodio exitoso baja de 127 a 122 (−0.3 lo baja a 115); un tiempo más caro reduce la ventaja neta de terminar.
+- El bono vale 1.9 puntos de media en el tramo guionizado (la última recogida suele estar en la balda 1–3): es una señal pequeña frente a los hitos (10/30/50), pensada como gradiente y no como premio.
+- Probado que el bono no es explotable: SUBIR/BAJAR repetidos en el tramo de entrega pagan como máximo 1 bono por puesto (`test_raising_and_lowering_on_the_way_to_delivery_is_not_farmable`).
+- **Límite declarado:** el bono solo actúa con objetivo DELIVERY; la bajada tras una recogida intermedia no cobra bono.
+
+| Run | `time` | `lower_bonus` | Semilla | Config |
+|---|---:|---:|---:|---|
+| m1o-e4l-seed0/1/2 (control, v5, ya entrenados) | −0.1 | 0 | 0, 1, 2 | `m1o_e4l_seed{0,1,2}.yaml` |
+| m1o-f1-seed0/1/2 | −0.2 | 1.0 | 0, 1, 2 | `m1o_f1_tiempo_bono_seed{0,1,2}.yaml` |
+| m1o-f2-seed0 (ablación) | −0.2 | 0 | 0 | `m1o_f2_tiempo_seed0.yaml` |
+| m1o-f3-seed0 (ablación) | −0.1 | 1.0 | 0 | `m1o_f3_bono_seed0.yaml` |
+
+El control es e4l: con `lower_bonus` 0 y `time` −0.1 v6 reproduce el retorno de v5 (prueba `test_v6_with_new_terms_off_matches_v5_returns`) y el entrenamiento es determinista, así que no se reentrena. El bloque `ppo:` de los cinco configs es idéntico al de e4l (verificado con `diff`).
+
+### Presupuesto real por run (f1–f3)
+| Run | Nivel | Pasos | Minutos | Estado |
+|---|---|---|---|---|
+| m1o-f1-seed0/1/2, m1o-f2-seed0, m1o-f3-seed0 | m1o | (pendiente) | (pendiente) | (pendiente) |

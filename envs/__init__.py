@@ -1,7 +1,7 @@
 """Warehouse Rush: cinemática discreta, sin motor físico continuo."""
 
-__version__ = "0.5.0"          # versión de la ficha del ambiente (docs/ambiente-v0.5.md)
-ENV_VERSION = "warehouse-v5"   # v5 = v4 + diferencia de distancia Manhattan y penalización por altura de bandeja distinta en la celda de interacción (ambos por defecto 0)
+__version__ = "0.6.0"          # versión de la ficha del ambiente (docs/ambiente-v0.6.md)
+ENV_VERSION = "warehouse-v6"   # v6 = v5 + bono por bajar la bandeja camino al despacho (`lower_bonus`, por defecto 0)
 
 from dataclasses import asdict
 
@@ -22,7 +22,7 @@ def reward_config(overrides: dict | None = None, layout_path=None) -> RewardConf
 
 def make_env(blocked: bool = False, layout_path=None, orders: int | None = None,
              reward_overrides: dict | None = None, **kwargs):
-    """Ambiente v5 (misiones de maquillaje). Con `orders=N` cada episodio sortea N productos
+    """Ambiente v6 (misiones de maquillaje). Con `orders=N` cada episodio sortea N productos
     distintos de 1 unidad y repone el stock al reiniciar (entrenamiento/evaluación).
     `reward_overrides` cambia coeficientes de recompensa; sin él rige la recompensa del mapa (= v2)."""
     if orders is not None:

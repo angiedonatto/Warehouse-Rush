@@ -89,6 +89,7 @@ class WarehouseRushEnv(gym.Env):
         low = np.zeros(self.OBSERVATION_SIZE, dtype=np.float32)
         self.observation_space = spaces.Box(low, np.ones_like(low), dtype=np.float32)
         self._done = True
+        self._delivery_floor: int | None = None
         # Cachés internes: sólo recompensa/diagnóstico/heurística; jamás se exponen a PPO.
         self._fields = {(b, s): self.layout.distance_field(s, b)
                         for b in (False, True) for s in self.layout.stations}
@@ -104,6 +105,7 @@ class WarehouseRushEnv(gym.Env):
                                 0, self.config.max_steps, 0, 0, 0, blocked)
         self.picked_packages: set[str] = set()
         self.completed_packages: set[str] = set()
+        self._delivery_floor = None
         self._done = False
         self._reason = None
         return self._observation(), self._info()
@@ -142,6 +144,23 @@ class WarehouseRushEnv(gym.Env):
         if station is None or self.route_distance(station) != 0:
             return 0
         return abs(self.tray_level() - needed)
+
+    def lowered_levels(self, action: Action, target: str | None, level_before: int, distance_before: int | None) -> int:
+        """Puestos de bandeja bajados por BAJAR al llevar el pedido al despacho, sin pagar dos veces el mismo puesto.
+
+        Paga solo si el objetivo previo es DELIVERY, el robot sigue lejos de él (distancia BFS > 0) y la bandeja
+        estaba por encima de 0. `_delivery_floor` es el puesto más bajo ya alcanzado en este tramo: subir y volver
+        a bajar no vuelve a pagar (un bucle SUBIR/BAJAR no es rentable). Se reinicia al salir del tramo.
+        """
+        if target != "DELIVERY":
+            self._delivery_floor = None
+            return 0
+        floor = level_before if self._delivery_floor is None else min(self._delivery_floor, level_before)
+        level_after = self.tray_level()
+        self._delivery_floor = min(floor, level_after)
+        if action != Action.BAJAR or level_before <= 0 or not distance_before:
+            return 0
+        return max(0, floor - level_after)
 
     def facing_target(self) -> bool:
         if self.state.objetivo is None:
@@ -215,6 +234,7 @@ class WarehouseRushEnv(gym.Env):
         old_distance = self.route_distance(old_target)
         old_manhattan = self.manhattan_to(old_target)
         needed_level = self.needed_tray_level()
+        level_before = self.tray_level()
         costs = (self.config.forward_cost, self.config.turn_cost, self.config.turn_cost,
                  self.config.brake_cost, self.config.interact_cost, self.config.interact_cost,
                  self.config.brake_cost, self.config.brake_cost)
@@ -233,11 +253,12 @@ class WarehouseRushEnv(gym.Env):
         target_distance = self.manhattan_to(old_target)
         manhattan_delta = float(old_manhattan - target_distance)   # mismo objetivo antes y después: sin salto al cambiar de etapa
         height_gap = float(self.height_gap(old_target, needed_level))
+        lowered = float(self.lowered_levels(action, old_target, level_before, old_distance))
         components = reward_components(self.reward_config, distance_delta=delta,
                                        battery_used=used, pickup=pickup, delivery=delivery,
                                        completion=success, collision=collision, invalid=invalid,
                                        target_distance=target_distance, manhattan_delta=manhattan_delta,
-                                       height_gap=height_gap)
+                                       height_gap=height_gap, lowered_levels=lowered)
         reward = float(sum(components.values()))
         state.recompensa_total += reward
         unreachable = not success and self.route_distance() is None

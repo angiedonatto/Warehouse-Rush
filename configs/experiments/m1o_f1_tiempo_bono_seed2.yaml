@@ -1,0 +1,34 @@
+id: f1
+hipotesis: >
+  e4 (m1o-e4l: Manhattan 0.3, altura -0.02, collision -1, invalid -0.2) mas dos cambios de recompensa de warehouse-v6: time -0.1 -> -0.2 y lower_bonus 1.0 (1 punto por puesto de bandeja que BAJAR gana
+  camino al despacho: objetivo DELIVERY, distancia > 0, bandeja > 0, una vez por tramo y puesto). 600 000 pasos, semillas 0-2, mismo PPO y mismo mapa que e4l.
+  Hipotesis: los episodios exitosos se acortan (menos pasos) y mas semillas completan la mision que con e4l (media 30.7%, seeds 92/0/0) sin perder exito. Criterio: exito medio >= e4l + 5 pp con choques sin subir >10%.
+  Se refuta si la media de exito de las 3 semillas no supera a la de e4l en >= 5 pp.
+nivel: m1o
+environment_version: warehouse-v6
+parent_run_id: null
+seed: 2
+presupuesto_pasos: 600000
+layout: configs/layout_v0.5.json   # mapa abierto
+recompensa:
+  invalid_interaction: -0.2
+  collision: -1.0
+  manhattan_progress: 0.3
+  height_mismatch: -0.02
+  time: -0.2
+  lower_bonus: 1.0
+ppo:
+  learning_rate: 3.0e-4
+  n_steps: 2048
+  n_envs: 4
+  batch_size: 64
+  n_epochs: 10
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_range: 0.2
+  ent_coef: 0.0
+  net_arch: [64, 64]
+evaluacion:
+  intermedia: dev-m1o-v1
+  cada_pasos: 20000
+  final: suite-m1o-v1

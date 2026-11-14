@@ -546,3 +546,43 @@ Los criterios no se cambiaron tras ver los resultados.
 **Limitaciones:** una semilla por ablación; tres para `f1`; presupuesto de 606 208 pasos; el control (e4l) se entrenó con código v5 con recompensa idéntica en los términos no nuevos (verificado por prueba, no reentrenado); el bono solo actúa con objetivo DELIVERY; las duraciones de entrenamiento incluyen carga concurrente de otras tareas.
 
 **Siguiente (no iniciado):** si se quiere acortar episodios, atacar el fallo: (1) volver a `time` −0.1 y probar un bono por avanzar con carga hacia el despacho (diferencia Manhattan ya existe; falta un hito, por ejemplo una vez al cruzar la mitad de la distancia al despacho tras bajar la bandeja); (2) replicar e4l en más semillas antes de seguir afinando recompensa, porque 92/0/0 no distingue efectos de recompensa de la varianza.
+
+
+## Hito de la mitad del camino al despacho con la carga (`g1`, escrito antes de entrenar, 2026-11-13)
+**Contexto:** en f1–f3 (v6) el bono por bajar la bandeja logró que el agente subiera, cargara y bajara la bandeja en 50/50 episodios (f1-seed0, f3), pero **ninguno entregó** (0 entregas en ≈ 7 600 episodios de entrenamiento): tras bajarla gira en el sitio
+(GIRAR_DERECHA 2 587 / 825 pasos) en lugar de avanzar al despacho. `time` −0.2 (f2) no acortó los éxitos (73.6 frente a 71.8 pasos) y bajó el éxito de 92% a 44% en la semilla 0. Instrucción del equipo: retirar `lower_bonus` y pagar un hito en el tramo con carga. Código `env/warehouse-v7`.
+
+**Cambio (una dimensión frente a e4l):** `carry_milestone` 0 → 5.0 (una vez por tramo de entrega, al llegar a la mitad o menos de la distancia BFS inicial al despacho). Se vuelve a `time` −0.1 y no hay `lower_bonus`. Resto igual a e4l: Manhattan 0.3, altura −0.02, collision −1, invalid −0.2,
+mapa abierto `layout_v0.5`, PPO de C0, 606 208 pasos efectivos (600 000 pedidos), semillas 0–2, `suite-m1o-v1`.
+
+**Hipótesis:** una señal única en el tramo con carga hace que los agentes que ya bajan la bandeja y no avanzan lleguen al despacho y entreguen, y suben el éxito medio de las 3 semillas frente a e4l (30.7%; 92/0/0).
+**Qué la refutaría:** que el éxito medio de las 3 semillas no supere al de e4l en ≥ 5 pp, o que los choques suban > 10% (criterio de `configs/criterios.yaml`, sin cambios). Métricas secundarias (descriptivas): entregas y recogidas por episodio, episodios de entrenamiento con entrega,
+pasos de los éxitos (e4l-seed0: 71.8), fallos por límite de tiempo, inválidas por episodio, y la acción elegida tras cargar con la bandeja abajo (giros en el sitio frente a AVANZAR).
+
+**Retornos de referencia medidos antes de entrenar** (conductas guionizadas, 15 semillas 10000–10014, mapa abierto; no son resultados del modelo):
+
+| Conducta | e4l (control, v5) | g1: hito 5.0 | hito 10.0 |
+|---|---:|---:|---:|
+| quieto en la base | −40.8 | −40.8 | −40.8 |
+| ir al estante y quedarse | −48.9 | −48.9 | −48.9 |
+| recoger el 1.º y quedarse | −26.0 | −26.0 | −26.0 |
+| recoger todo, bandeja arriba, quieto | 5.4 | 5.4 | 5.4 |
+| recoger todo, bajar la bandeja, quieto lejos | 5.4 | 5.4 | 5.4 |
+| llevar la carga a la mitad del camino y quedarse | 9.7 | 14.7 | 19.7 |
+| completar el pedido | 127.4 | 132.4 | 137.4 |
+
+- El hito no altera ninguna conducta anterior a la mitad del camino (columnas idénticas) y añade exactamente su valor a las que llegan a ella: el orden de las conductas no cambia y no aparece zona de evitación. Se eligió 5.0 (no 10.0) para que sea un gradiente y no domine los hitos de 10/30/50.
+- No es explotable: se paga una vez por tramo (`test_carry_milestone_is_not_farmable_by_oscillating`); el retorno máximo extra por pedido es 5.0 por tramo.
+- **Límite declarado:** el hito solo actúa con objetivo DELIVERY; si el atasco es de política (giros en el sitio) y no de señal, 5 puntos pueden no bastar.
+
+| Run | `time` | `carry_milestone` | Semilla | Config |
+|---|---:|---:|---:|---|
+| m1o-e4l-seed0/1/2 (control, v5, ya entrenados) | −0.1 | 0 | 0, 1, 2 | `m1o_e4l_seed{0,1,2}.yaml` |
+| m1o-g1-seed0/1/2 | −0.1 | 5.0 | 0, 1, 2 | `m1o_g1_hito_seed{0,1,2}.yaml` |
+
+El control es e4l: con el hito en 0 v7 reproduce el retorno de v5 (prueba `test_v7_with_milestone_off_matches_v5_returns`) y el entrenamiento es determinista, así que no se reentrena. El bloque `ppo:` de los tres configs es idéntico al de e4l (comprobado por prueba).
+
+### Presupuesto real por run (g1)
+| Run | Nivel | Pasos | Minutos | Estado |
+|---|---|---|---|---|
+| m1o-g1-seed0/1/2 | m1o | (pendiente) | (pendiente) | (pendiente) |

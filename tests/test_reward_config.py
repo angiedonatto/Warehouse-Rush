@@ -18,7 +18,7 @@ def raw(name):
 
 
 def test_default_reward_equals_v2_coefficients():
-    assert asdict(reward_config()) == {"pickup": 10.0, "delivery": 30.0, "completion": 50.0, "progress": 0.3, "distance": 0.0, "manhattan_progress": 0.0, "height_mismatch": 0.0, "lower_bonus": 0.0,
+    assert asdict(reward_config()) == {"pickup": 10.0, "delivery": 30.0, "completion": 50.0, "progress": 0.3, "distance": 0.0, "manhattan_progress": 0.0, "height_mismatch": 0.0, "carry_milestone": 0.0,
                                        "time": -0.1, "battery": -0.02, "collision": -5.0, "invalid_interaction": -2.0}
     assert make_env(orders=3).reward_config == reward_config()
 
@@ -292,8 +292,8 @@ def test_e4_long_seeds_control_and_e5_configs():
     assert e5["ppo"] == e4["ppo"] and e5["layout"] == OPEN
 
 
-# --- v6: bono por bajar la bandeja camino al despacho (`lower_bonus`) ---
-V6 = {**NEW, "height_mismatch": -0.02, "lower_bonus": 1.0, "time": -0.2}
+# --- v7: hito de la mitad del camino al despacho con la carga (`carry_milestone`); v6 (lower_bonus) se retira ---
+V7 = {**NEW, "height_mismatch": -0.02, "carry_milestone": 5.0}
 
 
 def play_until(env, policy, obs, stop):
@@ -305,27 +305,33 @@ def play_until(env, policy, obs, stop):
     return obs
 
 
-def all_picked_with_tray_up(env):
-    return len(env.picked_packages) == env.orders and env.tray_level() > 0
+def all_picked(env):
+    return len(env.picked_packages) == env.orders
 
 
-def test_lower_bonus_default_off_and_sign_validated():
+def test_carry_milestone_default_off_sign_validated_and_lower_bonus_is_gone():
     from pipelines.baselines import HeuristicPolicy
+    assert "lower_bonus" not in asdict(reward_config())
+    with pytest.raises(ValueError):
+        reward_config({"lower_bonus": 1.0})
+    with pytest.raises(ValueError):
+        reward_config({"carry_milestone": -1.0})
     env = make_env(layout_path=OPEN, orders=3, reward_overrides=NEW)
     obs, _ = env.reset(seed=10002)
-    obs = play_until(env, HeuristicPolicy(), obs, all_picked_with_tray_up)
-    *_, info = env.step(Action.BAJAR)
-    assert info["reward_components"]["lower_bonus"] == 0.0
-    with pytest.raises(ValueError):
-        reward_config({"lower_bonus": -1.0})
+    policy, paid, done = HeuristicPolicy(), 0.0, False
+    while not done:
+        obs, _, term, trunc, info = env.step(policy.action(obs, env))
+        paid += info["reward_components"]["carry_milestone"]
+        done = term or trunc
+    assert paid == 0.0
 
 
 def test_after_the_last_pickup_the_target_is_the_delivery_point():
     from pipelines.baselines import HeuristicPolicy
     for seed in range(10000, 10010):
-        env = make_env(layout_path=OPEN, orders=3, reward_overrides=V6)
+        env = make_env(layout_path=OPEN, orders=3, reward_overrides=V7)
         obs, _ = env.reset(seed=seed)
-        obs = play_until(env, HeuristicPolicy(), obs, lambda e: len(e.picked_packages) == e.orders)
+        obs = play_until(env, HeuristicPolicy(), obs, all_picked)
         dx, dy = env.layout.stations["DELIVERY"]
         assert env.state.objetivo == "DELIVERY" and env.state.etapa == "entregar"
         assert (obs[10] * (env.layout.width - 1), obs[11] * (env.layout.height - 1)) == pytest.approx((dx, dy), abs=1e-4)
@@ -333,57 +339,58 @@ def test_after_the_last_pickup_the_target_is_the_delivery_point():
         assert env.manhattan_to("DELIVERY") == abs(env.state.x - dx) + abs(env.state.y - dy)
 
 
-def test_lower_bonus_pays_per_level_only_far_from_delivery_and_only_once():
+def test_carry_milestone_pays_once_at_half_the_distance_and_never_before():
     from pipelines.baselines import HeuristicPolicy
-    env = make_env(layout_path=OPEN, orders=3, reward_overrides=V6)
-    obs, _ = env.reset(seed=10005)           # última recogida en la balda 3
-    obs = play_until(env, HeuristicPolicy(), obs, all_picked_with_tray_up)
-    start = env.tray_level()
-    assert start >= 1 and env.route_distance() > 0
-    paid = []
-    for _ in range(start):
-        *_, info = env.step(Action.BAJAR)
-        paid.append(info["reward_components"]["lower_bonus"])
-    assert paid == [1.0] * start and env.tray_level() == 0
-    *_, info = env.step(Action.BAJAR)         # ya en 0: inválida, sin bono
-    assert info["reward_components"]["lower_bonus"] == 0.0
+    for seed in (10000, 10004, 10005):
+        env = make_env(layout_path=OPEN, orders=3, reward_overrides=V7)
+        obs, _ = env.reset(seed=seed)
+        policy = HeuristicPolicy()
+        obs = play_until(env, policy, obs, all_picked)
+        start = env.route_distance()
+        events, done = [], False
+        while not done:
+            obs, _, term, trunc, info = env.step(policy.action(obs, env))
+            done = term or trunc
+            paid = info["reward_components"]["carry_milestone"]
+            if paid:
+                events.append((start, env.route_distance()))
+        assert len(events) == 1
+        assert events[0][1] * 2 <= events[0][0]
 
 
-def test_raising_and_lowering_on_the_way_to_delivery_is_not_farmable():
+def test_carry_milestone_is_not_farmable_by_oscillating():
     from pipelines.baselines import HeuristicPolicy
-    env = make_env(layout_path=OPEN, orders=3, reward_overrides=V6)
-    obs, _ = env.reset(seed=10005)
-    obs = play_until(env, HeuristicPolicy(), obs, all_picked_with_tray_up)
-    start = env.tray_level()
+    env = make_env(layout_path=OPEN, orders=3, reward_overrides=V7)
+    obs, _ = env.reset(seed=10000)
+    policy = HeuristicPolicy()
+    obs = play_until(env, policy, obs, all_picked)
+    obs = play_until(env, policy, obs, lambda e: e.tray_level() == 0)       # baja la bandeja; aún lejos del despacho
     total = 0.0
-    for action in [Action.BAJAR, Action.SUBIR] * 30 + [Action.BAJAR] * (start + 1):
-        *_, info = env.step(action)
-        total += info["reward_components"]["lower_bonus"]
-    assert total == pytest.approx(1.0 * start)       # nunca más de un bono por puesto y tramo
+    for _ in range(40):                                                     # avanza y retrocede 80 pasos
+        for action in (Action.AVANZAR, Action.GIRAR_DERECHA, Action.GIRAR_DERECHA, Action.AVANZAR,
+                       Action.GIRAR_DERECHA, Action.GIRAR_DERECHA):
+            *_, info = env.step(action)
+            total += info["reward_components"]["carry_milestone"]
+    assert total <= 5.0
 
 
-def test_no_bonus_while_the_target_is_a_rack_or_at_the_delivery_cell():
+def test_no_milestone_while_the_target_is_a_rack():
     from pipelines.baselines import HeuristicPolicy
-    env = make_env(layout_path=OPEN, orders=3, reward_overrides=V6)
+    env = make_env(layout_path=OPEN, orders=3, reward_overrides=V7)
     obs, _ = env.reset(seed=10002)
-    obs = to_pickup_pose(env, HeuristicPolicy(), obs)
-    for _ in range(3):
-        env.step(Action.SUBIR)
-    *_, info = env.step(Action.BAJAR)                # objetivo = estante: sin bono
-    assert info["reward_components"]["lower_bonus"] == 0.0
-    # en la celda de entrega (distancia 0) el bono tampoco aplica
-    env2 = make_env(layout_path=OPEN, orders=3, reward_overrides=V6)
-    obs, _ = env2.reset(seed=10002)
-    obs = play_until(env2, HeuristicPolicy(), obs, all_picked_with_tray_up)
-    obs = play_until(env2, HeuristicPolicy(), obs, lambda e: e.tray_level() == 0)
-    assert env2.tray_level() == 0
+    policy, total, done = HeuristicPolicy(), 0.0, False
+    while not done and not env.picked_packages:
+        obs, _, term, trunc, info = env.step(policy.action(obs, env))
+        total += info["reward_components"]["carry_milestone"]
+        done = term or trunc
+    assert total == 0.0
 
 
-def test_v6_with_new_terms_off_matches_v5_returns():
-    """lower_bonus = 0 deja intacto el retorno de v5 (e4): mismo episodio guionizado, mismo retorno."""
+def test_v7_with_milestone_off_matches_v5_returns():
+    """carry_milestone = 0 deja intacto el retorno de v5 (e4): mismo episodio guionizado, mismo retorno."""
     from pipelines.baselines import HeuristicPolicy
     returns = []
-    for overrides in ({**NEW, "height_mismatch": -0.02}, {**NEW, "height_mismatch": -0.02, "lower_bonus": 0.0}):
+    for overrides in ({**NEW, "height_mismatch": -0.02}, {**NEW, "height_mismatch": -0.02, "carry_milestone": 0.0}):
         env = make_env(layout_path=OPEN, orders=3, reward_overrides=overrides)
         obs, _ = env.reset(seed=10003)
         policy, total, done = HeuristicPolicy(), 0.0, False
@@ -394,15 +401,14 @@ def test_v6_with_new_terms_off_matches_v5_returns():
     assert returns[0] == returns[1]
 
 
-def test_v6_experiment_configs_change_only_time_and_lower_bonus():
+def test_v6_configs_are_history_and_v7_configs_change_only_the_milestone():
+    for name in ("m1o_f1_tiempo_bono_seed0", "m1o_f2_tiempo_seed0", "m1o_f3_bono_seed0"):
+        assert raw(name)["environment_version"] == "warehouse-v6"
     e4 = raw("m1o_e4l_seed0")
-    expected = {"m1o_f1_tiempo_bono_seed0": (0, {"time": -0.2, "lower_bonus": 1.0}),
-                "m1o_f1_tiempo_bono_seed1": (1, {"time": -0.2, "lower_bonus": 1.0}),
-                "m1o_f1_tiempo_bono_seed2": (2, {"time": -0.2, "lower_bonus": 1.0}),
-                "m1o_f2_tiempo_seed0": (0, {"time": -0.2}), "m1o_f3_bono_seed0": (0, {"lower_bonus": 1.0})}
-    for name, (seed, extra) in expected.items():
-        cfg = load_config(f"configs/experiments/{name}.yaml")
-        assert cfg["environment_version"] == ENV_VERSION == "warehouse-v6"
+    for seed in (0, 1, 2):
+        cfg = load_config(f"configs/experiments/m1o_g1_hito_seed{seed}.yaml")
+        assert cfg["environment_version"] == ENV_VERSION == "warehouse-v7"
         assert cfg["seed"] == seed and cfg["presupuesto_pasos"] == 600000 and cfg["layout"] == OPEN
-        assert cfg["recompensa"] == {**e4["recompensa"], **extra}
+        assert cfg["recompensa"] == {**e4["recompensa"], "carry_milestone": 5.0}
+        assert "time" not in cfg["recompensa"] and "lower_bonus" not in cfg["recompensa"]
         assert cfg["ppo"] == e4["ppo"] and cfg["evaluacion"] == e4["evaluacion"]

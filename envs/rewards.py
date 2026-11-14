@@ -17,12 +17,12 @@ class RewardConfig:
     distance: float = 0.0   # v4: por celda de distancia Manhattan al objetivo, por paso (<= 0; 0 = sin término)
     manhattan_progress: float = 0.0   # v5: por celda de DIFERENCIA de distancia Manhattan (>= 0): acercarse suma, alejarse resta
     height_mismatch: float = 0.0      # v5: por paso y por puesto de bandeja de diferencia con la altura exigida, solo en una celda de interacción del objetivo (<= 0)
-    lower_bonus: float = 0.0          # v6: por puesto de bandeja que BAJAR gana al llevar el pedido al despacho (distancia > 0, bandeja > 0); una vez por tramo y puesto (>= 0)
+    carry_milestone: float = 0.0      # v7: una vez por tramo de entrega, al recorrer la mitad de la distancia (BFS) al despacho con la carga (>= 0)
 
     def __post_init__(self):
         if not all(math.isfinite(value) for value in self.__dict__.values()):
             raise ValueError("Las recompensas deben ser finitas")
-        if min(self.pickup, self.delivery, self.completion, self.progress, self.manhattan_progress, self.lower_bonus) < 0:
+        if min(self.pickup, self.delivery, self.completion, self.progress, self.manhattan_progress, self.carry_milestone) < 0:
             raise ValueError("Los premios/progreso deben ser no negativos")
         if self.time >= 0 or max(self.battery, self.collision, self.invalid_interaction, self.distance, self.height_mismatch) > 0:
             raise ValueError("Tiempo negativo y penalizaciones no positivas previenen ciclos rentables")
@@ -32,7 +32,7 @@ def reward_components(config: RewardConfig, *, distance_delta: float, battery_us
                       pickup: bool, delivery: bool, completion: bool,
                       collision: bool, invalid: bool, target_distance: float = 0.0,
                       manhattan_delta: float = 0.0, height_gap: float = 0.0,
-                      lowered_levels: float = 0.0) -> dict[str, float]:
+                      milestone: bool = False) -> dict[str, float]:
     return {
         "pickup": config.pickup if pickup else 0.0,
         "delivery": config.delivery if delivery else 0.0,
@@ -45,5 +45,5 @@ def reward_components(config: RewardConfig, *, distance_delta: float, battery_us
         "distance": config.distance * target_distance,
         "manhattan_progress": config.manhattan_progress * manhattan_delta,
         "height_mismatch": config.height_mismatch * height_gap,
-        "lower_bonus": config.lower_bonus * lowered_levels,
+        "carry_milestone": config.carry_milestone if milestone else 0.0,
     }

@@ -1,5 +1,7 @@
 # R2 · Training and experiments (guide of 4 Nov 2026)
 
+> **Status as of 2026-11-13:** this file is the original guide. The environment moved on (v5, makeup mode, `Box(27)`/`Discrete(8)`, levels `m1`/`m1o`) and the hypotheses C1-C4 below were not run as written (C0/C1/C6 ran on v1 and were rejected; later work used reward sweeps). What was actually run, results and lessons: [experiment-log.md](experiment-log.md); how to run and document: [workflow.md](workflow.md).
+
 R2 turns the env into evidence: trains PPO agents, compares them to references on a fixed suite, and decides with data which model is adopted, rejected, or restored. Weight: 25%. Done when every learning claim in the report traces to a run, a suite and a seed. All numbers below are initial proposals: measure and adjust, agree thresholds as a team, and **do not change them after seeing results**.
 
 ## Own files

@@ -1,0 +1,46 @@
+# How we work in this repo (commands, protocol, pitfalls)
+
+Branch: `dev/lis` (all work goes here; `main` only by PR with review). Not pushed unless the user asks. Commits in Spanish (`feat:`, `fix:`, `docs:`, `test:`, `chore:`), end with the attribution line the session requires. Git identity is not configured globally: `git -c user.name=Lis -c user.email=<user email> commit ...` (use the address already in the user's project memory; never send it to external services). Python 3.12 venv at `.venv` (built with uv); run tools as `.venv/bin/python`.
+
+## Commands
+| Task | Command |
+|---|---|
+| Full tests (about 7.5 min, 159 pass at `env/warehouse-v5`) | `.venv/bin/python -m pytest tests -q -p no:cacheprovider` (add `--junitxml=docs/resultados/pytest-warehouse-vN.xml` to keep the report) |
+| Reward/config tests only (about 40 s) | `.venv/bin/python -m pytest tests/test_reward_config.py -q -p no:cacheprovider` |
+| Train a run | `.venv/bin/python -m pipelines.train --config configs/experiments/<file>.yaml` (writes `models/<run>/`, `docs/resultados/training/<run>/`, logs to MLflow `warehouse-<nivel>`; fails if the run already exists; rejects a config whose `environment_version` differs from `ENV_VERSION`) |
+| Evaluate with the run's own map and reward | `.venv/bin/python -I .claude/skills/warehouse-rush/scripts/eval_run.py <run>` |
+| Diagnose a policy (final states, key-state probabilities) | `.venv/bin/python -I .claude/skills/warehouse-rush/scripts/trace_policy.py <run>` |
+
+`pipelines.evaluate.evaluate(...)` does **not** infer the map or reward from the model: pass `layout_path=` and `reward_overrides=` (the scripts read them from `metadata.json`).
+
+## Experiment YAML keys
+`id, hipotesis, nivel, environment_version, parent_run_id, seed, presupuesto_pasos, layout (optional path), recompensa (optional coefficient overrides), ppo{...}, evaluacion{intermedia, cada_pasos, final}`. Run name = `<nivel>-<id>-seed<seed>`, so **one YAML per seed**. Reward keys: `pickup, delivery, completion, progress, time, battery, collision, invalid_interaction, distance, manhattan_progress, height_mismatch` (unknown keys, negative rewards, time >= 0 or positive penalties are rejected). Levels in `configs/niveles.yaml`: `n1-n3` (v1 history), `m1` (walled map, 3 random SKUs), `m1o` (open map, 3 random SKUs). Suites are immutable: `dev-*` seeds 1000-1009, `suite-*` seeds 10000-10049; a new map or level means a new suite id.
+
+## Protocol for every experiment (what the teacher and R3 grade)
+1. **Hypothesis before training**, in `docs/experimentos.md`: change (one dimension), what would refute it, decision criterion from `configs/criterios.yaml` (adopt if success beats the baseline by >= 5 pp without collisions rising >10%), secondary descriptive metrics, runs table, budget table with "(pendiente)". Include **scripted-behaviour returns measured before training** when the change is a reward (idle at base / approach and idle / pick and stall / full order) to catch perverse incentives.
+2. Create the configs; assert the PPO block is identical to `c0_baseline_n1.yaml` (`diff` of the `ppo:` block) unless the hypothesis is about it; add a test that pins what differs.
+3. Run the tests. If the **code** changed: full suite, update `envs/CONTRATO.md`, add `docs/ambiente-v0.N.md`, `docs/decisiones.md`, bump `ENV_VERSION`/`__version__` in `envs/__init__.py`, commit, **annotated tag** `env/warehouse-vN` (`git tag -a env/warehouse-vN -m "..."`).
+4. **Commit before training** so `git_commit` in MLflow/metadata is the real code. Launch runs in parallel (below).
+5. After training: evaluate on the suite, diagnose with `trace_policy.py`, write `manifests/<run>.json` (schema `manifests/schema.json`: run_id, level_id, environment_version, git_commit, config_sha256, model_uri, model_sha256, normalization_uri, runtime_ref, evaluation_suite_id, seed, parent_run_id; plus estado, budget, reward, layout, results_uri, decision, decision_reason), validate it with `jsonschema`, set the MLflow tag `estado` (`candidato` / `recomendado` / `rechazado` / `fallido` / `interrumpido`), fill the budget table (real steps and minutes), add the results section (facts, decision by criterion, diagnosis, limitations), add a `docs/decisiones.md` row, commit.
+6. Keep failed/rejected runs and their evidence. Do not change reward/criteria after seeing results; a new idea is a new run (and a new version if it changes the reward).
+Valid `level_id` values in the schema: `n1, n2, n3, m1, m1o` (R3 owns the schema: tell them when adding one).
+
+## Launching runs in parallel
+```bash
+for f in cfgA cfgB cfgC; do
+  (nohup .venv/bin/python -m pipelines.train --config configs/experiments/$f.yaml \
+     > /tmp/<scratch>/$f.log 2>&1; echo "exit $?" >> /tmp/<scratch>/$f.log) &
+done
+```
+Observed: the machine has 16 cores and 7.6 GB RAM; 4-5 runs in parallel each train at about 520-550 steps/s (a lone run about 540); 204 800 steps take 8-10 min, 606 208 steps 24-26 min. Training is single-threaded and **deterministic** (same config and seed -> same model; `m1-c0b` reproduced `m1-c0` exactly). Runs launched together in the same instant can record `git_dirty: true` only because sibling runs created untracked output folders; no tracked file changed. State that in the manifest (`git_dirty_note`) rather than hiding it. Concurrent writes to `mlflow.db` produced no lock errors in practice.
+
+## Pitfalls we hit
+- A manifest/test that loads a config with `load_config` fails for older versions (it rejects `environment_version` != current). Read finished history configs as raw YAML.
+- `pkill -f "pytest tests"` inside the same shell kills that shell (exit 144); stop background jobs with the task tool instead. `sleep` is blocked in the foreground: wait with a monitor/until-loop on a log line.
+- Rewriting `manifests/schema.json` with `json.dump` reformats the whole file (noisy diff): edit the one enum line with `sed`.
+- `models/*` is git-ignored: **weights exist only locally** (including the only model that completes the mission, `models/m1o-e4l-seed0/model.zip`, 188 KB, sha256 in its manifest). DVC remote is undecided; `experiment-001` is the only snapshot kept in Git by exception.
+- `info["reward_components"]` keys equal the `RewardConfig` field names; adding a reward field changes both places.
+- The web viewer (`web/`, `api/_viewer.py`, `api/_cloud.py`) was relocated and tested for v2 but **not rebuilt or tested against v3-v5**; its action mapping uses the v2 names.
+
+## Docs to touch per change (all Spanish except this skill)
+`envs/CONTRATO.md` (frozen contract), `docs/ambiente-v0.N.md`, `docs/decisiones.md` (date, author lis, change, reason), `docs/experimentos.md` (hypothesis before, results after), `docs/modelo-actual.md` (note at top), `README.md`/`CLAUDE.md` (when the headline changes), this skill.

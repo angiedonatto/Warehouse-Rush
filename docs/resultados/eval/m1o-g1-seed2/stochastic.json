@@ -1,0 +1,45 @@
+{
+  "run": "m1o-g1-seed2",
+  "suite_seeds": "10000-10049",
+  "deterministic": false,
+  "repeats": [
+    {
+      "sampling_seed": 1000,
+      "success_rate": 0.94,
+      "mean_steps_of_successes": 119.46808510638297,
+      "mean_deliveries": 2.82,
+      "mean_invalid": 7.1,
+      "mean_collisions": 0.38,
+      "end_reasons": {
+        "time_limit": 2,
+        "battery_depleted": 1,
+        "success": 47
+      }
+    },
+    {
+      "sampling_seed": 1001,
+      "success_rate": 0.94,
+      "mean_steps_of_successes": 113.06382978723404,
+      "mean_deliveries": 2.82,
+      "mean_invalid": 6.4,
+      "mean_collisions": 0.24,
+      "end_reasons": {
+        "time_limit": 2,
+        "battery_depleted": 1,
+        "success": 47
+      }
+    },
+    {
+      "sampling_seed": 1002,
+      "success_rate": 0.94,
+      "mean_steps_of_successes": 108.12765957446808,
+      "mean_deliveries": 2.82,
+      "mean_invalid": 6.08,
+      "mean_collisions": 0.38,
+      "end_reasons": {
+        "time_limit": 3,
+        "success": 47
+      }
+    }
+  ]
+}

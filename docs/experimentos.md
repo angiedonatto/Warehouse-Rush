@@ -615,3 +615,29 @@ Código: commit `c152c42` (tag `env/warehouse-v7`). Manifiestos `manifests/m1o-g
 **Limitaciones:** una configuración, tres semillas; presupuesto de 606 208 pasos; el control (e4l) se entrenó con código v5 con recompensa idéntica (verificado por prueba y, en seed 1, por el resultado idéntico); evaluación solo determinista.
 
 **Siguiente (no iniciado):** (1) replicar e4l y g1 en más semillas (3–7) para estimar la tasa real de semillas que funcionan; (2) evaluar g1-seed2 con política estocástica en la suite para ver si el éxito de entrenamiento (268/1 673) se reproduce; (3) para semillas como la 1 (nunca cargan) hace falta señal antes de la recogida, por ejemplo un hito al llegar a una celda de interacción del primer estante.
+
+
+### Diagnóstico de g1 con política estocástica (2026-11-13, post hoc; no sustituye a la evaluación oficial)
+**Por qué:** la suite oficial evalúa con la acción más probable. g1-seed2 tuvo 268/1 673 éxitos de entrenamiento (política estocástica) pero 0% determinista. Se evalúa cada modelo muestreando acciones (`deterministic=False`) en las mismas 50 semillas de la suite (10000–10049), con 3 semillas de muestreo distintas
+(script `.claude/skills/warehouse-rush/scripts/eval_stochastic.py`; salida en `docs/resultados/eval/<run>/stochastic.json`). Se decidió **después** de ver el resultado oficial, así que es exploratorio.
+
+| Run | Éxito determinista (oficial) | Éxito estocástico (3 repeticiones) | Pasos de los éxitos (estocástico) | Choques/ep (estocástico) |
+|---|---:|---|---:|---:|
+| m1o-e4l-seed0 | 92% | 96 / 96 / 96% | 77–78 | 0.1–0.2 |
+| m1o-g1-seed0 | 94% | 96 / 96 / 96% | 78–79 | 0.0–0.3 |
+| m1o-e4l-seed1 | 0% | (no evaluado) | – | – |
+| m1o-g1-seed1 | 0% | 0 / 0 / 0% | – | 0.1 |
+| m1o-e4l-seed2 | 0% | 4 / 0 / 0% | 277 (2 éxitos) | 0.1–0.3 |
+| m1o-g1-seed2 | 0% | **94 / 94 / 94%** | 108–119 | 0.2–0.4 |
+
+**Hallazgos:**
+- **El hito sí funcionó en la semilla 2.** Con muestreo, g1-seed2 completa la misión en 47/50 episodios en las tres repeticiones; e4l-seed2 casi nunca (2/150). La política determinista de g1-seed2 gira con carga, pero la estocástica avanza: la acción más probable tras cargar es un giro, y los giros y el avance están cerca en probabilidad (≈ 0.24 por giro, AVANZAR ≈ 0.01 en estado de carga medio), de modo que el muestreo basta para salir del giro y el argmax no.
+- **La evaluación determinista esconde esto.** Con los números estocásticos el éxito medio de 3 semillas sería ≈ 63% (96 / 94 / 0) para g1 frente a ≈ 32% (96 / 0 / 1.3) para e4l (el seed 1 de e4l no se midió: se usó 0%, su valor determinista).
+- **Pero los éxitos de seed2 son lentos:** 108–119 pasos frente a 72–79 de seed0. El objetivo original (episodios más cortos) no se cumple en esa semilla; el hito ayuda a entregar, no a entregar rápido.
+- Seed1 sigue en 0% con muestreo: nunca carga, el hito no puede actuar.
+- Con muestreo aparecen choques (0.1–0.4 por episodio); en determinista eran 0.
+
+**Decisión:** el **resultado oficial no cambia**: el criterio fijado antes es determinista y g1 sigue `rechazado` (+0.7 pp). Reetiquetarlo ahora con una métrica elegida tras ver los datos sería cambiar el criterio a posteriori. Lo que sí queda registrado es que (a) la evaluación determinista subestima políticas cuyas probabilidades están repartidas y
+(b) g1 podría ser mejor que e4l bajo una evaluación estocástica. Para afirmarlo haría falta un criterio **nuevo, escrito antes**, con política estocástica y semillas de evaluación no usadas aquí, y más semillas de entrenamiento. Es una decisión del equipo (el criterio vive en `configs/criterios.yaml`, que no se toca).
+
+**Limitaciones:** exploratorio y decidido después de ver los resultados; las mismas 50 semillas de episodio de la suite; 3 muestreos por modelo no son semillas de entrenamiento (la variación entre semillas de entrenamiento sigue sin medirse); e4l-seed1 no se evaluó.

@@ -1,0 +1,41 @@
+{
+  "run": "m1o-e4l-seed2",
+  "suite_seeds": "10000-10049",
+  "deterministic": false,
+  "repeats": [
+    {
+      "sampling_seed": 1000,
+      "success_rate": 0.04,
+      "mean_steps_of_successes": 277.5,
+      "mean_deliveries": 0.12,
+      "mean_invalid": 13.54,
+      "mean_collisions": 0.18,
+      "end_reasons": {
+        "success": 2,
+        "time_limit": 48
+      }
+    },
+    {
+      "sampling_seed": 1001,
+      "success_rate": 0.0,
+      "mean_steps_of_successes": null,
+      "mean_deliveries": 0.0,
+      "mean_invalid": 14.44,
+      "mean_collisions": 0.34,
+      "end_reasons": {
+        "time_limit": 50
+      }
+    },
+    {
+      "sampling_seed": 1002,
+      "success_rate": 0.0,
+      "mean_steps_of_successes": null,
+      "mean_deliveries": 0.0,
+      "mean_invalid": 13.18,
+      "mean_collisions": 0.12,
+      "end_reasons": {
+        "time_limit": 50
+      }
+    }
+  ]
+}

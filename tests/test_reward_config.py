@@ -565,3 +565,14 @@ def test_q2_configs_are_p1_with_everything_but_time_and_battery_scaled_by_three(
         assert "time" not in q2["recompensa"] and "battery" not in q2["recompensa"]
         assert q2["ppo"] == p1["ppo"] and q2["layout"] == p1["layout"] == WALLED
         assert q2["presupuesto_pasos"] == 600000 and q2["parada_estancamiento"] == 100
+
+
+def test_c1_c2_controls_are_c0l_on_v9_with_and_without_the_stagnation_stop():
+    for seed in (0, 1, 2):
+        c0l, c1 = raw(f"m1_c0l_seed{seed}"), raw(f"m1_c1_control_v9_seed{seed}")
+        assert c1["environment_version"] == "warehouse-v9" and c0l["environment_version"] == "warehouse-v7"
+        assert c1["recompensa"] == c0l["recompensa"] and c1["ppo"] == c0l["ppo"] and c1["layout"] == c0l["layout"]
+        assert c1["seed"] == c0l["seed"] == seed and c1["parada_estancamiento"] == 100 and "potential" not in c1["recompensa"]
+    c2, c0l = raw("m1_c2_repro_v9_seed0"), raw("m1_c0l_seed0")
+    assert c2["environment_version"] == "warehouse-v9" and "parada_estancamiento" not in c2
+    assert {k: v for k, v in c2.items() if k not in ("id", "hipotesis", "environment_version")} == {k: v for k, v in c0l.items() if k not in ("id", "hipotesis", "environment_version")}

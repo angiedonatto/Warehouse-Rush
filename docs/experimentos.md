@@ -954,3 +954,20 @@ Presupuesto efectivo 606 208 pasos por run.
 - **Control propuesto, no hecho (pruebas de ambiente antes que del modelo):** `m1-c0l` (progress 0.3, sin potencial) con el código v9 y la parada de 100, 3 semillas. Si vuelve a llegar al estante en ≈ la mitad de las semillas, el potencial es el problema; si da 0/3, el cambio de código o la parada rompen la línea base.
 - **Limitaciones:** el potencial se probó con pesos internos de φ fijos (0.10/0.40/0.20/0.30) y tres factores; los giros no tienen señal propia; solo se mide la señal por la política aleatoria, no la dificultad real de exploración.
 
+
+## Control de regresión de v9: `m1-c0l` con el código v9 (`m1-c1`, `m1-c2`, escrito antes de entrenar, 2026-11-14)
+**Contexto:** 10 runs con `potential` (p1, p2, q1, q2; ×1, ×3, ×5) dieron 0/50 episodios que llegan a la celda de interacción, mientras `m1-c0l` (recompensa base con `progress` 0.3, `warehouse-v7`) y `m1-e4l` llegaban en la mitad de las semillas. Instrucción del usuario: correr el control. Sin cambio de código.
+- **`m1-c1` (3 semillas):** receta de `m1-c0l` (invalid −0.2, collision −1, `progress` 0.3 por defecto, sin `potential`), código `warehouse-v9` y `parada_estancamiento` 100. 600 000 pasos, mapa con muro. Referencia `m1-c0l`: llegan a la celda 29/50, 0/50 y 50/50 (semillas 0, 1, 2); éxito 0% en las tres.
+- **`m1-c2` (semilla 0):** exactamente la config de `m1-c0l-seed0` pero con `environment_version: warehouse-v9` y **sin parada**. El entrenamiento es determinista (`m1-c0b` reprodujo a `m1-c0`): si v9 no cambia la dinámica ni la recompensa con `potential` = 0, los **pesos deben ser idénticos** a los de `m1-c0l-seed0`.
+- **Qué se concluye (fijado ahora):**
+  - `m1-c2` con pesos idénticos → el código v9 no rompe la línea base; si difieren → hay una regresión en v9 y se investiga antes de cualquier otro experimento.
+  - `m1-c1` reproduce el patrón de `c0l` (al menos 1 de 3 semillas con ≥ 10/50 episodios que llegan a la celda) → el fallo de los 10 runs es del potencial y no de la parada; si da 0/3 con `c2` idéntico → la parada rompe la línea base.
+- **Qué la refutaría / limitaciones:** con 3 semillas y probabilidad de llegar ≈ 2/3 por semilla en la línea base, ver 0/3 por azar con la parada inocua tiene probabilidad ≈ 4%, no cero; el control es una señal fuerte, no una prueba. `c2` solo cubre la semilla 0.
+- **Métricas secundarias descriptivas:** episodios que llegan / miran / suben / cargan, mezcla de acciones, episodios de entrenamiento.
+
+| Run | Pasos | Semilla | Parada | Config |
+|---|---:|---:|---|---|
+| m1-c1-seed0/1/2 | 606 208 | 0/1/2 | 100 | `m1_c1_control_v9_seed{0,1,2}.yaml` |
+| m1-c2-seed0 | 606 208 | 0 | ninguna | `m1_c2_repro_v9_seed0.yaml` |
+
+Presupuesto real: (pendiente).

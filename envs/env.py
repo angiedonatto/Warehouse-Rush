@@ -9,7 +9,7 @@ from gymnasium import spaces
 import numpy as np
 
 from envs.layout import DIRECTIONS, RAYS, Layout
-from envs.rewards import RewardConfig, reward_components
+from envs.rewards import POTENTIAL_GAMMA, RewardConfig, reward_components
 
 
 class Action(IntEnum):
@@ -184,6 +184,10 @@ class WarehouseRushEnv(gym.Env):
     def target_station_distance(self, station: str):
         return self.route_distance(station)
 
+    def potential(self) -> float:
+        """v9: potencial Phi(s) en [0,1] (solo del estado); el ambiente base no define etapas, así que vale 0."""
+        return 0.0
+
     def facing_target(self) -> bool:
         if self.state.objetivo is None:
             return False
@@ -253,6 +257,7 @@ class WarehouseRushEnv(gym.Env):
         action = Action(int(action))
         state = self.state
         old_target = state.objetivo
+        phi_before = self.potential()
         old_distance = self.route_distance(old_target)
         old_manhattan = self.manhattan_to(old_target)
         needed_level = self.needed_tray_level()
@@ -276,11 +281,12 @@ class WarehouseRushEnv(gym.Env):
         manhattan_delta = float(old_manhattan - target_distance)   # mismo objetivo antes y después: sin salto al cambiar de etapa
         height_gap = float(self.height_gap(old_target, needed_level))
         milestone = self.carry_milestone_reached(old_target, old_distance, new_distance)
+        potential_delta = POTENTIAL_GAMMA * self.potential() - phi_before
         components = reward_components(self.reward_config, distance_delta=delta,
                                        battery_used=used, pickup=pickup, delivery=delivery,
                                        completion=success, collision=collision, invalid=invalid,
                                        target_distance=target_distance, manhattan_delta=manhattan_delta,
-                                       height_gap=height_gap, milestone=milestone, face=face)
+                                       height_gap=height_gap, milestone=milestone, face=face, potential_delta=potential_delta)
         reward = float(sum(components.values()))
         state.recompensa_total += reward
         unreachable = not success and self.route_distance() is None

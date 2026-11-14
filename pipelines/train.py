@@ -10,8 +10,43 @@ import shutil
 import subprocess
 import time
 
+import gymnasium as gym
+
 from envs import ENV_VERSION, __version__, make_env
 from envs.env import WarehouseRushEnv
+
+
+class StagnationStop(gym.Wrapper):
+    """Solo para el ENTRENAMIENTO: trunca el episodio tras `window` pasos sin superar el mejor potencial Phi del episodio.
+
+    Phi (`env.potential()`, v9) es una función del estado y solo se usa para decidir la parada; no entra en la observación.
+    Se marca `truncated` (no `terminated`) para que PPO haga bootstrap del valor (SB3 lo trata como límite de tiempo).
+    La evaluación (suites, evaluate.py, EvalCallback) usa el ambiente sin envolver y conserva los 400 pasos.
+    """
+
+    def __init__(self, env, window: int):
+        super().__init__(env)
+        if type(window) is not int or window < 1:
+            raise ValueError("window debe ser un entero >= 1")
+        self.window = window
+        self._best, self._since = 0.0, 0
+
+    def reset(self, **kwargs):
+        obs, info = self.env.reset(**kwargs)
+        self._best, self._since = self.env.unwrapped.potential(), 0
+        return obs, info
+
+    def step(self, action):
+        obs, reward, terminated, truncated, info = self.env.step(action)
+        potential = self.env.unwrapped.potential()
+        if potential > self._best + 1e-9:
+            self._best, self._since = potential, 0
+        else:
+            self._since += 1
+        if not (terminated or truncated) and self._since >= self.window:
+            truncated = True
+            info = {**info, "end_reason": "stagnation", "stagnation_stop": True}
+        return obs, reward, terminated, truncated, info
 
 
 def default_model(orders=1, seed=42, algo="ppo") -> Path:
@@ -41,7 +76,7 @@ DEFAULT_DQN = dict(learning_rate=5e-4, buffer_size=100_000, learning_starts=5_00
 def train_ppo(*, timesteps=20_000, seed=42, orders=1, blocked=False, layout_path=None,
               n_steps=None, batch_size=None, run_name=None, ppo=None, n_envs=1,
               eval_every=5_000, eval_episodes=5, parent_model=None, algo="ppo",
-              reward_overrides=None) -> dict:
+              reward_overrides=None, stagnation_window=None) -> dict:
     """Entrena PPO (referencia del plan) o DQN con el mismo ambiente, recompensa y trazabilidad."""
     import torch
     from stable_baselines3 import DQN, PPO
@@ -93,12 +128,16 @@ def train_ppo(*, timesteps=20_000, seed=42, orders=1, blocked=False, layout_path
         "versions": {p: version(p) for p in ("numpy", "gymnasium", "torch", "stable-baselines3", "matplotlib")},
         "git_revision": revision.stdout.strip(), "git_dirty": bool(dirty.stdout.strip()),
         "started_at_utc": datetime.now(timezone.utc).isoformat(),
-        "periodic_eval_seed": 20_000, "periodic_eval_episodes": eval_episodes, "periodic_eval_every": eval_every,
+        "stagnation_window": stagnation_window, "periodic_eval_seed": 20_000, "periodic_eval_episodes": eval_episodes, "periodic_eval_every": eval_every,
     }
     write_json(run_dir / "metadata.json", metadata)
     from stable_baselines3.common.vec_env import DummyVecEnv, VecMonitor
 
-    vec_env = DummyVecEnv([lambda: make_env(blocked, layout_path, orders, reward_overrides) for _ in range(n_envs)])
+    def make_train_env():
+        train_env = make_env(blocked, layout_path, orders, reward_overrides)
+        return StagnationStop(train_env, stagnation_window) if stagnation_window else train_env
+
+    vec_env = DummyVecEnv([make_train_env for _ in range(n_envs)])
     monitor = VecMonitor(vec_env, str(run_dir / "episodes"),
                          info_keywords=("success", "deliveries", "collisions", "end_reason"))
     started = time.perf_counter()
@@ -222,6 +261,9 @@ def load_config(path) -> dict:
     from envs import reward_config
 
     reward_config(config.get("recompensa"))  # valida claves y signos antes de entrenar
+    window = config.get("parada_estancamiento")
+    if window is not None and (type(window) is not int or window < 1):
+        raise ValueError(f"{path}: parada_estancamiento debe ser un entero >= 1 (pasos sin mejorar el potencial)")
     levels = yaml.safe_load(Path("configs/niveles.yaml").read_text())
     if config["nivel"] not in levels:
         raise ValueError(f"nivel desconocido: {config['nivel']}")
@@ -267,7 +309,8 @@ def train_from_config(path, *, tipo="candidato", timesteps=None) -> dict:
         meta = train_ppo(timesteps=budget, seed=config["seed"], orders=level["orders"],
                          blocked=level["blocked"], run_name=name, ppo=ppo, n_envs=n_envs,
                          eval_every=evaluation.get("cada_pasos", 5_000), parent_model=parent_model, algo=algo,
-                         reward_overrides=config.get("recompensa"), layout_path=config.get("layout"))
+                         reward_overrides=config.get("recompensa"), layout_path=config.get("layout"),
+                         stagnation_window=config.get("parada_estancamiento"))
         model_path = Path(meta["model_path"])
         mlflow.log_artifact(str(model_path), artifact_path="modelo")
         mlflow.set_tags({"model_sha256": sha256_file(model_path), "pasos_reales": meta["effective_timesteps"]})

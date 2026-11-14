@@ -18,7 +18,7 @@ def raw(name):
 
 
 def test_default_reward_equals_v2_coefficients():
-    assert asdict(reward_config()) == {"pickup": 10.0, "delivery": 30.0, "completion": 50.0, "progress": 0.3, "distance": 0.0, "manhattan_progress": 0.0, "height_mismatch": 0.0, "carry_milestone": 0.0, "face_bonus": 0.0,
+    assert asdict(reward_config()) == {"pickup": 10.0, "delivery": 30.0, "completion": 50.0, "progress": 0.3, "distance": 0.0, "manhattan_progress": 0.0, "height_mismatch": 0.0, "carry_milestone": 0.0, "face_bonus": 0.0, "potential": 0.0,
                                        "time": -0.1, "battery": -0.02, "collision": -5.0, "invalid_interaction": -2.0}
     assert make_env(orders=3).reward_config == reward_config()
 
@@ -432,7 +432,7 @@ V8 = {**NEW, "height_mismatch": -0.02, "face_bonus": 5.0}
 
 
 def test_face_bonus_default_off_sign_validated_and_version():
-    assert ENV_VERSION == "warehouse-v8"
+    assert ENV_VERSION == "warehouse-v9"   # v9 solo añade `potential`; v8 sigue igual con potential = 0
     assert asdict(reward_config())["face_bonus"] == 0.0
     with pytest.raises(ValueError):
         reward_config({"face_bonus": -1.0})
@@ -480,3 +480,64 @@ def test_face_bonus_is_not_farmable_by_standing_or_turning_away_and_back():
         extra += info["reward_components"]["face_bonus"]
     assert first is not None and extra == 0.0
     assert first in env._face_paid
+
+
+# --- v9: shaping basado en potencial (`potential`), un solo peso W; Phi(s) en [0,1] y función solo del estado ---
+from envs.rewards import POTENTIAL_GAMMA
+P9 = {"invalid_interaction": -0.2, "collision": -1.0, "progress": 0.0, "potential": 30.0}
+
+
+def test_potential_default_off_sign_validated_and_gamma_matches_ppo():
+    assert asdict(reward_config())["potential"] == 0.0
+    with pytest.raises(ValueError):
+        reward_config({"potential": -1.0})
+    assert POTENTIAL_GAMMA == 0.99 == raw("m1_e4l_seed0")["ppo"]["gamma"]
+
+
+def test_potential_is_state_only_bounded_and_ends_at_one_on_success():
+    for layout in (OPEN, WALLED):
+        env = make_env(layout_path=layout, orders=3, reward_overrides=P9)
+        rows, info = run_heuristic(env, 10003)
+        assert info["success"] and env.potential() == pytest.approx(1.0)
+        env.reset(seed=10003)
+        assert 0.0 <= env.potential() < 0.1
+
+
+def test_potential_discounted_sum_telescopes_exactly():
+    for layout in (OPEN, WALLED):
+        env = make_env(layout_path=layout, orders=3, reward_overrides=P9)
+        from pipelines.baselines import HeuristicPolicy
+        obs, _ = env.reset(seed=10004)
+        policy, done, t, discounted = HeuristicPolicy(), False, 0, 0.0
+        p0 = env.potential()
+        while not done:
+            obs, _, term, trunc, info = env.step(policy.action(obs, env))
+            discounted += POTENTIAL_GAMMA ** t * info["reward_components"]["potential"]
+            done, t = term or trunc, t + 1
+        assert discounted == pytest.approx(30.0 * (POTENTIAL_GAMMA ** t * env.potential() - p0))
+
+
+def test_potential_zero_weight_keeps_v8_returns():
+    a = make_env(layout_path=WALLED, orders=3, reward_overrides={**P9, "potential": 0.0})
+    b = make_env(layout_path=WALLED, orders=3, reward_overrides={k: v for k, v in P9.items() if k != "potential"})
+    ra, ia = run_heuristic(a, 10005)
+    rb, ib = run_heuristic(b, 10005)
+    assert ia["total_reward"] == pytest.approx(ib["total_reward"])
+    assert all(c["potential"] == 0.0 for _, c in ra)
+
+
+def test_potential_cannot_be_farmed_by_standing_or_turning_away_and_back():
+    from pipelines.baselines import HeuristicPolicy
+    from envs.env import Action
+    env = make_env(layout_path=WALLED, orders=3, reward_overrides=P9)
+    obs, _ = env.reset(seed=10003)
+    policy = HeuristicPolicy()
+    while not (env.route_distance() == 0 and env.facing_target()):
+        obs, *_ = env.step(policy.action(obs, env))
+    idle = sum(env.step(int(Action.FRENAR))[4]["reward_components"]["potential"] for _ in range(30))
+    assert idle < 0.0
+    cycle = 0.0
+    for _ in range(10):
+        for action in (Action.GIRAR_IZQUIERDA, Action.GIRAR_DERECHA):
+            cycle += env.step(int(action))[4]["reward_components"]["potential"]
+    assert cycle < 0.0

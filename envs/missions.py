@@ -140,6 +140,37 @@ class MakeupMissionEnv(WarehouseRushEnv):
             return 0
         return self.lift_config.index(self.lines[s.pedido_actual]['height_m'])
 
+    # --- v9: potencial por etapas (Phi en [0,1], solo función del estado) ---
+    POTENTIAL_WEIGHTS = dict(stow=0.10, navigate=0.40, face=0.20, tray=0.30)   # suman 1: reparto dentro de un tramo
+
+    def _max_route(self, station):
+        key = (self.state.pasillo_bloqueado, station)
+        cache = self.__dict__.setdefault('_max_route_cache', {})
+        if key not in cache:
+            cache[key] = max(self._fields[key].values()) or 1
+        return cache[key]
+
+    def potential(self):
+        """Phi(s) = (K + phi_tramo) / (2n): K = líneas recogidas + entregadas; phi_tramo en [0,1] mide el avance del tramo actual.
+
+        phi_tramo = 0.10 bandeja guardada mientras se viaja + 0.40 (1 - d/d_max) por distancia BFS a la celda de interacción
+        + 0.20 ya en la celda y mirando a la estación + 0.30 bandeja en la altura exigida (1 - |nivel - exigido|/3).
+        En la celda de interacción la bandeja guardada cuenta como cumplida para que subirla no reste. Sin objetivo, phi_tramo = 0.
+        """
+        s, w = self.state, self.POTENTIAL_WEIGHTS
+        units = len(self.picked_packages) + s.entregas
+        total = 2 * self.orders
+        if s.objetivo is None or not self.lines:
+            return min(1.0, units / total)
+        d = self.route_distance(s.objetivo)
+        level = self.tray_level()
+        nav = 0.0 if d is None else 1.0 - d / self._max_route(s.objetivo)
+        at_cell = d == 0
+        phi = w['navigate'] * max(0.0, nav) + (w['stow'] if (level == 0 or at_cell) else 0.0)
+        if at_cell and self.facing_target():
+            phi += w['face'] + w['tray'] * (1.0 - abs(level - self.needed_tray_level()) / 3.0)
+        return min(1.0, (units + min(1.0, phi)) / total)
+
     def elevation(self):
         return self.lift_config.normalized(self.lift_height)
 

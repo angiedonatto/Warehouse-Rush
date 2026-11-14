@@ -859,3 +859,23 @@ Entrenamiento con éxito: 0 en los tres (0 / ≈1 512 episodios).
 - **j3 (`ent_coef` 0.01):** sin cambio útil (22/50 llegan a una celda, 0 miran, 8 inválidas/ep): la entropía por sí sola no descubre el primer paso.
 - **Limitaciones:** una semilla por ajuste y semilla 0 elegida por ser la más difícil; j2 no probó el hito donde sí cargan; j1 no se probó con una recompensa para subir la bandeja.
 - **Código:** `env/warehouse-v8` (suite 175/176 en la primera pasada; el fallo, un test que fijaba v7, se corrigió y pasa; reporte `docs/resultados/pytest-warehouse-v8.xml` conserva el fallo original).
+
+
+## Shaping solo por potencial y parada por estancamiento (`m1-p1`, `m1-p2`, escrito antes de entrenar, 2026-11-14)
+**Contexto:** j1 (`face_bonus`) hizo llegar y mirar al estante en 40/50 episodios pero se quedó mirando; el shaping acumulaba términos (≈ 40% del retorno de una misión perfecta, con `progress` y `manhattan_progress` midiendo lo mismo). Instrucción del usuario: probar **solo shaping basado en potencial** y acortar los episodios en el entrenamiento para que tarde menos. Código `env/warehouse-v9` (ver `docs/ambiente-v0.9.md`).
+- **Cambio:** se quitan `progress` (0), `manhattan_progress`, `height_mismatch`, `face_bonus` y `carry_milestone`; queda `potential` 30.0 (Φ por etapas, γ 0.99) más las recompensas de la tarea (pickup, delivery, completion), `time`, `battery`, `invalid_interaction` −0.2 y `collision` −1. PPO y mapa (`layout_v0.4`, `m1`) iguales a `m1-e4l`; 600 000 pasos. **Dos cambios a la vez** (potencial y parada por estancamiento de 100 pasos solo en entrenamiento), por instrucción del usuario; por eso hay ablación.
+- **Medición previa (conductas guionizadas, retorno descontado, 10 semillas):** quieto −10.0 → −11.4; ir, mirar y quedarse −10.2 → −11.6; recoger el 1.º y quedarse −2.0 → −3.3; pedido completo 50.6 → 62.4 (W = 0 → 30). El orden no cambia: no hay zona de evitación nueva. Brecha máxima sin mejorar Φ (parada): heurística 2, éxitos de e4x-seed2 con acciones muestreadas 49 (p95 30), episodios atascados ≈ 384 → ventana 100.
+- **Hipótesis:** un único potencial por etapas da señal para toda la cadena sin las zonas de evitación de los términos sueltos, y la parada multiplica los episodios por paso, de modo que más semillas despegan.
+- **Criterio (fijado ahora):** `m1-p1` se adopta como *señal* si el éxito medio de las 3 semillas en `suite-m1-v1` es ≥ 5% (referencia `m1-e4l`: 0%) sin que los choques por episodio suban > 10%. Se reporta cada semilla; con 3 semillas, un resultado llevado por una sola sigue siendo `candidato`, no `recomendado`.
+- **Qué la refutaría:** media < 5% o choques que suben > 10%.
+- **Ablación `m1-p2`** (semilla 0, potencial sin parada): atribuye el efecto. Se compara con `m1-p1-seed0` y con `m1-e4l-seed0` (0%).
+- **Métricas secundarias descriptivas:** episodios que llegan / miran / suben la bandeja / cargan, recogidas y entregas por episodio, episodios de entrenamiento (con la parada son más), inválidas, choques, minutos de entrenamiento.
+- **Sobre el tiempo:** los pasos por segundo no cambian (el presupuesto sigue siendo de 606 208 pasos); la parada reduce el tiempo por episodio, no el tiempo del run. Si p1 funciona, el siguiente paso es recortar el presupuesto de pasos.
+- **Limitaciones:** retorno sin descontar de evaluación no comparable con v8 (fuga del potencial); pesos internos de φ sin ajustar; la parada y el potencial vienen juntos salvo en la semilla 0 de p2.
+
+| Run | Pasos | Semilla | Parada | Config |
+|---|---:|---:|---|---|
+| m1-p1-seed0/1/2 | 606 208 | 0/1/2 | 100 pasos sin mejorar Φ | `m1_p1_potencial_seed{0,1,2}.yaml` |
+| m1-p2-seed0 | 606 208 | 0 | ninguna | `m1_p2_potencial_sinparada_seed0.yaml` |
+
+Presupuesto real: (pendiente).

@@ -1,7 +1,7 @@
 """Warehouse Rush: cinemática discreta, sin motor físico continuo."""
 
-__version__ = "0.7.0"          # versión de la ficha del ambiente (docs/ambiente-v0.7.md)
-ENV_VERSION = "warehouse-v7"   # v7 = v6 sin lower_bonus + hito `carry_milestone` (mitad del camino al despacho con la carga, una vez por tramo, por defecto 0)
+__version__ = "0.8.0"          # versión de la ficha del ambiente (docs/ambiente-v0.8.md)
+ENV_VERSION = "warehouse-v8"   # v8 = v7 + `face_bonus` (una vez por estación objetivo y episodio al estar en su celda de interacción mirándola, por defecto 0)
 
 from dataclasses import asdict
 

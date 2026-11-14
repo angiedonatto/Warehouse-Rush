@@ -825,3 +825,22 @@ Presupuesto efectivo 606 208 / 1 802 240 (múltiplo de 8 192; el 1 810 432 anota
 - **e4x-seed2:** primer modelo que completa la misión en el mapa con muro. Éxitos en 91.8 pasos de media (heurística 80); 7 de los 10 fallos terminan con carga y la bandeja arriba (el mismo atasco tras cargar), 2 por batería. Curva en la suite intermedia (`dev-m1-v1`, 10 episodios, checkpoints cada 20 000 pasos): retorno ≈ −40 hasta ≈ 660 000, primer retorno positivo a 700 000, ≈ 125 desde 1 060 000 pero irregular (29 a 1.22M, 18 a 1.70M, 95 al final). El modelo final es el de 1 802 240 pasos, no el mejor checkpoint.
 - **e4x-seed0** acaba en DESCARGAR/inválidas (117.9/ep) sin llegar a celdas de interacción; **seed1** se queda quieto o gira (30/50 llegan a una celda, 1/50 mira al estante).
 - **Limitaciones:** sin control de 1 802 240 pasos sin términos e4: no se separa recompensa de pasos a ese presupuesto (a 600 000 pasos el control y e4l coinciden en 0%); 3 semillas, una sola exitosa; el modelo depende de la semilla, lo que apunta a que el descubrimiento de la cadena es la parte frágil de la recompensa.
+
+## Tres ajustes de la recompensa/PPO, uno por experimento, en el mapa con muro (`m1-j1`, `m1-j2`, `m1-j3`, escrito antes de entrenar, 2026-11-14)
+**Contexto:** `m1-e4x` (1 800 000 pasos) dio 0/0/80%: solo una semilla descubre la cadena. Instrucción del usuario: probar los tres ajustes a 600 000 pasos, **cada uno en su propio experimento (no combinados), una corrida cada uno**. Se usa la **semilla 0**, que fracasó en e4l (0%), c0l (0%) y e4x (0%), para que un éxito no pueda atribuirse a una semilla favorable. Línea base común: `m1-e4l-seed0` (600 000 pasos, misma semilla, 0%).
+Código `env/warehouse-v8` (nuevo término `face_bonus`, por defecto 0; ver `docs/ambiente-v0.8.md`). Los experimentos j2 y j3 no cambian código (j2 usa `carry_milestone` de v7). PPO de C0 salvo en j3.
+
+| Run | Cambio frente a `m1-e4l-seed0` | Config |
+|---|---|---|
+| m1-j1-seed0 | `face_bonus` 10.0 (llegar a la celda de interacción mirando a la estación, una vez por estación y episodio) | `m1_j1_cara_seed0.yaml` |
+| m1-j2-seed0 | `carry_milestone` 5.0 (hito a mitad del camino al despacho con la carga) | `m1_j2_hito_seed0.yaml` |
+| m1-j3-seed0 | `ent_coef` 0.01 (recompensa idéntica a e4l) | `m1_j3_entropia_seed0.yaml` |
+
+- **Hipótesis:** (j1) el primer paso, llegar y mirar al estante, no tiene señal y por eso 2 de 3 semillas no despegan; (j2) el atasco tras cargar se reduce con un hito en el tramo con carga; (j3) el colapso temprano a una acción casi determinista impide descubrir la cadena.
+- **Medición previa (conductas guionizadas, mapa con muro, 20 semillas):** quieto en la base −40.8; ir al estante y mirarlo y quedarse −47.8 sin bonus, −42.8 con 5, **−37.8 con 10**; pedido completo 128.8 / 147.8 / 166.8. Por eso se usa 10.0 y no 5.0.
+- **Criterio (fijado ahora, antes de ver resultados), idéntico para los tres:** el ajuste *muestra señal* si el éxito en `suite-m1-v1` es ≥ 5% (≥ 3/50) frente a e4l-seed0 (0%) y los choques por episodio no suben > 10%; si no, se rechaza. Con una sola semilla un resultado positivo **no basta para adoptar**: pide repetir con semillas 1 y 2 (donde también falló e4l/e4x).
+- **Qué los refutaría:** éxito < 5% o choques que suben > 10%.
+- **Limitaciones declaradas:** una semilla por ajuste (la variación entre semillas fue enorme: 0/0/80% en e4x), sin control de ablación; no se sabe cuánto de un resultado positivo es del ajuste y cuánto de la semilla. Una diferencia en la conducta (llega al estante, carga, entrega) es evidencia descriptiva.
+- **Métricas secundarias descriptivas:** episodios que llegan a la celda de interacción / miran al estante / suben la bandeja / cargan (`trace_policy.py`), recogidas y entregas por episodio, inválidas, choques, episodios de entrenamiento con éxito.
+
+Presupuesto efectivo 606 208 pasos por run. Presupuesto real: (pendiente).

@@ -84,9 +84,9 @@ def test_pretrained_model_loads_as_parent_and_fits_better_than_chance():
 def test_h0_h1_configs_pair_by_seed_and_only_the_initialisation_differs_from_e4l():
     e4l = yaml.safe_load(Path("configs/experiments/m1o_e4l_seed0.yaml").read_text())
     for seed in (0, 1, 2):
-        h0 = load_config(f"configs/experiments/m1o_h0_bc_seed{seed}.yaml")
-        h1 = load_config(f"configs/experiments/m1o_h1_bcppo_seed{seed}.yaml")
-        assert h0["environment_version"] == h1["environment_version"] == ENV_VERSION
+        h0 = yaml.safe_load(Path(f"configs/experiments/m1o_h0_bc_seed{seed}.yaml").read_text())   # historia v7: se lee como YAML
+        h1 = yaml.safe_load(Path(f"configs/experiments/m1o_h1_bcppo_seed{seed}.yaml").read_text())
+        assert h0["environment_version"] == h1["environment_version"] == "warehouse-v7"
         assert h0["seed"] == h1["seed"] == seed and h1["parent_run_id"] == f"m1o-h0-seed{seed}" and h0["parent_run_id"] is None
         assert h1["recompensa"] == h0["recompensa"] == e4l["recompensa"]
         assert h1["ppo"] == h0["ppo"] == e4l["ppo"] and h1["presupuesto_pasos"] == e4l["presupuesto_pasos"] == 600000

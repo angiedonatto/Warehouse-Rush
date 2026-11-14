@@ -18,7 +18,7 @@ def raw(name):
 
 
 def test_default_reward_equals_v2_coefficients():
-    assert asdict(reward_config()) == {"pickup": 10.0, "delivery": 30.0, "completion": 50.0, "progress": 0.3, "distance": 0.0, "manhattan_progress": 0.0, "height_mismatch": 0.0, "carry_milestone": 0.0,
+    assert asdict(reward_config()) == {"pickup": 10.0, "delivery": 30.0, "completion": 50.0, "progress": 0.3, "distance": 0.0, "manhattan_progress": 0.0, "height_mismatch": 0.0, "carry_milestone": 0.0, "face_bonus": 0.0,
                                        "time": -0.1, "battery": -0.02, "collision": -5.0, "invalid_interaction": -2.0}
     assert make_env(orders=3).reward_config == reward_config()
 
@@ -406,8 +406,8 @@ def test_v6_configs_are_history_and_v7_configs_change_only_the_milestone():
         assert raw(name)["environment_version"] == "warehouse-v6"
     e4 = raw("m1o_e4l_seed0")
     for seed in (0, 1, 2):
-        cfg = load_config(f"configs/experiments/m1o_g1_hito_seed{seed}.yaml")
-        assert cfg["environment_version"] == ENV_VERSION == "warehouse-v7"
+        cfg = raw(f"m1o_g1_hito_seed{seed}")
+        assert cfg["environment_version"] == "warehouse-v7"   # historia: v8 solo añade face_bonus (por defecto 0)
         assert cfg["seed"] == seed and cfg["presupuesto_pasos"] == 600000 and cfg["layout"] == OPEN
         assert cfg["recompensa"] == {**e4["recompensa"], "carry_milestone": 5.0}
         assert "time" not in cfg["recompensa"] and "lower_bonus" not in cfg["recompensa"]
@@ -416,11 +416,67 @@ def test_v6_configs_are_history_and_v7_configs_change_only_the_milestone():
 
 def test_more_seeds_configs_replicate_e4l_and_g1_with_only_the_seed_changed():
     for seed in range(3, 8):
-        e4l = load_config(f"configs/experiments/m1o_e4l_seed{seed}.yaml")
-        g1 = load_config(f"configs/experiments/m1o_g1_hito_seed{seed}.yaml")
-        base = load_config("configs/experiments/m1o_g1_hito_seed0.yaml")
+        e4l = raw(f"m1o_e4l_seed{seed}")
+        g1 = raw(f"m1o_g1_hito_seed{seed}")
+        base = raw("m1o_g1_hito_seed0")
         assert e4l["seed"] == g1["seed"] == seed
-        assert e4l["environment_version"] == g1["environment_version"] == ENV_VERSION
+        assert e4l["environment_version"] == g1["environment_version"] == "warehouse-v7"
         assert e4l["recompensa"] == {k: v for k, v in g1["recompensa"].items() if k != "carry_milestone"}
         assert g1["recompensa"] == base["recompensa"] and g1["ppo"] == base["ppo"] == e4l["ppo"]
         assert e4l["presupuesto_pasos"] == g1["presupuesto_pasos"] == 600000 and e4l["layout"] == g1["layout"]
+
+
+# --- v8: face_bonus (una vez por estación objetivo y episodio al estar en su celda de interacción mirándola) ---
+WALLED = "configs/layout_v0.4.json"
+V8 = {**NEW, "height_mismatch": -0.02, "face_bonus": 5.0}
+
+
+def test_face_bonus_default_off_sign_validated_and_version():
+    assert ENV_VERSION == "warehouse-v8"
+    assert asdict(reward_config())["face_bonus"] == 0.0
+    with pytest.raises(ValueError):
+        reward_config({"face_bonus": -1.0})
+
+
+def run_heuristic(env, seed):
+    from pipelines.baselines import HeuristicPolicy
+    obs, _ = env.reset(seed=seed)
+    policy, rows, done = HeuristicPolicy(), [], False
+    while not done:
+        obs, reward, term, trunc, info = env.step(policy.action(obs, env))
+        rows.append((reward, info["reward_components"].copy()))
+        done = term or trunc
+    return rows, info
+
+
+def test_face_bonus_zero_keeps_v7_returns_and_pays_each_station_once():
+    for layout in (OPEN, WALLED):
+        base = make_env(layout_path=layout, orders=3, reward_overrides={**V8, "face_bonus": 0.0})
+        on = make_env(layout_path=layout, orders=3, reward_overrides=V8)
+        rows0, info0 = run_heuristic(base, 10003)
+        rows1, info1 = run_heuristic(on, 10003)
+        paid = [c["face_bonus"] for _, c in rows1 if c["face_bonus"]]
+        assert all(c["face_bonus"] == 0.0 for _, c in rows0)
+        assert set(paid) == {5.0} and 1 <= len(paid) <= len(on.layout.stations)
+        assert info1["total_reward"] == pytest.approx(info0["total_reward"] + 5.0 * len(paid))
+        assert info0["success"] and info1["success"]
+
+
+def test_face_bonus_is_not_farmable_by_standing_or_turning_away_and_back():
+    from pipelines.baselines import HeuristicPolicy
+    from envs.env import Action
+    env = make_env(layout_path=WALLED, orders=3, reward_overrides=V8)
+    obs, _ = env.reset(seed=10003)
+    policy, first, target = HeuristicPolicy(), None, None
+    while first is None:
+        target = env.state.objetivo
+        obs, _, term, trunc, info = env.step(policy.action(obs, env))
+        assert not (term or trunc)
+        if info["reward_components"]["face_bonus"]:
+            first = target
+    extra = 0.0
+    for action in [Action.FRENAR] * 10 + [Action.GIRAR_IZQUIERDA, Action.GIRAR_DERECHA] * 10:
+        _, _, term, trunc, info = env.step(int(action))
+        extra += info["reward_components"]["face_bonus"]
+    assert first is not None and extra == 0.0
+    assert first in env._face_paid

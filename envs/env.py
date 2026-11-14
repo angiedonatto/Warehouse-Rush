@@ -91,6 +91,7 @@ class WarehouseRushEnv(gym.Env):
         self._done = True
         self._leg_start: int | None = None      # distancia BFS al despacho al empezar el tramo de entrega
         self._leg_paid = False
+        self._face_paid: set[str] = set()       # v8: estaciones objetivo cuyo face_bonus ya se pagó en este episodio
         # Cachés internes: sólo recompensa/diagnóstico/heurística; jamás se exponen a PPO.
         self._fields = {(b, s): self.layout.distance_field(s, b)
                         for b in (False, True) for s in self.layout.stations}
@@ -107,6 +108,7 @@ class WarehouseRushEnv(gym.Env):
         self.picked_packages: set[str] = set()
         self.completed_packages: set[str] = set()
         self._leg_start, self._leg_paid = None, False
+        self._face_paid = set()
         self._done = False
         self._reason = None
         return self._observation(), self._info()
@@ -164,6 +166,23 @@ class WarehouseRushEnv(gym.Env):
             self._leg_paid = True
             return True
         return False
+
+    def face_bonus_reached(self, target: str | None) -> bool:
+        """v8: primera vez en el episodio que el robot está en una celda de interacción de `target` mirando a la estación.
+
+        Se paga como mucho una vez por estación y episodio (no por tramo), así que repetir recoger/soltar o salir y volver
+        a la celda no vuelve a pagar; el máximo total es un pago por estación distinta visitada como objetivo.
+        """
+        if target is None or target in self._face_paid or self.target_station_distance(target) != 0:
+            return False
+        dx, dy = DIRECTIONS[self.state.theta]
+        if (self.state.x + dx, self.state.y + dy) != self.layout.stations[target]:
+            return False
+        self._face_paid.add(target)
+        return True
+
+    def target_station_distance(self, station: str):
+        return self.route_distance(station)
 
     def facing_target(self) -> bool:
         if self.state.objetivo is None:
@@ -245,6 +264,7 @@ class WarehouseRushEnv(gym.Env):
         state.tiempo += 1
         state.tiempo_restante = max(0, self.config.max_steps - state.tiempo)
         collision = self._move(action)
+        face = self.face_bonus_reached(old_target)
         pickup = delivery = invalid = False
         if action in (Action.CARGAR, Action.DESCARGAR, Action.SUBIR, Action.BAJAR):
             pickup, delivery, invalid = self._interact(action)
@@ -260,7 +280,7 @@ class WarehouseRushEnv(gym.Env):
                                        battery_used=used, pickup=pickup, delivery=delivery,
                                        completion=success, collision=collision, invalid=invalid,
                                        target_distance=target_distance, manhattan_delta=manhattan_delta,
-                                       height_gap=height_gap, milestone=milestone)
+                                       height_gap=height_gap, milestone=milestone, face=face)
         reward = float(sum(components.values()))
         state.recompensa_total += reward
         unreachable = not success and self.route_distance() is None

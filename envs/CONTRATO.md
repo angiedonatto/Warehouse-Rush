@@ -66,6 +66,8 @@ máscara de acciones, bloqueo del pasillo ni recompensa del paso. La heurística
 
 **v6 añadió `lower_bonus` y v7 lo retira** (los runs f1–f3 lo usaron y se rechazaron; `env/warehouse-v6` conserva ese código). **v7 añade un hito (por defecto 0):** `+ c_hito·[hito]`, clave `carry_milestone` (`c_hito ≥ 0`). `[hito]` vale 1 una sola vez por **tramo de entrega**: la primera vez que la distancia BFS al despacho baja a la mitad o menos de la que había al empezar el tramo. El tramo empieza en el primer paso con objetivo DELIVERY (es decir, justo tras recoger la última línea que se entregará) y termina al cambiar de objetivo; cada tramo exige una recogida previa, y alejarse y volver a acercarse no paga otra vez. Con la bandeja arriba el robot no se mueve, así que el hito exige haberla bajado. Con el objetivo DELIVERY, la observación (índices 10–11), `objetivo`, `etapa = entregar` y la distancia BFS apuntan al punto de entrega en cuanto se recoge la última línea.
 
+**v8 añade un término (por defecto 0):** `+ c_cara·[cara]`, clave `face_bonus` (`c_cara ≥ 0`). `[cara]` vale 1 una sola vez por **estación objetivo y episodio**: la primera vez que el robot está en una celda de interacción (distancia BFS 0) de la estación objetivo y la tiene justo delante. Quedarse quieto, girar, salir y volver o repetir recoger/soltar no paga otra vez. Con `c_cara` = 0, v8 es idéntico a v7.
+
 - Hitos una sola vez por línea; recompensa de entrega una vez por acción DESCARGAR aunque descargue varias líneas.
 - La energía vertical de la bandeja se descuenta como batería y se penaliza con el mismo coeficiente (−0.02).
 - El progreso usa la distancia transitable a una celda de acceso del objetivo anterior (no se paga por cambiar de objetivo).

@@ -440,3 +440,30 @@ La heurística BFS logra 100% en ≈ 71 pasos en este mapa.
 
 **Lectura (hipótesis):** la recompensa e4 más presupuesto bastan para resolver el problema en al menos una semilla, y las otras dos se atascan en puntos distintos (no llegar y spam de DESCARGAR; cargar y no entregar). Antes de afirmar que la configuración funciona hay que replicar con más semillas y presupuesto; los puntos de fallo sugieren bonos únicos por línea al bajar tras cargar y al llegar a la cinta con la bandeja abajo (nueva versión).
 **Limitaciones:** una semilla por control; 3 semillas por configuración; mapa abierto; 606 208 pasos; no se usó la suite final reservada.
+
+### Curva de e4l-seed0 por pasos de entrenamiento (2026-11-13, `suite-m1o-v1`, 50 episodios, acciones deterministas)
+Pregunta del equipo: ¿qué habría pasado con la semilla 0 con el presupuesto original (200 000 pasos)? Ya existe ese run: `m1o-e4-seed0` (misma recompensa, hiperparámetros y semilla; 204 800 pasos) dio **0%** de éxito y 0.30 recogidas por episodio. Como el entrenamiento es determinista (`m1-c0b` reproduce `m1-c0`), repetirlo daría el mismo modelo; en su lugar se evaluaron los 30 checkpoints (uno cada 20 000 pasos) del run de 606 208 pasos. Datos: `docs/resultados/eval/m1o-e4l-seed0-curve.json`.
+
+| Pasos | Éxito | Entregas/ep | Recogidas/ep | Pasos/ep | Inválidas/ep |
+|---:|---:|---:|---:|---:|---:|
+| 20 000 | 0% | 0.00 | 0.00 | 400 | 0.0 |
+| 100 000 | 0% | 0.00 | 0.00 | 400 | 0.0 |
+| 200 000 | 0% | 0.00 | 0.06 | 400 | 155.9 |
+| 280 000 | 0% | 0.00 | 0.92 | 385 | 53.1 |
+| 340 000 | 10% | 0.30 | 1.14 | 388 | 134.7 |
+| 380 000 | 26% | 0.78 | 1.60 | 337 | 133.3 |
+| 420 000 | 32% | 0.96 | 1.90 | 292 | 51.1 |
+| 460 000 | 48% | 1.44 | 2.20 | 249 | 10.4 |
+| 480 000 | 76% | 2.28 | 2.68 | 151 | 44.2 |
+| 500 000 | 88% | 2.64 | 2.86 | 117 | 25.3 |
+| 560 000 | 92% | 2.76 | 2.92 | 96 | 3.2 |
+| 600 000 | 90% | 2.70 | 2.88 | 102 | 13.4 |
+| 606 208 (modelo final) | 92% | 2.76 | 2.92 | 95 | 3.8 |
+
+**Hechos medidos:**
+- Hasta los ≈ 120 000 pasos la política no hace nada útil (400 pasos, 0 recogidas, 0 inválidas): colapso a quedarse quieto, como en los runs de 200 000 pasos.
+- A los 200 000 pasos casi no recoge (0.06 por episodio; el run `m1o-e4` de 204 800 pasos recogió 0.30, porque el checkpoint de 200 000 aún no incorpora la última actualización) y dispara las inválidas (156 por episodio): explora acciones nuevas.
+- Entre 200 000 y 340 000 pasos las recogidas suben de 0.06 a 1.14 por episodio sin ninguna entrega; el **primer éxito aparece a los 340 000 pasos (10%)**, 76% a los 480 000 y ≈ 88–94% desde los 500 000, con irregularidades (78% a los 540 000).
+- Por tanto el presupuesto original quedaba **a mitad de camino**: la política aprendía a recoger pero aún no a entregar. El 3× del presupuesto no es un detalle: la curva solo despega pasado el doble del presupuesto original.
+
+**Cuidado:** es una sola semilla y la curva se evaluó con la suite de comparación (`suite-m1o-v1`); no debe usarse para escoger un checkpoint (sería ajustar sobre la suite). Los checkpoints están solo en local (`models/` ignorado por Git).

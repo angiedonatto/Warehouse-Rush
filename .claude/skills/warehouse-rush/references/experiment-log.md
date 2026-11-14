@@ -1,6 +1,6 @@
 # Experiment log (R2) and what we learned
 
-Status: 2026-11-13. Full evidence, per-episode CSV/JSON and manifests are in the repo: `docs/experimentos.md` (Spanish, hypotheses written **before** training), `docs/resultados/eval/<run>/`, `docs/resultados/training/<run>/`, `manifests/<run>.json`, MLflow (`warehouse-n1`, `warehouse-m1`, `warehouse-m1o`; local `mlflow.db`, not committed). Run names: `<nivel>-<id>-seed<seed>`.
+Status: 2026-11-14. Full evidence, per-episode CSV/JSON and manifests are in the repo: `docs/experimentos.md` (Spanish, hypotheses written **before** training), `docs/resultados/eval/<run>/`, `docs/resultados/training/<run>/`, `manifests/<run>.json`, MLflow (`warehouse-n1`, `warehouse-m1`, `warehouse-m1o`; local `mlflow.db`, not committed). Run names: `<nivel>-<id>-seed<seed>`.
 
 Everything uses PPO `MlpPolicy` [64,64], lr 3e-4, `n_steps` 2048 x `n_envs` 4, batch 64, 10 epochs, gamma 0.99, gae_lambda 0.95, clip 0.2, `ent_coef` 0.0 (the C0 config) unless stated. Budget 200 000 requested (204 800 effective = 25 x 8 192) unless stated; 600 000 requested = 606 208 effective. Evaluation: frozen model, deterministic actions, 50 episodes, seeds 10000-10049 (`suite-n1-v1`, `suite-m1-v1`, `suite-m1o-v1`), 1 training seed unless stated.
 
@@ -80,20 +80,30 @@ Mean 31.3% vs e4l 30.7% (+0.7 pp < 5 pp): hypothesis rejected. Findings: seed 1 
 | `m1o-h1-seed2` | same, seed 2 | 100% | 79.8 | 0 | rejected |
 Criterion (pre-registered, h1 vs e4l): mean success +62.7 pp (93.3% vs 30.7%) but mean collisions 2.25/ep vs limit +0.1 over 0 -> rejected (both conditions required; all excess collisions from seed 0). Findings: (1) imitation alone solves the task on every seed, so the 27-dim observation is sufficient; e4l/g1 were limited by discovering the task, not by capacity. (2) PPO fine-tuning with the e4l config DEGRADES the imitator from the first checkpoint (dev-eval return 127 -> 6 / 1 / -19 at 20k steps) and oscillates for 600k steps; the final model is only wherever training stopped. Probable cause (untested): critic explained variance only 0.38-0.40 plus lr 3e-4 and ent_coef 0. (3) Stochastic diagnostic on seeds 20000-20049: h1 100% on all seeds. (4) h0 copies a privileged controller: a reference, not RL evidence; the team must decide how to present it. Next: fine-tuning that keeps the policy (lr 3e-5, critic warm-up with frozen actor, target_kl) and also evaluate `models/<run>/best`. BC hyperparameters may be tuned only on validation accuracy (rule fixed beforehand), never on the suite. Demos regenerate deterministically (about 8 min; they are identical for every seed, so a cache would save 10 min per run).
 
+## Cancelled: seeds 3-7 of e4l and g1 (pre-registered, never evaluated)
+Configs `m1o_{e4l,g1_hito}_seed{3..7}.yaml` and a criterion (mean of the 5 new seeds, deterministic eval, g1 >= e4l + 5 pp, collisions <= +0.1/ep) were committed before training. The g1 runs were stopped at about 300 000 of 606 208 steps (user switched to behaviour cloning); the e4l runs never started. Status `interrumpido` in MLflow, no evaluation, partial folders untracked. The criterion was never applied; do not read the missing results as a null result.
+
 ## Lessons (use these when designing the next experiment)
-1. The bottleneck is a **missing positive signal before the first delivery**, not exploration cost or algorithm (PPO, DQN, entropy sweep 0-0.1 and penalty sweeps all failed alike).
+1. The bottleneck is a **missing positive signal before the first delivery**, not exploration cost or algorithm (PPO, DQN, entropy sweep 0-0.1 and penalty sweeps all failed alike). Behaviour cloning confirmed it: a network of the same size and the same 27-dim observation imitates the heuristic to 100% success on every seed.
 2. Shaping must keep **pick-up the best move**: a per-step state penalty that jumps when the target changes inverts the incentive. Use differences measured against the same target.
 3. A penalty applied only in the zone the agent must occupy creates an **avoidance zone** (-0.05, -0.1). Check scripted returns of "approach and idle" vs "idle at base" **before** training.
 4. **Budget matters**: success appeared after about 1.7x the original budget; judge a reward with at least about 600k steps.
-5. **Seed variance is huge** (92 / 0 / 0). Never conclude from one seed; the course asks for 3 seeds for finalists.
-6. Always run a **control with the same budget** and the same code; training is deterministic (same seed -> same model), so a re-run of a finished config is wasted compute.
-7. Return does not measure progress (e4's return -70.5 was worse than the control's while its behaviour was more advanced); report success, pickups, deliveries, invalid interactions, steps.
-8. The common failure after loading is **not completing the trip with the tray down** (tray never lowered, or loaded but never delivered).
+5. **Seed variance is huge** (e4l 92/0/0, g1 94/0/0, h1 88/92/100 only because of the BC start). Never conclude from one seed; a reward term that acts after loading cannot help a seed that never loads (g1-seed1 was bit-identical to e4l-seed1).
+6. Always run a **control with the same budget** and the same code; training is deterministic (same seed -> same model), so a re-run of a finished config is wasted compute, and bit-identical results show a term never fired.
+7. Return does not measure progress (e4's return -70.5 was worse than the control's while its behaviour was more advanced); report success, pickups, deliveries, invalid interactions, steps, collisions.
+8. The common failure after loading is **not completing the trip with the tray down** (tray never lowered, or loaded but never delivered, or spinning in place with cargo). A bonus for lowering the tray (v6) made the agent lower it but not drive; a delivery-leg milestone (v7) helped one seed.
+9. **Argmax evaluation can hide a working policy.** When action probabilities after loading are spread (turn 0.24 vs AVANZAR 0.01), the deterministic policy loops while the sampled one completes the mission (g1-seed2 0% vs 94%). Report sampled eval as a diagnostic; making it the criterion needs a new pre-registered criterion with unseen seeds.
+10. **Raising `time` penalty does not shorten successful episodes** (they already last as long as the heuristic, about 71-73 steps); the long mean episode length came from failures. It can reduce success (f2: 92% -> 44% on seed 0).
+11. **PPO fine-tuning with the e4l config destroys a good starting policy** (dev-eval return 127 -> about 0 at 20k steps, then oscillates for 600k): critic explained variance after BC is only 0.38-0.40, lr 3e-4 and ent_coef 0. A final model is only the point where training stopped; compare against `models/<run>/best` too.
+12. A pre-registered **two-part criterion** is applied as written even when one part is overwhelmingly met (h1: +62.7 pp success but collisions failed). State both numbers.
+13. Behaviour cloning from a privileged expert gives a strong reference but is not RL evidence; label it that way (`candidato`, reference, not recommended) and let the team decide how to present it.
 
 ## Open items / next candidates (none started)
-1. Replicate `e4l` on more seeds (for example 3-7) at 606 208 steps to estimate how often it works; also e4 on seeds 1-2 at 200k if the team wants the literal budget comparison.
-2. Run the e4 reward on the **walled map** (`layout_v0.4.json`); the earlier "walled run if favorable" condition was never triggered for the distance term, but e4l-seed0 now makes it relevant.
-3. Once-per-line bonuses (reaching the right tray height, lowering after loading, arriving at the conveyor with the tray down) = new version `warehouse-v6`.
-4. Behaviour cloning from the heuristic then PPO fine-tuning (demonstrations via DVC).
-5. A penalty/reward between -0.02 and -0.05 is not worth more runs; rewarding correct height instead of punishing wrong height would be a new version.
-6. Missing from the plan: finalists x 3 seeds comparison, `compare.py`, `callbacks.py`, suite-driven `evaluate.py`, N3 incident suite for v2+ (the open map has no closable gap; the walled map still has one at (6,14)), `test-final` run, Prefect flow, FastAPI, DVC/MLflow remotes, web viewer rebuilt and tested against v2-v5, push to origin and PR to `main`.
+1. **Fine-tuning that keeps the BC policy**: lr 3e-5, critic warm-up with the actor frozen for the first steps, or `target_kl`; pre-register, 3+ seeds; also evaluate the saved `best` checkpoint of the periodic eval.
+2. Decide with the team whether h0 (copy of the heuristic) is an acceptable result or only a reference; if a stochastic evaluation is wanted, pre-register that criterion and use unseen eval seeds (20000-20049 were used for diagnostics only).
+3. More seeds of `e4l` and `g1` (3-7), configs already exist (cancelled, see above).
+4. A signal **before** the first pickup for seeds that never load (for example a one-off bonus for reaching the first rack's interaction cell) - new version.
+5. Observation with the target relative to the robot's heading (egocentric), and randomized start poses (curriculum) - new env version.
+6. The e4 reward on the walled map (`layout_v0.4.json`).
+7. Cache the BC demonstrations by config hash (about 8 of the 10 minutes per BC run are demonstration generation).
+8. Missing from the plan: finalists x 3 seeds comparison, `compare.py`, `callbacks.py`, suite-driven `evaluate.py`, N3 incident suite for v2+ (the open map has no closable gap; the walled map still has one at (6,14)), `test-final` run, Prefect flow, FastAPI, DVC/MLflow remotes, web viewer rebuilt and tested against v2-v7, push to origin and PR to `main`.

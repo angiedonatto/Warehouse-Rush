@@ -1,9 +1,9 @@
 # Environment versions (warehouse-v1 to warehouse-v7)
 
-Everything below is true at 2026-11-13 on branch `dev/lis` (last code commit `2b80031`, last experiment commit `64e3c77`). The authoritative documents live in the repo; read them before changing anything:
-`envs/CONTRATO.md` (frozen contract), `docs/ambiente-v0.1.md` ... `docs/ambiente-v0.5.md` (one sheet per version), `docs/decisiones.md` (dated decision log, Spanish).
+Everything below is true at 2026-11-14 on branch `dev/lis` (last env tag `env/warehouse-v7` at `c152c42`; behaviour cloning and its results came after, no env change). The authoritative documents live in the repo; read them before changing anything:
+`envs/CONTRATO.md` (frozen contract), `docs/ambiente-v0.1.md` ... `docs/ambiente-v0.7.md` (one sheet per version), `docs/decisiones.md` (dated decision log, Spanish).
 
-**Rule:** any change to observation order/units/ranges, actions, dt, physics **or the reward function** bumps `ENV_VERSION` and gets an annotated git tag `env/warehouse-vN` on the commit that introduces it. Old tags must keep pointing at the code that produced the old results. Adding a reward term that defaults to 0 is still a reward change: it was bumped (v4, v5).
+**Rule:** any change to observation order/units/ranges, actions, dt, physics **or the reward function** bumps `ENV_VERSION` and gets an annotated git tag `env/warehouse-vN` on the commit that introduces it. Old tags must keep pointing at the code that produced the old results. Adding a reward term that defaults to 0 is still a reward change: it was bumped (v4, v5, v6, v7). Removing a reward term (v7 removes `lower_bonus`) is a reward change too; old configs for removed fields are read as raw YAML.
 
 ## Timeline
 
@@ -17,16 +17,16 @@ Everything below is true at 2026-11-13 on branch `dev/lis` (last code commit `2b
 | `warehouse-v6` (0.6.0) | `env/warehouse-v6` -> `cc968ff` | `lower_bonus` (>= 0, default 0): per tray level that BAJAR lowers while the target is DELIVERY, route distance to dispatch > 0 and tray > 0; paid once per leg and level (a SUBIR/BAJAR loop is not farmable). After the last pickup the target (obs 10-11, `objetivo`, distances) already pointed at DELIVERY; pinned by a test, no code change | `docs/ambiente-v0.6.md` |
 | `warehouse-v7` (0.7.0) | `env/warehouse-v7` -> `c152c42` | removes `lower_bonus`; adds `carry_milestone` (>= 0, default 0): paid once per delivery leg when the BFS distance to dispatch first falls to half or less of the leg's starting distance. `time` back to -0.1 in the g1 configs | `docs/ambiente-v0.7.md` |
 
-v2 models share observation and actions with v3-v5 and load there (trained without the new terms). **v1 models are incompatible** (22 inputs, 5 outputs); keep them as history only.
+v2 models share observation and actions with v3-v7 and load there (trained without the new terms). **v1 models are incompatible** (22 inputs, 5 outputs); keep them as history only.
 
-## Current contract (v5), summary
+## Current contract (v7), summary
 
 - **Code:** `envs/` (`env.py` base, `missions.py` = `MakeupMissionEnv`, `inventory.py`, `handling.py` tray config, `layout.py`, `rewards.py`). Factory: `envs.make_env(blocked, layout_path, orders, reward_overrides, **kw)`. With `orders=N`: each episode draws N distinct SKUs of 1 unit and restocks the inventory on reset. `reset(seed=s)` reproduces the order; `reset()` draws it from the env RNG.
 - **Observation `Box(27)`, all in [0,1]:** 0-7 rays (8 m range), 8-9 own (x,y), 10-11 target (x,y) (station cell of the rack E01-E06 or `DELIVERY`), 12-15 orientation one-hot, 16 moving, 17 battery, 18 carried/capacity, 19-21 stage one-hot (recoger/entregar/completada), 22 time left, 23 order progress, 24 facing an interactable, 25 tray elevation, 26 target elevation. **Not given:** map, SKU/level/quantity, inventory, tray phase, action mask, reward.
 - **Actions `Discrete(8)`:** 0 AVANZAR, 1 GIRAR_IZQUIERDA, 2 GIRAR_DERECHA, 3 FRENAR, 4 CARGAR, 5 DESCARGAR, 6 SUBIR, 7 BAJAR. One tray position per SUBIR/BAJAR: positions 0.55 (travel) / 0.99 / 1.79 / 2.60 m, so shelf level 3 needs 3 SUBIR from stowed. SUBIR from stowed needs: stopped, facing the target rack, stage recoger. CARGAR needs: stopped, facing, tray exactly at the line's height. DESCARGAR needs: stopped, at the dispatch access cell (21,16) facing east, tray stowed. With the tray up, AVANZAR/GIRAR are blocked (no invalid penalty, counted in `blocked_lift_moves`). The tray stays up after CARGAR; the agent must BAJAR. Costs: advance 0.8, turn 0.2, brake 0.1, CARGAR/DESCARGAR 0.2, SUBIR/BAJAR 0.1 + 0.8 per metre of travel.
 - **Episode:** `terminated` = `success` | `battery_depleted` | `unreachable_target` | `insufficient_budget`; `truncated` = `time_limit` (400 steps). Battery 180.
 - **Maps:** `layout_v0.4.json` (walled, 25x19, interior wall y=14 with a permanent gap at x=20 and a closable gap at x=6, dispatch conveyor (22,16)-(23,16), approach (21,16)); `layout_v0.5.json` (same without the interior wall). BASE (3,16) facing north.
-- **Reward (defaults; `e4l` values in brackets):** pickup +10, delivery +30, completion +50, progress +0.3 x BFS-distance reduction, time -0.1, battery -0.02 x units, collision -5 [-1], invalid interaction -2 [-0.2], distance 0 (v4 term), manhattan_progress 0 [0.3], height_mismatch 0 [-0.02]. Milestones pay once per line; delivery pays once per DESCARGAR; every penalty is <= 0, so repeating invalid actions or SUBIR/BAJAR loops never profits (tested). Components appear in `info["reward_components"]`.
+- **Reward (defaults; `e4l` values in brackets):** pickup +10, delivery +30, completion +50, progress +0.3 x BFS-distance reduction, time -0.1, battery -0.02 x units, collision -5 [-1], invalid interaction -2 [-0.2], distance 0 (v4 term), manhattan_progress 0 [0.3], height_mismatch 0 [-0.02], carry_milestone 0 (v7; g1 uses 5.0; `lower_bonus` existed only in v6). Milestones pay once per line; delivery pays once per DESCARGAR; every penalty is <= 0, so repeating invalid actions or SUBIR/BAJAR loops never profits (tested). Components appear in `info["reward_components"]`.
 - **Reward comparability:** returns only compare between runs with identical coefficients. Across reward sets compare success rate, pickups, deliveries, steps.
 
 ## References measured on the walled/open maps (3 random SKUs)

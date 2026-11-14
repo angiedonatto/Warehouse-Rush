@@ -71,13 +71,13 @@ def test_pretrained_model_loads_as_parent_and_fits_better_than_chance():
     try:
         parent.mkdir(parents=True)
         model.save(parent / "model.zip")
-        meta = train_ppo(timesteps=128, seed=0, orders=3, layout_path=OPEN, run_name=run, n_envs=2, eval_every=128,
+        meta = train_ppo(timesteps=128, seed=987, orders=3, layout_path=OPEN, run_name=run, n_envs=2, eval_every=128,
                          eval_episodes=1, parent_model=parent / "model.zip", reward_overrides=REW,
                          ppo=dict(n_steps=64, batch_size=64, ent_coef=0.0, net_arch=[64, 64]))
         assert meta["status"] == "completed" and meta["parent_model"].endswith("model.zip")
     finally:
-        for path in (parent, Path("models") / run, Path("docs/resultados/training") / run, Path("models/ppo_orders3_seed0.zip"),
-                     Path("models/ppo_orders3_seed0.json")):
+        for path in (parent, Path("models") / run, Path("docs/resultados/training") / run, Path("models/ppo_orders3_seed987.zip"),
+                     Path("models/ppo_orders3_seed987.json")):
             shutil.rmtree(path, ignore_errors=True) if path.is_dir() else path.unlink(missing_ok=True)
 
 

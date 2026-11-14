@@ -781,3 +781,26 @@ Referencias en el mismo mapa: heurística 100% (80 pasos), `m1-r5` 0%.
 - **Observación sobre el riesgo anticipado:** los choques son 0.0 por episodio en las tres semillas, así que no hay atasco contra el muro; el fallo no es el trampa del muro sino que no se descubre o no se completa la cadena de carga y entrega.
 - **Limitaciones:** 3 semillas y un único presupuesto (606 208); sin control del mismo presupuesto en `m1` (`c0l`), por lo que no se separa el efecto de pasos y recompensa. La curva de aprendizaje (e4l-seed0 abierto: primer éxito a 340 000 pasos) sugiere que 600 000 pasos puede ser insuficiente con el muro; no probado.
 - **Evidencia no tocada:** `m1-r5` se reevaluó por error con la salida por defecto y se restauró desde Git; sus archivos de evaluación no cambiaron.
+
+## Control sin términos e4 y e4 con 3x pasos en el mapa con muro (`m1-c0l`, `m1-e4x`, escrito antes de entrenar, 2026-11-14)
+**Contexto:** `m1-e4l` (600 000 pasos, mapa con muro) dio 0/0/0%. Instrucción del usuario: enfoque de RL puro; primero un control del mismo presupuesto, luego e4 con más pasos, y después evaluar la función de recompensa para hacerla más robusta. Sin cambio de ambiente (`warehouse-v7`). Todo con PPO de C0 (bloque `ppo:` idéntico, verificado con `diff`), 3 productos aleatorios, `layout_v0.4`, `suite-m1-v1`.
+
+### Experimento 1: control `m1-c0l` (600 000 pasos, semillas 0–2)
+- **Cambio frente a `m1-e4l`:** se quitan `manhattan_progress` y `height_mismatch`; queda `invalid_interaction` −0.2 y `collision` −1.
+- **Pregunta:** ¿la recompensa de e4 aporta algo en el mapa con muro frente a los pasos solos? Control descriptivo, sin adopción: se reporta media y cada semilla frente a `m1-e4l` (0%) y `m1-r5` (200 000 pasos, 0%). En el mapa abierto el control a 600 000 pasos aprendió a recoger (1.68/ep) pero no a entregar.
+- **Qué lo haría informativo:** si `m1-c0l` > 0% con e4l = 0%, los términos e4 dañan con el muro; si ambos 0%, no se separan a este presupuesto.
+
+### Experimento 2: `m1-e4x` (e4, 1 800 000 pasos, semillas 0–2)
+- **Cambio frente a `m1-e4l`:** solo el presupuesto (3x).
+- **Hipótesis:** con el muro el descubrimiento es más lento (en el mapa abierto la primera victoria llegó a ≈340 000 pasos) y con 1 800 000 pasos la política completa la cadena.
+- **Criterio (fijado ahora):** adoptar si el éxito medio de las 3 semillas en `suite-m1-v1` supera en ≥ 5 pp al de `m1-e4l` (0%) sin que los choques por episodio suban > 10%. Se reporta cada semilla.
+- **Qué la refutaría:** media < 5%.
+- **Limitación conocida:** no hay control de 1 800 000 pasos sin términos e4; la comparación con `m1-c0l` es a otro presupuesto.
+- **Métricas secundarias descriptivas:** recogidas/entregas por episodio, inválidas, choques, pasos de los éxitos, primer punto de la curva (checkpoints cada 20 000) con éxito, episodios de entrenamiento con éxito.
+
+| Run | Pasos pedidos | Semilla | Config |
+|---|---:|---:|---|
+| m1-c0l-seed0/1/2 | 600 000 | 0/1/2 | `m1_c0l_seed{0,1,2}.yaml` |
+| m1-e4x-seed0/1/2 | 1 800 000 | 0/1/2 | `m1_e4x_seed{0,1,2}.yaml` |
+
+Presupuesto efectivo 606 208 / 1 810 432 (múltiplo de 8 192). Presupuesto real: (pendiente). Se lanzan 6 runs en paralelo.

@@ -641,3 +641,27 @@ Código: commit `c152c42` (tag `env/warehouse-v7`). Manifiestos `manifests/m1o-g
 (b) g1 podría ser mejor que e4l bajo una evaluación estocástica. Para afirmarlo haría falta un criterio **nuevo, escrito antes**, con política estocástica y semillas de evaluación no usadas aquí, y más semillas de entrenamiento. Es una decisión del equipo (el criterio vive en `configs/criterios.yaml`, que no se toca).
 
 **Limitaciones:** exploratorio y decidido después de ver los resultados; las mismas 50 semillas de episodio de la suite; 3 muestreos por modelo no son semillas de entrenamiento (la variación entre semillas de entrenamiento sigue sin medirse); e4l-seed1 no se evaluó.
+
+
+## Más semillas de e4l y g1 (escrito antes de entrenar, 2026-11-13)
+**Contexto:** con 3 semillas (0–2) e4l dio 92 / 0 / 0% y g1 94 / 0 / 0% en la suite determinista: la varianza entre semillas de entrenamiento (la mayoría de las semillas no funcionan) es mayor que cualquier efecto de recompensa medido, y con muestreo g1-seed2 sí completa la misión (94%) mientras e4l-seed2 no (≈ 1%).
+Con tres semillas no se puede estimar con qué frecuencia funciona cada recompensa. Se entrenan las semillas **3–7 (no vistas)** de ambas, con el mismo presupuesto (606 208 pasos), el mismo PPO, el mismo mapa y `suite-m1o-v1`. Código `env/warehouse-v7` (e4l = `carry_milestone` 0, equivalente a v5 por prueba).
+
+**Hipótesis:** (1) el hito `carry_milestone` 5.0 sube el éxito medio frente a e4l; (2) aumenta la fracción de semillas que completan la misión (≥ 50% de éxito), pero no puede ayudar a las que nunca cargan (como seed 1).
+**Criterio principal (fijado antes de entrenar, sobre las 5 semillas nuevas 3–7, evaluación **determinista** oficial en `suite-m1o-v1`):** g1 supera a e4l si el éxito medio de las 5 semillas es ≥ 5 pp mayor y los choques por episodio no suben más de 0.1 (con 0 choques en e4l un porcentaje no tiene sentido). Si no, se rechaza.
+**Métricas secundarias, descriptivas (no deciden):** (a) las 8 semillas juntas (0–7); (b) fracción de semillas con ≥ 50% de éxito determinista (k/8, con intervalo de Wilson al 95%); (c) pasos de los éxitos; (d) entregas por episodio; (e) **evaluación estocástica** de los 16 modelos (3 muestreos) en las semillas de episodio **20000–20049**,
+que no son parte de ninguna suite oficial ni de la suite reservada `test-final`; es un diagnóstico exploratorio y no cambia el criterio principal. Si el resultado oficial y el estocástico discrepan, se informan ambos y la decisión sigue el principal.
+**Lo que lo refutaría:** que la media de las 5 semillas nuevas de g1 no supere a la de e4l en ≥ 5 pp.
+
+| Run | `carry_milestone` | Semillas | Config |
+|---|---:|---|---|
+| m1o-e4l-seed3…7 (control, nuevas) | 0 | 3, 4, 5, 6, 7 | `m1o_e4l_seed{3..7}.yaml` |
+| m1o-g1-seed3…7 | 5.0 | 3, 4, 5, 6, 7 | `m1o_g1_hito_seed{3..7}.yaml` |
+| m1o-e4l-seed0/1/2, m1o-g1-seed0/1/2 (ya entrenados) | 0 / 5.0 | 0, 1, 2 | solo para las métricas secundarias |
+
+Se entrena en dos tandas de 5 runs en paralelo (g1 primero, luego e4l) por memoria (7.6 GB). Tras cada run: evaluación oficial, traza y evaluación estocástica; manifiestos al final.
+
+### Presupuesto real por run (semillas 3–7)
+| Run | Nivel | Pasos | Minutos | Estado |
+|---|---|---|---|---|
+| m1o-g1-seed3…7, m1o-e4l-seed3…7 | m1o | (pendiente) | (pendiente) | (pendiente) |

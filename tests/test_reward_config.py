@@ -412,3 +412,15 @@ def test_v6_configs_are_history_and_v7_configs_change_only_the_milestone():
         assert cfg["recompensa"] == {**e4["recompensa"], "carry_milestone": 5.0}
         assert "time" not in cfg["recompensa"] and "lower_bonus" not in cfg["recompensa"]
         assert cfg["ppo"] == e4["ppo"] and cfg["evaluacion"] == e4["evaluacion"]
+
+
+def test_more_seeds_configs_replicate_e4l_and_g1_with_only_the_seed_changed():
+    for seed in range(3, 8):
+        e4l = load_config(f"configs/experiments/m1o_e4l_seed{seed}.yaml")
+        g1 = load_config(f"configs/experiments/m1o_g1_hito_seed{seed}.yaml")
+        base = load_config("configs/experiments/m1o_g1_hito_seed0.yaml")
+        assert e4l["seed"] == g1["seed"] == seed
+        assert e4l["environment_version"] == g1["environment_version"] == ENV_VERSION
+        assert e4l["recompensa"] == {k: v for k, v in g1["recompensa"].items() if k != "carry_milestone"}
+        assert g1["recompensa"] == base["recompensa"] and g1["ppo"] == base["ppo"] == e4l["ppo"]
+        assert e4l["presupuesto_pasos"] == g1["presupuesto_pasos"] == 600000 and e4l["layout"] == g1["layout"]

@@ -5,7 +5,7 @@ Uso:
 
 Por qué existe: la suite oficial evalúa con la acción más probable (determinista). Una política que en
 entrenamiento (estocástica) completa la misión pero en evaluación determinista no, queda escondida.
-No sustituye a la evaluación oficial; es un diagnóstico. Salida: docs/resultados/eval/<run>/stochastic.json.
+No sustituye a la evaluación oficial; es un diagnóstico. Salida: docs/resultados/eval/<run>/stochastic.json (stochastic-<seed-start>.json si la semilla inicial no es 10000).
 Cada repetición usa otra semilla de muestreo (torch) sobre las mismas semillas de episodio.
 """
 import argparse
@@ -57,7 +57,8 @@ def main():
                         mean_collisions=float(np.mean([r["collisions"] for r in rows])),
                         end_reasons={k: sum(r["end_reason"] == k for r in rows) for k in {r["end_reason"] for r in rows}}))
         print(args.run, out[-1], flush=True)
-    Path(f"docs/resultados/eval/{args.run}/stochastic.json").write_text(json.dumps(
+    name = "stochastic.json" if args.seed_start == 10_000 else f"stochastic-{args.seed_start}.json"
+    Path(f"docs/resultados/eval/{args.run}/{name}").write_text(json.dumps(
         dict(run=args.run, suite_seeds=f"{args.seed_start}-{args.seed_start + args.episodes - 1}", deterministic=False, repeats=out), indent=2) + "\n")
 
 

@@ -803,4 +803,25 @@ Referencias en el mismo mapa: heurística 100% (80 pasos), `m1-r5` 0%.
 | m1-c0l-seed0/1/2 | 600 000 | 0/1/2 | `m1_c0l_seed{0,1,2}.yaml` |
 | m1-e4x-seed0/1/2 | 1 800 000 | 0/1/2 | `m1_e4x_seed{0,1,2}.yaml` |
 
-Presupuesto efectivo 606 208 / 1 810 432 (múltiplo de 8 192). Presupuesto real: (pendiente). Se lanzan 6 runs en paralelo.
+Presupuesto efectivo 606 208 / 1 802 240 (múltiplo de 8 192; el 1 810 432 anotado antes era un error de cálculo). Se lanzaron 6 runs en paralelo.
+
+### Presupuesto real (m1-c0l, m1-e4x)
+| Run | Pasos | Minutos | Estado |
+|---|---:|---:|---|
+| m1-c0l-seed0/1/2 | 606 208 | 30.5 / 30.4 / 31.6 (6 runs en paralelo) | candidato (control) |
+| m1-e4x-seed0/1/2 | 1 802 240 | 74.9 / 74.8 / 80.1 | candidato |
+
+### Resultados (`suite-m1-v1`, determinista, semillas 10000–10049; heurística 100%)
+| Run | Éxito | Recogidas/ep | Entregas/ep | Inválidas/ep | Choques/ep | Entrenamiento con éxito |
+|---|---:|---:|---:|---:|---:|---:|
+| m1-c0l-seed0 | 0% | 0.00 | 0 | 0.0 | 0 | 0 / 1 821 |
+| m1-c0l-seed1 | 0% | 0.00 | 0 | 0.0 | 0 | 0 |
+| m1-c0l-seed2 | 0% | 1.00 | 0 | 11.9 | 0 | 0 |
+| m1-e4x-seed0 | 0% | 0.00 | 0 | 117.9 | 0 | 0 |
+| m1-e4x-seed1 | 0% | 0.00 | 0 | 0.0 | 0 | 0 |
+| m1-e4x-seed2 | **80%** (40/50) | 2.68 | 2.40 | 63.8 | 0 | 8 322 |
+- **Experimento 1 (control):** 0/0/0%, media 0%, igual que `m1-e4l` (0%): a 600 000 pasos la recompensa de e4 no se distingue de la base. c0l-seed2 aprende a cargar (como e4l-seed2) pero no entrega; las otras dos quedan en idle.
+- **Experimento 2 (criterio fijado antes): cumplido.** Media de las 3 semillas 26.7% (desv. poblacional 37.7 pp) ≥ 0% + 5 pp, choques 0.0 (sin subir). **Lo lleva una semilla de tres** (seed0 y seed1 0%), igual que pasó con e4l en el mapa abierto: los 3 runs quedan `candidato`, ninguno `recomendado`.
+- **e4x-seed2:** primer modelo que completa la misión en el mapa con muro. Éxitos en 91.8 pasos de media (heurística 80); 7 de los 10 fallos terminan con carga y la bandeja arriba (el mismo atasco tras cargar), 2 por batería. Curva en la suite intermedia (`dev-m1-v1`, 10 episodios, checkpoints cada 20 000 pasos): retorno ≈ −40 hasta ≈ 660 000, primer retorno positivo a 700 000, ≈ 125 desde 1 060 000 pero irregular (29 a 1.22M, 18 a 1.70M, 95 al final). El modelo final es el de 1 802 240 pasos, no el mejor checkpoint.
+- **e4x-seed0** acaba en DESCARGAR/inválidas (117.9/ep) sin llegar a celdas de interacción; **seed1** se queda quieto o gira (30/50 llegan a una celda, 1/50 mira al estante).
+- **Limitaciones:** sin control de 1 802 240 pasos sin términos e4: no se separa recompensa de pasos a ese presupuesto (a 600 000 pasos el control y e4l coinciden en 0%); 3 semillas, una sola exitosa; el modelo depende de la semilla, lo que apunta a que el descubrimiento de la cadena es la parte frágil de la recompensa.

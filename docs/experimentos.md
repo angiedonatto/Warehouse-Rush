@@ -970,4 +970,21 @@ Presupuesto efectivo 606 208 pasos por run.
 | m1-c1-seed0/1/2 | 606 208 | 0/1/2 | 100 | `m1_c1_control_v9_seed{0,1,2}.yaml` |
 | m1-c2-seed0 | 606 208 | 0 | ninguna | `m1_c2_repro_v9_seed0.yaml` |
 
-Presupuesto real: (pendiente).
+Presupuesto efectivo 606 208 pasos por run.
+
+### Presupuesto real y resultados (c1, c2; `suite-m1-v1`, determinista, semillas 10000–10049)
+| Run | Minutos | Éxito | Llegan a celda / miran / suben / cargan (de 50) | Inválidas/ep | Recogidas/ep | Episodios de entrenamiento | Estado |
+|---|---:|---:|---|---:|---:|---:|---|
+| m1-c0l-seed0 (ref. v7) | 30.5 | 0% | 29 / 0 / 0 / 0 | 0.0 | 0.00 | 1 821 | candidato |
+| m1-c0l-seed1 (ref. v7) | 30.4 | 0% | 0 / 0 / 0 / 0 | 0.0 | 0.00 | — | candidato |
+| m1-c0l-seed2 (ref. v7) | 31.6 | 0% | 50 / 50 / 50 / 49 | 11.9 | 1.00 | — | candidato |
+| m1-c1-seed0 (v9 + parada) | 26.1 | 0% | **49 / 41 / 41 / 19** | 132.1 | 0.44 | 3 577 | candidato |
+| m1-c1-seed1 (v9 + parada) | 25.8 | 0% | 0 / 0 / 0 / 0 | 0.0 | 0.00 | 4 341 | candidato |
+| m1-c1-seed2 (v9 + parada) | 25.7 | 0% | 21 / 0 / 0 / 0 | 0.0 | 0.00 | 4 310 | candidato |
+| m1-c2-seed0 (v9, sin parada) | 25.4 | 0% | 29 / 0 / 0 / 0 | 0.0 | 0.00 | 1 512 | candidato |
+- **`m1-c2`: pesos idénticos a `m1-c0l-seed0` (verificado tensor a tensor).** El código v9 con `potential` = 0 no cambia el entrenamiento: no hay regresión del ambiente ni de la recompensa.
+- **`m1-c1`: reproduce el patrón de la línea base** (2 de 3 semillas llegan a la celda: 49/50 y 21/50; la semilla 1 no, igual que `c0l`). Con la parada de 100 pasos, la receta base sigue llegando al estante; la semilla 0 incluso sube la bandeja en 41/50 episodios y carga en 19/50 (la línea base, seed0: 0 cargan), pero con una semilla por celda esto es descriptivo, no atribuible a la parada (el camino de aprendizaje cambia al cambiar la parada).
+- **Conclusión por el criterio fijado antes:** `c2` idéntico y `c1` con ≥ 1 de 3 semillas que llega a la celda ⇒ **el fallo de los 10 runs con potencial (0/50 llegan a la celda) es del potencial, no del código v9 ni de la parada.** Éxito 0% en los siete runs de la tabla: la línea base tampoco entrega con 600 000 pasos.
+- **Qué no se sabe:** por qué el potencial no despega mientras `progress` 0.3 sí en la mitad de las semillas. La medición de señal con política aleatoria no lo distinguía (ver q2). Una diferencia que no se ha aislado: `progress` paga la diferencia de BFS sin descuento y sin términos extra, mientras el potencial usa `γΦ' − Φ` con la fuga (γ−1)Φ y reparte el peso entre cuatro partes de φ.
+- **Limitaciones:** una semilla por celda en las comparaciones entre runs; `c0l` y `c1` no son comparables semilla a semilla (la parada cambia el camino).
+

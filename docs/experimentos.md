@@ -760,4 +760,24 @@ El criterio exige ambas condiciones, así que **h1 se rechaza**, aunque el éxit
 | m1-e4l-seed1 | 600 000 | 1 | `m1_e4l_seed1.yaml` |
 | m1-e4l-seed2 | 600 000 | 2 | `m1_e4l_seed2.yaml` |
 
-Presupuesto efectivo 606 208 pasos por run. Presupuesto real: (pendiente).
+Presupuesto efectivo 606 208 pasos por run.
+
+### Presupuesto real (m1-e4l)
+| Run | Nivel | Pasos | Minutos | Estado |
+|---|---|---|---|---|
+| m1-e4l-seed0 | m1 | 606 208 | 34.3 (3 runs en paralelo) | rechazado |
+| m1-e4l-seed1 | m1 | 606 208 | 34.5 (3 runs en paralelo) | rechazado |
+| m1-e4l-seed2 | m1 | 606 208 | 37.0 (3 runs en paralelo) | rechazado |
+
+### Resultados (m1-e4l, `suite-m1-v1`, determinista, semillas 10000–10049)
+| Run | Éxito | Recogidas/ep | Entregas/ep | Inválidas/ep | Choques/ep | Episodios de entrenamiento con éxito |
+|---|---:|---:|---:|---:|---:|---:|
+| m1-e4l-seed0 | 0% | 0.00 | 0.00 | 63.0 | 0.0 | 0 / 1 512 |
+| m1-e4l-seed1 | 0% | 0.00 | 0.00 | 0.0 | 0.0 | 0 / 1 512 |
+| m1-e4l-seed2 | 0% | 1.94 | 0.00 | 113.7 | 0.0 | 0 / 1 516 |
+Referencias en el mismo mapa: heurística 100% (80 pasos), `m1-r5` 0%.
+- **Decisión por el criterio fijado antes:** media 0% < 0% + 5 pp → **hipótesis refutada, los 3 runs `rechazado`** (se conservan como evidencia).
+- **Diagnóstico (`trace_policy.py`):** seed0 y seed1 llegan a una celda de interacción en 21/50 y 29/50 episodios pero nunca miran al estante ni cargan (se quedan quietos o giran). seed2 es la más avanzada: en los 50 episodios llega al estante, sube la bandeja y carga (1.94 recogidas/ep), pero no entrega: tras cargar gira a la derecha (prob. media 0.46) y casi nunca avanza (0.01), 31 episodios acaban con la bandeja arriba y 19 abajo. Mismo tipo de atasco que e4l-seed2/g1 en el mapa abierto antes de `carry_milestone`.
+- **Observación sobre el riesgo anticipado:** los choques son 0.0 por episodio en las tres semillas, así que no hay atasco contra el muro; el fallo no es el trampa del muro sino que no se descubre o no se completa la cadena de carga y entrega.
+- **Limitaciones:** 3 semillas y un único presupuesto (606 208); sin control del mismo presupuesto en `m1` (`c0l`), por lo que no se separa el efecto de pasos y recompensa. La curva de aprendizaje (e4l-seed0 abierto: primer éxito a 340 000 pasos) sugiere que 600 000 pasos puede ser insuficiente con el muro; no probado.
+- **Evidencia no tocada:** `m1-r5` se reevaluó por error con la salida por defecto y se restauró desde Git; sus archivos de evaluación no cambiaron.

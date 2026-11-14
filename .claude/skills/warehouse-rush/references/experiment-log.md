@@ -54,6 +54,14 @@ Findings: a height penalty applied only on the interaction cell punishes standin
 
 - **What the working policy looks like** (`scripts/trace_policy.py m1o-e4l-seed0`, 6 episodes): in the key states it is near-deterministic: stopped facing the rack with the tray down -> SUBIR 0.96; tray below the needed height -> SUBIR 0.94; tray at the needed height -> CARGAR 0.94; after loading with the tray up -> BAJAR 0.70 (CARGAR 0.25 when another line is on the same rack). The failing runs were near-uniform in those states (for example CARGAR 0.12-0.34 vs competing turns/brakes).
 
+## warehouse-v6: time -0.2 and `lower_bonus` 1.0 (600k steps; controls = e4l)
+| Run | time | lower_bonus | Seed | Success | Pickups/ep | Deliveries/ep | Status |
+|---|---:|---:|---:|---:|---:|---:|---|
+| `m1o-f1-seed0/1/2` | -0.2 | 1.0 | 0/1/2 | 0 / 0 / 0% | 2.50 / 0.82 / 0.00 | 0 | rejected |
+| `m1o-f2-seed0` (ablation) | -0.2 | 0 | 0 | 44% | 2.70 | 1.32 | rejected (criterion: -48 pp vs e4l-seed0) |
+| `m1o-f3-seed0` (ablation) | -0.1 | 1.0 | 0 | 0% | 2.38 | 0 | rejected |
+Findings: (1) e4l-seed0's successful episodes already take 71.8 steps (heuristic 71.3); the long mean (95) came from 4 failures (3 time_limit at 400 steps). (2) The bonus does what it targets (f1-seed0 and f3 raise, load and lower the tray in 50/50) but the policy then spins instead of driving to the dispatch (0 deliveries in about 7 600 training episodes of f1/f3). The bottleneck moved to the leg with cargo to the dispatch. (3) time -0.2 alone did not shorten successes (73.6 steps) and cut success 92% -> 44% (seed 0). (4) f1 seeds 1 and 2 reproduce the e4l-seed1/2 failures. Scripted returns before training showed no new perverse incentive at -0.2, so the loss is not an avoidance trap of that kind. Do not raise `time` further; next idea: a milestone for progress with cargo toward the dispatch, and more e4l seeds first.
+
 ## Lessons (use these when designing the next experiment)
 1. The bottleneck is a **missing positive signal before the first delivery**, not exploration cost or algorithm (PPO, DQN, entropy sweep 0-0.1 and penalty sweeps all failed alike).
 2. Shaping must keep **pick-up the best move**: a per-step state penalty that jumps when the target changes inverts the incentive. Use differences measured against the same target.

@@ -510,4 +510,39 @@ El control es e4l: con `lower_bonus` 0 y `time` −0.1 v6 reproduce el retorno d
 ### Presupuesto real por run (f1–f3)
 | Run | Nivel | Pasos | Minutos | Estado |
 |---|---|---|---|---|
-| m1o-f1-seed0/1/2, m1o-f2-seed0, m1o-f3-seed0 | m1o | (pendiente) | (pendiente) | (pendiente) |
+| m1o-f1-seed0 | m1o | 606 208 | 35.0 (5 runs en paralelo más pruebas y guiones corriendo a la vez) | rechazado |
+| m1o-f1-seed1 | m1o | 606 208 | 33.4 | rechazado |
+| m1o-f1-seed2 | m1o | 606 208 | 31.1 | rechazado |
+| m1o-f2-seed0 | m1o | 606 208 | 35.0 | rechazado (criterio; 44% de éxito) |
+| m1o-f3-seed0 | m1o | 606 208 | 35.4 | rechazado |
+
+(Más lento que los 24–26 min de e4l porque la suite completa de pruebas y el guion de retornos corrían a la vez.)
+
+
+### Resultados de `f1`–`f3` (2026-11-13, `suite-m1o-v1`: 50 episodios, semillas 10000–10049, acciones deterministas, mapa abierto)
+Código: commit `cc968ff` (tag `env/warehouse-v6`). Manifiestos `manifests/m1o-f*.json`; evidencia en `docs/resultados/eval/m1o-f*/`. Choques: 0 en todos.
+
+| Run | `time` | `lower_bonus` | Éxito | Recogidas/ep | Entregas/ep | Inválidas/ep | Fin de episodio | Éxitos en entrenamiento | Estado |
+|---|---:|---:|---:|---:|---:|---:|---|---:|---|
+| m1o-e4l-seed0 (control) | −0.1 | 0 | 92% | 2.92 | 2.76 | 3.8 | 46 éxito, 3 tiempo, 1 batería | 2 395 / 3 278 | candidato |
+| m1o-e4l-seed1 / seed2 (control) | −0.1 | 0 | 0% / 0% | 0.00 / 2.42 | 0 / 0 | 258 / – | tiempo | 0 / 1 512, 2 / 1 515 | candidato |
+| m1o-f1-seed0 | −0.2 | 1.0 | 0% | 2.50 | 0 | 44.3 | 49 tiempo, 1 batería | 0 / 1 525 | **rechazado** |
+| m1o-f1-seed1 | −0.2 | 1.0 | 0% | 0.82 | 0 | 128.4 | 50 tiempo | 0 / 1 514 | **rechazado** |
+| m1o-f1-seed2 | −0.2 | 1.0 | 0% | 0.00 | 0 | 0.0 | 50 tiempo | 0 / 1 512 | **rechazado** |
+| m1o-f2-seed0 | −0.2 | 0 | **44%** | 2.70 | 1.32 | 27.4 | 22 éxito, 26 tiempo, 2 batería | 479 / 1 813 | **rechazado** (criterio) |
+| m1o-f3-seed0 | −0.1 | 1.0 | 0% | 2.38 | 0 | 57.4 | 50 tiempo | 0 / 1 516 | **rechazado** |
+
+**Decisión:** el éxito medio de `f1` (3 semillas) es 0% frente a 30.7% de e4l: no supera al control en ≥ 5 pp, así que `f1` se **rechaza** con el criterio fijado antes; la hipótesis «el bono y el tiempo −0.2 hacen que más semillas completen la misión» se rechaza con este presupuesto. `f2` (solo tiempo) y `f3` (solo bono) también se rechazan frente a e4l-seed0 (92%): −48 pp y −92 pp.
+Los criterios no se cambiaron tras ver los resultados.
+
+**Diagnóstico** (`trace_policy.py`, repetición determinista de las 50 semillas):
+- **El bono hizo lo que se esperaba en el paso que buscaba:** `f1-seed0` y `f3` suben, cargan y **bajan la bandeja** en 50/50 episodios (35/50 y 47/50 terminan con bandeja abajo y carga). Pero después **no avanzan al despacho**: giran en el sitio (f1-seed0: GIRAR_DERECHA 2 587 y GIRAR_IZQUIERDA 1 634 pasos en el estado posterior a cargar; f3: GIRAR_DERECHA 825) y terminan por límite de tiempo con carga. Ningún episodio de entrenamiento de f1/f3 (7 600 en total) entregó nada. El cuello de botella se movió de «bajar la bandeja» a «recorrer el camino al despacho con la carga».
+- **f1-seed1:** llega al estante en 50/50 pero solo carga en 35/50; se queda en FRENAR y CARGAR inválido (128 inválidas por episodio). **f1-seed2:** nunca llega a una celda de interacción (0/50): estas dos semillas reproducen los fallos de e4l-seed1/seed2 y el bono no las rescata.
+- **f2 (solo time −0.2) aprende la cadena completa** (479 episodios de entrenamiento exitosos; 44% en la suite), pero menos que e4l-seed0 con −0.1 (92%): 26/50 episodios terminan por tiempo con carga, 2 por batería. Sus 22 éxitos duran **73.6 pasos de media** (máximo 82) frente a 71.8 de e4l-seed0: **subir la penalización de tiempo no acortó los episodios exitosos** (ya estaban al nivel de la heurística, 71.3), y el único efecto medible fue menos éxito.
+- Sobre la duración de los episodios: la causa del largo medio es el fallo (400 pasos), y con `time` −0.2 hay más fallos, no menos.
+
+**Lectura (hipótesis, no causa demostrada):** (a) el bono por bajar es una señal correcta pero insuficiente: el siguiente tramo (recorrer ~10–30 celdas con carga hasta el despacho) sigue sin señal propia más allá de la diferencia Manhattan; (b) `time` −0.2 duplica el costo de explorar y puede dificultar el descubrimiento de la cadena (f2 pierde 48 pp respecto a −0.1); no se probó una causa; (c) con una semilla por ablación no se puede separar efecto de la penalización de la varianza entre semillas (e4l dio 92/0/0).
+
+**Limitaciones:** una semilla por ablación; tres para `f1`; presupuesto de 606 208 pasos; el control (e4l) se entrenó con código v5 con recompensa idéntica en los términos no nuevos (verificado por prueba, no reentrenado); el bono solo actúa con objetivo DELIVERY; las duraciones de entrenamiento incluyen carga concurrente de otras tareas.
+
+**Siguiente (no iniciado):** si se quiere acortar episodios, atacar el fallo: (1) volver a `time` −0.1 y probar un bono por avanzar con carga hacia el despacho (diferencia Manhattan ya existe; falta un hito, por ejemplo una vez al cruzar la mitad de la distancia al despacho tras bajar la bandeja); (2) replicar e4l en más semillas antes de seguir afinando recompensa, porque 92/0/0 no distingue efectos de recompensa de la varianza.

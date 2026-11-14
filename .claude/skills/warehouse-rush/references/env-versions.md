@@ -1,4 +1,4 @@
-# Environment versions (warehouse-v1 to warehouse-v5)
+# Environment versions (warehouse-v1 to warehouse-v6)
 
 Everything below is true at 2026-11-13 on branch `dev/lis` (last code commit `2b80031`, last experiment commit `64e3c77`). The authoritative documents live in the repo; read them before changing anything:
 `envs/CONTRATO.md` (frozen contract), `docs/ambiente-v0.1.md` ... `docs/ambiente-v0.5.md` (one sheet per version), `docs/decisiones.md` (dated decision log, Spanish).
@@ -14,6 +14,7 @@ Everything below is true at 2026-11-13 on branch `dev/lis` (last code commit `2b
 | `warehouse-v3` (0.3.0) | `env/warehouse-v3` -> `30c34fb` | Reward coefficients become a **per-run parameter**: `recompensa:` block in the experiment YAML -> `config_sha256`, `metadata.json` (`reward_overrides`, `rewards`), MLflow tag `recompensa`. Defaults = v1/v2 values | `docs/ambiente-v0.3.md` |
 | `warehouse-v4` (0.4.0) | `env/warehouse-v4` -> `1b82ca9` | `distance` term (state penalty: coefficient x Manhattan distance to the previous target, per step, <= 0). Open map `configs/layout_v0.5.json` (no interior wall, no closable gap), level `m1o`, `Layout.validate_routes` only demands that the blockable gap alters a route when a gap exists | `docs/ambiente-v0.4.md` |
 | `warehouse-v5` (0.5.0) | `env/warehouse-v5` -> `2b80031` | `manhattan_progress` (>= 0, **difference** of Manhattan distance to the same target before/after the step; no jump when the target changes) and `height_mismatch` (<= 0, per step and per tray position of mismatch, only while standing on an interaction cell of the current target; needed position is 0 at dispatch). Both default 0 | `docs/ambiente-v0.5.md` |
+| `warehouse-v6` (0.6.0) | `env/warehouse-v6` -> `cc968ff` | `lower_bonus` (>= 0, default 0): per tray level that BAJAR lowers while the target is DELIVERY, route distance to dispatch > 0 and tray > 0; paid once per leg and level (a SUBIR/BAJAR loop is not farmable). After the last pickup the target (obs 10-11, `objetivo`, distances) already pointed at DELIVERY; pinned by a test, no code change | `docs/ambiente-v0.6.md` |
 
 v2 models share observation and actions with v3-v5 and load there (trained without the new terms). **v1 models are incompatible** (22 inputs, 5 outputs); keep them as history only.
 

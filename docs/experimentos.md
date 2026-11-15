@@ -1040,4 +1040,18 @@ Presupuesto efectivo 606 208 pasos por run.
 | m1-e4y-seed3/4/5 | 1 802 240 | 3/4/5 | 100 | `m1_e4y_seed{3,4,5}.yaml` |
 | m1-c3-seed0 | 1 802 240 | 0 | 100 | `m1_c3_largo_seed0.yaml` |
 
-Presupuesto real: (pendiente). Se lanzan 4 runs en paralelo (≈ 80 minutos esperados).
+Presupuesto efectivo 1 802 240 pasos por run. Los 4 runs corrieron en paralelo; **92.7–103.0 minutos** cada uno (el estimado de ≈ 80 minutos se quedó corto: mis pruebas y perfilados compartieron la CPU).
+
+### Presupuesto real y resultados (`suite-m1-v1`, determinista, semillas 10000–10049; heurística 100%, 79.9 pasos)
+| Run | Minutos | Éxito | Recogidas / entregas por ep | Llegan / miran / suben / cargan (de 50) | Inválidas/ep | Choques/ep | Pasos de los éxitos | Entrenamiento: éxitos / episodios | Estado |
+|---|---:|---:|---|---|---:|---:|---:|---:|---|
+| **m1-e4y-seed3** | 103.0 | **100%** (50/50) | 3.00 / 3.00 | 50 / 50 / 50 / 50 | 6.6 | 0.0 | 94.2 | 2 575 / 10 767 | candidato |
+| m1-e4y-seed4 | 94.1 | 0% | 0.00 / 0 | 22 / 0 / 0 / 0 | 0.0 | 0.0 | — | 0 / 13 814 | candidato |
+| m1-e4y-seed5 | 92.7 | 0% | 0.00 / 0 | 22 / 21 / 0 / 0 | 0.0 | 0.0 | — | 0 / 14 145 | candidato |
+| **m1-c3-seed0** | 99.7 | **98%** (49/50) | 2.98 / 2.94 | 50 / 50 / 50 / 50 | 7.1 | 0.0 | 86.8 | 2 040 / 11 123 | candidato |
+- **Experimento A (criterio fijado antes): cumplido.** Media de las 3 semillas nuevas 33.3% (desv. poblacional 47.1 pp) ≥ 5%, choques 0.0 (sin subir). **Lo lleva una semilla de tres** (seed3 100%; seed4 y seed5 0%), exactamente como `m1-e4x` (0/0/80%): 1 de 3 semillas con éxito en ambos grupos. La parada no aumentó la fracción de semillas que despegan (1/3 frente a 1/3 con 3 semillas por grupo; no hay potencia para ver una diferencia). e4y-seed3 hizo 10 767 episodios de entrenamiento (e4x ≈ 4 000–5 000) con 2 575 éxitos.
+- **Experimento B (criterio fijado antes): cumplido con holgura.** `m1-c3-seed0` 98% (49/50) frente a 0% de `m1-c1-seed0` a 600 000 pasos. **Con la receta base, sin ningún término e4** (invalid −0.2, collision −1, `progress` 0.3 por defecto) más la parada: 2.94 entregas por episodio, 0 choques, éxitos en 86.8 pasos (heurística 79.9). El único fallo agota el tiempo con carga y la bandeja abajo. Primer retorno positivo de la evaluación intermedia a 1 620 000 pasos, casi al final del presupuesto: con menos pasos no habría despegado.
+- **Lectura conjunta:** un modelo de RL puro (sin heurística ni imitación) completa la misión en el mapa con muro en dos runs distintos (e4y-seed3 100%, c3-seed0 98%, además de e4x-seed2 80%). Lo que falta no es la recompensa e4 (c3 funciona sin ella) sino **robustez entre semillas**: 2 de 3 semillas de e4y fracasan y e4x también; de c3 solo se corrió una semilla. El presupuesto largo es necesario (c1 con 600 000 pasos dio 0%).
+- **Lo que NO se puede afirmar:** que la receta base sea fiable (una semilla); que la parada ayude (confusión con las semillas); que 98–100% sea el rendimiento esperado: las semillas se eligieron por convocatoria, y la suite de comparación (10000–10049) es la misma con la que se decide, no el test final reservado.
+- **Notas de trazabilidad:** los runs se lanzaron con el commit `750e99f`; después se hizo la mejora de rendimiento de `Layout.distance_field` (`1cffbc0`), que no cambia resultados (equivalencia probada) y que los runs en curso no importaron. Tres manifiestos registran `git_dirty: true` por carpetas de salida de runs hermanos sin versionar.
+- **Siguiente paso razonable (no hecho):** repetir `c3` en las semillas 1 y 2 (y/o 3–5) con la misma parada para medir la fiabilidad de la receta base; elegir finalistas con tres semillas y reservar el test final.

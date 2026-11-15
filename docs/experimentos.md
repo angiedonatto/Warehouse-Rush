@@ -1068,4 +1068,19 @@ Presupuesto efectivo 1 802 240 pasos por run. Los 4 runs corrieron en paralelo; 
 |---|---:|---:|---|
 | m1-c3-seed1/2/3/4 | 1 802 240 | 1/2/3/4 | `m1_c3_largo_seed{1,2,3,4}.yaml` |
 
-Presupuesto real: (pendiente).
+Presupuesto efectivo 1 802 240 pasos por run; 4 runs en paralelo sin otra carga: **104.2–110.3 minutos** cada uno (≈ 270 pasos/s; la estimación de 80–90 minutos se quedó corta también sin carga externa).
+
+### Presupuesto real y resultados (`suite-m1-v1`, determinista, semillas 10000–10049; heurística 100%)
+| Run | Minutos | Éxito | Recogidas / entregas por ep | Llegan / miran / suben / cargan (de 50) | Inválidas/ep | Choques/ep | Entrenamiento: éxitos / episodios | Estado |
+|---|---:|---:|---|---|---:|---:|---:|---|
+| m1-c3-seed0 (previo) | 99.7 | **98%** | 2.98 / 2.94 | 50 / 50 / 50 / 50 | 7.1 | 0.0 | 2 040 / 11 123 | candidato |
+| m1-c3-seed1 | 104.3 | 0% | 0 / 0 | 0 / 0 / 0 / 0 | 0.0 | 0.0 | 0 / 14 249 | candidato |
+| m1-c3-seed2 | 104.2 | 0% | 0 / 0 | 42 / 15 / 0 / 0 | 55.7 | 4.48 | 0 / 13 731 | candidato |
+| m1-c3-seed3 | 110.3 | 0% | 2.66 / 0 | 50 / 50 / 50 / 50 | 0.0 | 0.0 | 0 / 9 454 | candidato |
+| m1-c3-seed4 | 104.8 | 0% | 0 / 0 | 22 / 22 / 0 / 0 | 0.0 | 0.0 | 0 / 14 096 | candidato |
+- **Decisión por el criterio fijado antes: refutada.** 0 de las 4 semillas nuevas alcanza ≥ 50% (el umbral de refutación era ≤ 1); en total **1 de 5 semillas** (seed0) completa la misión. Media de las 5: 19.6% (desv. poblacional 39.2 pp). La receta base **no es candidata a finalista** con esta evidencia; los 5 runs quedan `candidato` como evidencia.
+- **Patrón:** las semillas se reparten en tres conductas finales: idle sin llegar al estante (seed1), llegar y mirar sin subir la bandeja (seed2, seed4; seed2 además choca 4.48/ep y hace 55.7 inválidas/ep), y cargar sin entregar (seed3: 2.66 recogidas/ep, 42/50 episodios acaban con carga y la bandeja abajo, es decir, **ya puede moverse** y aun así no va al despacho). Solo seed0 completa la cadena. seed3 tuvo su primer retorno positivo en la evaluación intermedia a 1 400 000 pasos: con más presupuesto podría haber despegado, pero eso no se probó.
+- **Fiabilidad acumulada del RL puro en el mapa con muro a 1 802 240 pasos:** e4x 1/3, e4y 1/3, c3 1/5 → **3 de 11 semillas** completan la misión (27%), con y sin los términos e4, con y sin parada. La recompensa (e4 frente a base) y la parada no cambian esa fracción de forma visible con estas muestras; la variable que decide es la semilla, es decir, si la exploración temprana encuentra la cadena completa antes de que la política se cierre.
+- **Lo que esto cambia:** el problema no es la forma de la recompensa (tres recetas distintas dan la misma tasa) sino la **exploración**: la mayoría de las semillas se estanca en una etapa (idle, mirar, cargar) y PPO con `ent_coef` 0 no sale de ahí. Las palancas no probadas que atacan eso: (a) más presupuesto para las semillas que ya cargan (seed3 iba subiendo), (b) `ent_coef` > 0 con el presupuesto largo (j3 solo lo probó a 600 000 pasos), (c) currículo de posiciones iniciales o de pedidos de 1 línea, (d) elegir entre varias semillas con una suite de desarrollo y validar la elegida en el test final reservado (legítimo si la selección se declara).
+- **Limitaciones:** 5 semillas; sin control sin parada al mismo presupuesto; la suite de comparación es la misma con la que se decide; la selección de seed0 como «el modelo que funciona» es posterior a ver el resultado.
+

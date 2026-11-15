@@ -5,7 +5,7 @@ Branch: `dev/lis` (all work goes here; `main` only by PR with review). Not pushe
 ## Commands
 | Task | Command |
 |---|---|
-| Full tests (about 1.4 min, 196 pass after the 2026-11-14 BFS speed-up; it was about 9 min) | `.venv/bin/python -m pytest tests -q -p no:cacheprovider` (add `--junitxml=docs/resultados/pytest-warehouse-vN.xml` to keep the report) |
+| Full tests (about 1.4 min serial, **about 30 s in parallel**: `.venv/bin/python -m pytest tests -q -p no:cacheprovider -n 6 --dist loadfile`; 196 pass; it was about 9 min before the 2026-11-14 BFS speed-up) | `.venv/bin/python -m pytest tests -q -p no:cacheprovider` (add `--junitxml=docs/resultados/pytest-warehouse-vN.xml` to keep the report) |
 | Reward/config tests only (about 40 s) | `.venv/bin/python -m pytest tests/test_reward_config.py -q -p no:cacheprovider` |
 | Train a run | `.venv/bin/python -m pipelines.train --config configs/experiments/<file>.yaml` (writes `models/<run>/`, `docs/resultados/training/<run>/`, logs to MLflow `warehouse-<nivel>`; fails if the run already exists; rejects a config whose `environment_version` differs from `ENV_VERSION`) |
 | Evaluate with the run's own map and reward | `.venv/bin/python -I .claude/skills/warehouse-rush/scripts/eval_run.py <run>` |
@@ -59,4 +59,4 @@ Observed: the machine has 16 cores and 7.6 GB RAM; 4-5 runs in parallel each tra
 
 ## Speed notes (2026-11-14)
 - Building an environment used to cost about 2.6 s: `Layout.free()` rebuilt the wall/rack/obstacle sets on every neighbour check (about 41 000 times per build, inside the BFS distance fields). `Layout.distance_field` now builds the set once (about 0.03 s per build, 87x); `tests/test_layout_perf.py` pins it against the old slow implementation on every layout, station and blocked state. This is what made `test_cloud_makeup_roundtrip_and_inventory_retention` take 182 s (the stateless cloud API builds a fresh environment per request) and what made scripts that call `make_env` per episode (`eval_run.py`, `eval_stochastic.py`, ad-hoc diagnostics) slow. Training itself builds its environments once, so training speed (about 370-540 steps/s) did not change.
-- `pytest-xdist` is not installed (not in `requirements.txt`); with `-n 8 --dist loadfile` the remaining 83 s would likely drop again, but tests that train use fixed seeds and write to `models/ppo_orders3_seed987*`, so keep them in one worker (`loadfile`).
+- `pytest-xdist==3.6.1` (and `execnet==2.1.2`) are now in `requirements.txt`; the project venv had no `pip`, so it was bootstrapped with `.venv/bin/python -m ensurepip`. Run `-n 6 --dist loadfile` (6 workers: 196 pass in about 29 s even with 4 training runs using the CPU). Keep `--dist loadfile`: tests that train use a fixed seed and write to `models/ppo_orders3_seed987*`, so every test file must stay in one worker. It is not forced in `pytest.ini` so a teammate without xdist can still run `pytest tests -q`.

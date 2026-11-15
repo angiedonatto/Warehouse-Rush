@@ -31,7 +31,7 @@ evaluarlos con su ambiente compatible. Más contexto: skill `warehouse-rush`.
 - Runs: <nivel>-<hipótesis>-seed<semilla>, ej. n1-baseline-seed42.
 
 ## Comandos
-- Pruebas: python -m pytest tests -q
+- Pruebas: python -m pytest tests -q (rápido, en paralelo: python -m pytest tests -q -n 6 --dist loadfile; requiere pytest-xdist)
 - Entrenar: python -m pipelines.train --config configs/experiments/<archivo>.yaml (v2: m1_c0_makeup3.yaml)
 - Visor 3D local: python -m pipelines.cli view
 - Modelo actual y reentrenamiento: docs/modelo-actual.md

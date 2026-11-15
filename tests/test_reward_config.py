@@ -635,3 +635,11 @@ def test_c3_seeds_1_to_4_change_only_the_seed():
         cfg = raw(f"m1_c3_largo_seed{seed}")
         assert cfg["seed"] == seed and cfg["id"] == "c3"
         assert {k: v for k, v in cfg.items() if k not in ("seed", "hipotesis")} == {k: v for k, v in base.items() if k not in ("seed", "hipotesis")}
+
+
+def test_c4_configs_are_c3_with_only_ent_coef_changed():
+    for seed in (1, 2, 3, 4):
+        c3, c4 = raw(f"m1_c3_largo_seed{seed}"), raw(f"m1_c4_entropia_seed{seed}")
+        assert c4["id"] == "c4" and c4["seed"] == seed and c4["ppo"]["ent_coef"] == 0.01 and c3["ppo"]["ent_coef"] == 0.0
+        assert {k: v for k, v in c4["ppo"].items() if k != "ent_coef"} == {k: v for k, v in c3["ppo"].items() if k != "ent_coef"}
+        assert {k: v for k, v in c4.items() if k not in ("id", "hipotesis", "ppo")} == {k: v for k, v in c3.items() if k not in ("id", "hipotesis", "ppo")}

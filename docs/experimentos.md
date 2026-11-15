@@ -1084,3 +1084,17 @@ Presupuesto efectivo 1 802 240 pasos por run; 4 runs en paralelo sin otra carga:
 - **Lo que esto cambia:** el problema no es la forma de la recompensa (tres recetas distintas dan la misma tasa) sino la **exploración**: la mayoría de las semillas se estanca en una etapa (idle, mirar, cargar) y PPO con `ent_coef` 0 no sale de ahí. Las palancas no probadas que atacan eso: (a) más presupuesto para las semillas que ya cargan (seed3 iba subiendo), (b) `ent_coef` > 0 con el presupuesto largo (j3 solo lo probó a 600 000 pasos), (c) currículo de posiciones iniciales o de pedidos de 1 línea, (d) elegir entre varias semillas con una suite de desarrollo y validar la elegida en el test final reservado (legítimo si la selección se declara).
 - **Limitaciones:** 5 semillas; sin control sin parada al mismo presupuesto; la suite de comparación es la misma con la que se decide; la selección de seed0 como «el modelo que funciona» es posterior a ver el resultado.
 
+
+## Bono de entropía con el presupuesto largo (`m1-c4`, escrito antes de entrenar, 2026-11-14)
+**Contexto:** a 1 802 240 pasos el RL puro completa la misión en 3 de 11 semillas (e4x 1/3, e4y 1/3, c3 1/5), con y sin términos e4, con y sin parada. Las semillas que fallan se estancan en una etapa distinta (idle, mirar sin subir, cargar sin entregar). `j3` probó `ent_coef` 0.01 solo a 600 000 pasos, donde ninguna receta funciona. Instrucción del usuario: opción 1 (entropía con presupuesto largo). Sin cambio de código (`warehouse-v10`).
+- **Cambio frente a `m1-c3`:** solo `ent_coef` 0.0 → 0.01 (prueba que fija el resto del bloque `ppo` y del config). Semillas 1–4: las cuatro en que `m1-c3` dio 0%, así cada run tiene su par directo.
+- **Hipótesis:** el bono de entropía mantiene la exploración el tiempo suficiente para que más semillas descubran la cadena completa dentro del presupuesto.
+- **Criterio (fijado ahora):** muestra señal si **≥ 2 de las 4 semillas alcanzan ≥ 50%** de éxito en `suite-m1-v1` con choques ≤ 0.1 por episodio (`m1-c3` en esas semillas: 0 de 4). **Se refuta si 0 de 4.** 1 de 4 es inconcluyente (coincide con la tasa base ≈ 27%). Se reportan éxito, etapas alcanzadas, choques e inválidas por semilla, y la entropía de la política al final (`train/entropy_loss`).
+- **Qué más se aprende:** si las semillas estancadas avanzan de etapa frente a su par de `c3` (por ejemplo seed3 entrega algo) aunque no lleguen al 50%, la entropía mueve el cuello de botella; si suben las inválidas o los choques, el coste de explorar más.
+- **Limitaciones:** no se corre seed0 (el único éxito de c3), así que no se sabe si la entropía la perjudica; 4 semillas; mismo presupuesto y parada que c3, sin ablación de la parada; ≈ 105 minutos por run en paralelo.
+
+| Run | Pasos | Semilla | `ent_coef` | Config |
+|---|---:|---:|---:|---|
+| m1-c4-seed1/2/3/4 | 1 802 240 | 1/2/3/4 | 0.01 | `m1_c4_entropia_seed{1,2,3,4}.yaml` |
+
+Presupuesto real: (pendiente).

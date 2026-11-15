@@ -643,3 +643,11 @@ def test_c4_configs_are_c3_with_only_ent_coef_changed():
         assert c4["id"] == "c4" and c4["seed"] == seed and c4["ppo"]["ent_coef"] == 0.01 and c3["ppo"]["ent_coef"] == 0.0
         assert {k: v for k, v in c4["ppo"].items() if k != "ent_coef"} == {k: v for k, v in c3["ppo"].items() if k != "ent_coef"}
         assert {k: v for k, v in c4.items() if k not in ("id", "hipotesis", "ppo")} == {k: v for k, v in c3.items() if k not in ("id", "hipotesis", "ppo")}
+
+
+def test_c5_continues_c4_seed2_with_the_same_config():
+    c4, c5 = raw("m1_c4_entropia_seed2"), raw("m1_c5_continuar_seed2")
+    assert c5["id"] == "c5" and c5["seed"] == 2 and c5["parent_run_id"] == "m1-c4-seed2" and c4["parent_run_id"] is None
+    assert c5["presupuesto_pasos"] == 1800000 and c5["ppo"]["ent_coef"] == 0.01
+    assert {k: v for k, v in c5.items() if k not in ("id", "hipotesis", "parent_run_id")} == \
+        {k: v for k, v in c4.items() if k not in ("id", "hipotesis", "parent_run_id")}

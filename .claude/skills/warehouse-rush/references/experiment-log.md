@@ -1,6 +1,6 @@
 # Experiment log (R2) and what we learned
 
-Status: 2026-11-14. Full evidence, per-episode CSV/JSON and manifests are in the repo: `docs/experimentos.md` (Spanish, hypotheses written **before** training), `docs/resultados/eval/<run>/`, `docs/resultados/training/<run>/`, `manifests/<run>.json`, MLflow (`warehouse-n1`, `warehouse-m1`, `warehouse-m1o`; local `mlflow.db`, not committed). Run names: `<nivel>-<id>-seed<seed>`.
+Status: 2026-11-15. Full evidence, per-episode CSV/JSON and manifests are in the repo: `docs/experimentos.md` (Spanish, hypotheses written **before** training), `docs/resultados/eval/<run>/`, `docs/resultados/training/<run>/`, `manifests/<run>.json`, MLflow (`warehouse-n1`, `warehouse-m1`, `warehouse-m1o`; local `mlflow.db`, not committed). Run names: `<nivel>-<id>-seed<seed>`.
 
 Everything uses PPO `MlpPolicy` [64,64], lr 3e-4, `n_steps` 2048 x `n_envs` 4, batch 64, 10 epochs, gamma 0.99, gae_lambda 0.95, clip 0.2, `ent_coef` 0.0 (the C0 config) unless stated. Budget 200 000 requested (204 800 effective = 25 x 8 192) unless stated; 600 000 requested = 606 208 effective. Evaluation: frozen model, deterministic actions, 50 episodes, seeds 10000-10049 (`suite-n1-v1`, `suite-m1-v1`, `suite-m1o-v1`), 1 training seed unless stated.
 
@@ -83,6 +83,33 @@ Criterion (pre-registered, h1 vs e4l): mean success +62.7 pp (93.3% vs 30.7%) bu
 ## Cancelled: seeds 3-7 of e4l and g1 (pre-registered, never evaluated)
 Configs `m1o_{e4l,g1_hito}_seed{3..7}.yaml` and a criterion (mean of the 5 new seeds, deterministic eval, g1 >= e4l + 5 pp, collisions <= +0.1/ep) were committed before training. The g1 runs were stopped at about 300 000 of 606 208 steps (user switched to behaviour cloning); the e4l runs never started. Status `interrumpido` in MLflow, no evaluation, partial folders untracked. The criterion was never applied; do not read the missing results as a null result.
 
+## 2026-11-14/15: walled map (`m1`, `layout_v0.4.json`), pure RL, `suite-m1-v1` (seeds 10000-10049; heuristic 100%, 79.9 steps)
+Everything below: PPO C0 block ([64,64], lr 3e-4, n_steps 2048 x 4 envs, batch 64, gamma 0.99, `ent_coef` 0 unless stated), 3 random SKUs, deterministic eval. "Reach" = episodes (of 50) that reach an interaction cell of the first target; "face / raise / load" from `scripts/trace_policy.py`. `progress` 0.3 (BFS difference) is the env default and is on in every run unless set to 0.
+
+**Cross-map check (no training):** `m1o-e4l-seed0`, `m1o-g1-seed0`, `m1o-h0-seed0`, `m1o-h1-seed0` on the walled map: 0/50 each (e4l 40 collisions/ep, h0 52/ep); the heuristic 50/50. Models trained on the open map do not transfer.
+
+| Run (seeds) | Env | Reward / change | Steps | Stop | Success | Key diagnosis | Status |
+|---|---|---|---:|---|---|---|---|
+| `m1-e4l` (0,1,2) | v7 | e4 (manhattan 0.3, height -0.02, inv -0.2, col -1) | 606 208 | no | 0/0/0% | reach 21/29/50; seed2 loads 1.94/ep, never delivers; 0 collisions | rechazado |
+| `m1-c0l` (0,1,2) | v7 | base (inv -0.2, col -1) control | 606 208 | no | 0/0/0% | reach 29/0/50; seed2 loads 1.0/ep | candidato (control) |
+| `m1-e4x` (0,1,2) | v7 | e4, 3x budget | 1 802 240 | no | 0/0/**80%** | seed2 2.40 deliveries/ep, 91.8 steps, 8322 training successes; first dev return > 0 at 700k | candidato |
+| `m1-j1` (0) | v8 | e4 + `face_bonus` 10 | 606 208 | no | 0% | 40/50 face the shelf (e4l: 0) but none raise the tray; collisions 2.56/ep | rechazado |
+| `m1-j2` (0) | v8 | e4 + `carry_milestone` 5 | 606 208 | no | 0% | **weights identical to `m1-e4l-seed0`** (never loads, milestone never paid) | rechazado |
+| `m1-j3` (0) | v8 | e4 + `ent_coef` 0.01 | 606 208 | no | 0% | reach 22, no change | rechazado |
+| `m1-p1` (0,1,2) | v9 | `potential` 30 only (progress 0) | 606 208 | 100 | 0/0/0% | **reach 0/0/0**; idle (FRENAR 95-100%) | rechazado |
+| `m1-p2` (0) | v9 | same, no stop | 606 208 | no | 0% | reach 0; idle: the stop is not the cause | rechazado |
+| `m1-q1` (0,1,2) | v9 | potential 150 + task rewards x5, penalties unscaled | 606 208 | 100 | 0/0/0% | **collision trap** 98.8 / 39.9 / 0 per ep (effective collision -0.2) | rechazado |
+| `m1-q2` (0,1,2) | v9 | everything x3 incl. collision -3, invalid -0.6 | 606 208 | 100 | 0/0/0% | reach 0; idle again; no collisions | rechazado |
+| `m1-c1` (0,1,2) | v9 | base (progress 0.3, no potential) + stop: regression control | 606 208 | 100 | 0/0/0% | reach **49/0/21**, seed0 raises 41 and loads 19: baseline intact | candidato (control) |
+| `m1-c2` (0) | v9 | `m1-c0l-seed0` config on v9, no stop | 606 208 | no | 0% | **weights identical to `m1-c0l-seed0`**: v9 code is a no-op at potential 0 | candidato (control) |
+| `m1-s1` (0,1,2) | v10 | base + potential 30 with `potential_nav` 0 (stages only) | 606 208 | 100 | 0/0/0% | reach 0/0/0 (c1: 49/0/21); seed2 210 invalid/ep. Confound: with `potential_nav` 0 the stop no longer sees navigation progress | rechazado |
+| `m1-e4y` (3,4,5) | v10 | e4 (= e4x recipe) + stop, new seeds | 1 802 240 | 100 | **100**/0/0% | seed3 50/50, 94.2 steps, 2575 training successes, first dev > 0 at 820k; seeds 4-5 reach 22 and never load | candidato |
+| `m1-c3` (0) | v10 | base + stop, 3x budget | 1 802 240 | 100 | **98%** | 49/50, 86.8 steps, 2.94 deliveries/ep, first dev > 0 at 1.62M | candidato |
+| `m1-c3` (1,2,3,4) | v10 | same, new seeds | 1 802 240 | 100 | 0/0/0/0% | seed1 idle; seed2 reach 42, 4.5 collisions/ep; **seed3 loads 2.66/ep, 42/50 end carrying with the tray down, never delivers** (first dev > 0 at 1.4M); seed4 reach 22 | candidato |
+| `m1-c4` (1,2,3,4) | v10 | base + stop + **`ent_coef` 0.01** | 1 802 240 | 100 | (in flight) | criterion: >= 2 of 4 seeds >= 50%, collisions <= 0.1/ep | pending |
+
+**Scripted-behaviour returns measured before training** (walled map, discounted unless noted): `face_bonus` 5 left "reach, face and idle" (-42.8) worse than idling at base (-40.8), 10 made it better (-37.8), which is why j1 used 10 and why j1 then sat facing the shelf. Potential W=30: random exploration earns the same shaping as standing still (-1.40 vs -1.40; `progress` 0.3: +0.04 vs 0.00), navigation shaping ~0.08 per cell vs ~0.6 for e4; at W=150 0.40 per cell but collision cost falls to 2.5 cells of shaping (q1 trap); at x3 with scaled penalties 12.6 cells (same as p1) and 0.24 per cell. Four e4-era "approach and idle" measurements are in `docs/experimentos.md`.
+
 ## Lessons (use these when designing the next experiment)
 1. The bottleneck is a **missing positive signal before the first delivery**, not exploration cost or algorithm (PPO, DQN, entropy sweep 0-0.1 and penalty sweeps all failed alike). Behaviour cloning confirmed it: a network of the same size and the same 27-dim observation imitates the heuristic to 100% success on every seed.
 2. Shaping must keep **pick-up the best move**: a per-step state penalty that jumps when the target changes inverts the incentive. Use differences measured against the same target.
@@ -97,13 +124,20 @@ Configs `m1o_{e4l,g1_hito}_seed{3..7}.yaml` and a criterion (mean of the 5 new s
 11. **PPO fine-tuning with the e4l config destroys a good starting policy** (dev-eval return 127 -> about 0 at 20k steps, then oscillates for 600k): critic explained variance after BC is only 0.38-0.40, lr 3e-4 and ent_coef 0. A final model is only the point where training stopped; compare against `models/<run>/best` too.
 12. A pre-registered **two-part criterion** is applied as written even when one part is overwhelmingly met (h1: +62.7 pp success but collisions failed). State both numbers.
 13. Behaviour cloning from a privileged expert gives a strong reference but is not RL evidence; label it that way (`candidato`, reference, not recommended) and let the team decide how to present it.
+14. **Open-map models do not transfer to the walled map** (0/50, 40-52 collisions/ep): the target-relative observation carries no information about the wall. Train on the course map.
+15. **On the walled map nothing completes the mission at 606 208 steps; at 1 802 240 steps about 1 seed in 3-4 does** (3 of 11 across three recipes). First positive dev-suite returns appear at 0.7-1.6M steps. Budget is necessary but not sufficient; the seed decides. Report "k of n seeds" before any percentage.
+16. **The e4 terms are not needed**: the base reward (`progress` 0.3, invalid -0.2, collision -1) reached 98% on seed 0 at 1.8M steps. Reward shape did not change the success-per-seed rate in these samples; do not spend more runs on reward tweaks before an exploration lever is tested.
+17. **Potential-based shaping, as implemented in v9/v10, never got a policy to the shelf** in 13 runs regardless of scale, penalty scaling or dropping its navigation part. Policy invariance says nothing about signal strength; shaping that only redistributes a fixed total is tiny per step (0.08/cell at W=30). Cause not isolated; a regression control (`c1`/`c2`) proved the code and the stagnation stop innocent. Park it.
+18. **Scaling only positive rewards is the same as shrinking the penalties** (SB3 normalises advantages): x5 made collision effectively -0.2 and reproduced the wall-bumping trap of `m1-r6/r7` (98.8 collisions/ep). Scale contact penalties with the rewards (q2) or not at all.
+19. **The stagnation stop (truncate after N steps without a new best potential) is safe and cheap**: ~3.7x more training episodes per step, no change in run time, no harm to the baseline (c1 vs c0l pattern, c2 identical weights). It judges progress through `env.potential()`, so any reward config that changes the potential (e.g. `potential_nav` 0) also changes what the stop measures (s1 confound).
+20. **A single-seed test of a term that only pays after a stage the policy never reaches is uninformative** (j2 = e4l-seed0 bit for bit; a carry milestone cannot help a seed that never loads). Pick seeds that already reach the stage the term targets.
+21. **Measure elapsed time from the process, not from the launch time**: a laptop sleep froze four runs for ~14 h (27 min of CPU in 15 h wall); `ps -o etime,time` and `progress.csv` mtime tell the truth, `metadata.json` `duration_seconds` will not.
+22. Four parallel 1 802 240-step runs take ~105 min even on an idle machine (~270 steps/s each); 606 208-step runs ~27 min. Tests/profiling during training slow it by 10-20%.
 
-## Open items / next candidates (none started)
-1. **Fine-tuning that keeps the BC policy**: lr 3e-5, critic warm-up with the actor frozen for the first steps, or `target_kl`; pre-register, 3+ seeds; also evaluate the saved `best` checkpoint of the periodic eval.
-2. Decide with the team whether h0 (copy of the heuristic) is an acceptable result or only a reference; if a stochastic evaluation is wanted, pre-register that criterion and use unseen eval seeds (20000-20049 were used for diagnostics only).
-3. More seeds of `e4l` and `g1` (3-7), configs already exist (cancelled, see above).
-4. A signal **before** the first pickup for seeds that never load (for example a one-off bonus for reaching the first rack's interaction cell) - new version.
-5. Observation with the target relative to the robot's heading (egocentric), and randomized start poses (curriculum) - new env version.
-6. The e4 reward on the walled map (`layout_v0.4.json`).
-7. Cache the BC demonstrations by config hash (about 8 of the 10 minutes per BC run are demonstration generation).
-8. Missing from the plan: finalists x 3 seeds comparison, `compare.py`, `callbacks.py`, suite-driven `evaluate.py`, N3 incident suite for v2+ (the open map has no closable gap; the walled map still has one at (6,14)), `test-final` run, Prefect flow, FastAPI, DVC/MLflow remotes, web viewer rebuilt and tested against v2-v7, push to origin and PR to `main`.
+## Open items / next candidates (none started unless marked)
+1. **Exploration levers for seed reliability at 1.8M steps** (the actual bottleneck): `ent_coef` 0.01 (**running: `m1-c4`**); continue `m1-c3-seed3` from its checkpoint via `parent_run_id` (it loads 2.66/ep and its dev return turned positive at 1.4M); curriculum (1-line orders first, or randomised start poses: new env version).
+2. **Declared seed selection**: pick the best of N seeds on a dev suite, validate only that one on the reserved `test-final` (legitimate if pre-registered). This is the only path to a deployable model with current evidence (`m1-c3-seed0`, `m1-e4y-seed3`).
+3. Finalists x 3 seeds comparison, `compare.py`, `callbacks.py`, suite-driven `evaluate.py`, `test-final` run, N3 incident suite on the walled map (closable gap at (6,14)), Prefect flow, FastAPI, DVC/MLflow remotes, web viewer rebuilt and tested against v2-v10, push to origin and PR to `main`.
+4. Same-budget control without the stagnation stop at 1.8M (e4x already is one for e4: 1/3 either way), and `m1-c3-seed0` recipe without the stop, if the stop's effect ever matters.
+5. Potential shaping: parked. If revisited, first explain why `progress` 0.3 reaches the shelf and the potential never does (candidates: discount leak (γ-1)Φ, the K term, four-way weight split).
+6. Open-map leftovers: fine-tuning that keeps the BC policy (lr 3e-5, critic warm-up), h0 presentation decision, seeds 3-7 of e4l/g1 (configs exist, cancelled), BC demo cache.

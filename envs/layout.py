@@ -93,12 +93,17 @@ class Layout:
         return set(self.neighbors(self.stations[station], blocked))
 
     def distance_field(self, station: str, blocked: bool = False) -> dict[Cell, int]:
+        # Rendimiento: el conjunto de obstáculos se construye una sola vez (antes `free()` lo reconstruía en cada vecino,
+        # ≈ 41 000 veces por ambiente). Mismo resultado que recorrer con `neighbors()`; lo fija tests/test_layout_perf.py.
+        obstacles, width, height = self.obstacles(blocked), self.width, self.height
         distances = {cell: 0 for cell in self.approaches(station, blocked)}
         queue = deque(distances)
         while queue:
             current = queue.popleft()
-            for neighbor in self.neighbors(current, blocked):
-                if neighbor not in distances:
+            for dx, dy in DIRECTIONS:
+                neighbor = current[0] + dx, current[1] + dy
+                if (0 <= neighbor[0] < width and 0 <= neighbor[1] < height and neighbor not in obstacles
+                        and neighbor not in distances):
                     distances[neighbor] = distances[current] + 1
                     queue.append(neighbor)
         return distances

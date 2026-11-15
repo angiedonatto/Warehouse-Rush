@@ -1004,4 +1004,18 @@ Presupuesto efectivo 606 208 pasos por run.
 |---|---:|---:|---|
 | m1-s1-seed0/1/2 | 606 208 | 0/1/2 | `m1_s1_etapas_seed{0,1,2}.yaml` |
 
-Presupuesto real: (pendiente).
+Presupuesto efectivo 606 208 pasos por run.
+
+### Presupuesto real y resultados (s1; `suite-m1-v1`, determinista, semillas 10000–10049)
+| Run | Minutos | Éxito | Llegan a celda (de 50) | Referencia `m1-c1` (misma semilla) | Inválidas/ep | Choques/ep | Episodios de entrenamiento (éxitos) | Estado |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| m1-s1-seed0 | 23.7 | 0% | 0 | 49 | 0.0 | 0.0 | 6 024 (0) | rechazado |
+| m1-s1-seed1 | 23.5 | 0% | 0 | 0 | 3.6 | 0.0 | 6 060 (0) | rechazado |
+| m1-s1-seed2 | 23.8 | 0% | 0 | 21 | **210.0** | 0.0 | 6 026 (0) | rechazado |
+- **Decisión por el criterio fijado antes:** media 0% < 5% y las llegadas a la celda caen de 49/0/21 a 0/0/0 → hipótesis refutada, los 3 runs `rechazado`. Con `progress` 0.3 intacto, añadir solo las etapas del potencial hace perder la llegada al estante en las dos semillas que la tenían.
+- **Confusión de diseño, descubierta al analizar (mía):** la parada de estancamiento usa `env.potential()` para decidir si hubo progreso. Con `potential_nav` = 0 Φ no sube mientras el robot navega, así que en s1 la parada pasó a ser «100 pasos sin avanzar en mirar/altura/recoger», distinta de la de `m1-c1` (donde Φ incluía la navegación). s1 difiere de c1, por tanto, en **dos** cosas (el término de recompensa y la señal de la parada) y el resultado no permite atribuir el fallo solo al término. Lo que sí se mantiene: p2 (potencial completo, **sin parada**) también dio 0/50 y `m1-c2` (sin parada, v9) reproduce la línea base, así que la parada no explica los 10 runs anteriores.
+- **Curvas de entrenamiento (`progress.csv`, semillas 0 y 1):** la varianza explicada del crítico de s1 sube más rápido (0.95 a 60 000 pasos frente a 0.78 en c1-seed0) y la pérdida del valor cae a ≈ 0 hacia 120 000 pasos: el crítico predice bien un retorno casi constante (política idle), compatible con el colapso, pero no es un diagnóstico de la causa.
+- **Conclusión acumulada (13 runs con `potential` > 0: p1 ×3, p2, q1 ×3, q2 ×3, s1 ×3):** ninguno llega a la celda de interacción en ningún episodio de evaluación; los runs sin potencial (e4l, c0l, c1, c2, e4x, j1–j3) llegan en la mayoría de las semillas. La causa **no está establecida**. Lo descartado con evidencia: el código v9 (c2 idéntico), la parada (p2 y c2), la magnitud sola (×1, ×3, ×5), la trampa de choques (q2) y la navegación del potencial como único culpable (s1, con la salvedad de la parada).
+- **Siguiente paso razonable (no hecho):** abandonar la línea del potencial por ahora y volver a la receta que sí llega al estante (`progress` 0.3 / e4) para atacar la carga y la entrega con otra palanca (presupuesto de 1 800 000 pasos con parada, o repetir `e4x` con más semillas), en lugar de seguir variando el potencial.
+- **Limitaciones:** una semilla por celda; confusión de la parada en s1; sin ablación del `K` del potencial (recoger/entregar) ni de la renormalización.
+

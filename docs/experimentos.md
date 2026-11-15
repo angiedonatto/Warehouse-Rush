@@ -1136,4 +1136,11 @@ Presupuesto efectivo (pendiente).
 - **Criterio (fijado ahora):** `m1-c3-seed0` pasa a **`recomendado`** si en `test-final-m1-v1` alcanza **≥ 90% de éxito con ≤ 0.1 choques por episodio**; si no, queda `candidato` y se anota el resultado. Se reportan además pasos de los éxitos, entregas por episodio, inválidas y motivo de fin.
 - **Limitaciones:** el modelo elegido es una semilla afortunada (1 de 5 con su receta): el `recomendado` certifica **ese artefacto** (pesos + sha256), no la receta ni la reproducibilidad del entrenamiento; cualquier reentrenamiento vuelve a `candidato`. Un intervalo exacto al 95% para 90/100 es ≈ 82–95%. Los resultados crudos del test final (con sus semillas) quedan fuera del repo; aquí se anotan solo los agregados.
 
-Resultado (pendiente).
+### Resultado del test final (`test-final-m1-v1`, 100 episodios, determinista, corrido una sola vez el 2026-11-15)
+| Política | Éxito | Entregas/ep | Recogidas/ep | Choques/ep | Inválidas/ep | Pasos (media) | Motivo de fin |
+|---|---:|---:|---:|---:|---:|---:|---|
+| Heurística (referencia) | 100% (100/100) | 3.00 | 3.00 | 0.0 | 0.0 | 80.2 | success 100 |
+| **m1-c3-seed0** (`models/m1-c3-seed0/model.zip`, sha256 `b6034b33…`) | **100% (100/100)** | 3.00 | 3.00 | 0.0 | 0.0 | 90.6 | success 100 |
+- **Decisión por el criterio fijado antes (≥ 90% con ≤ 0.1 choques/ep): cumplido → `m1-c3-seed0` pasa a `recomendado`** (manifiesto `manifests/m1-c3-seed0.json`, bloque `test_final`; etiqueta MLflow `estado`). Intervalo exacto al 95% para 100/100: ≈ 96.4–100%.
+- **Lectura:** el 98% de la suite de comparación no era optimista: en 100 semillas nunca vistas el modelo entrega los 3 productos en todos los episodios, sin choques ni acciones inválidas, un 13% más lento que la heurística BFS (90.6 frente a 80.2 pasos). Es el **primer modelo desplegable** del proyecto en el mapa del curso.
+- **Lo que certifica y lo que no:** certifica este artefacto (pesos + sha256) en el nivel `m1` con `warehouse-v10` y `layout_v0.4`. No certifica la receta (c3 completa la misión en 1 de 5 semillas) ni que un reentrenamiento reproduzca el resultado; tampoco se ha evaluado con el paso cerrable en (6,14) bloqueado (suite de incidentes pendiente). Los resultados crudos (con las semillas) están en `configs/suites/test-final-results/m1-c3-seed0/` (local, fuera del repo público); los pesos solo existen en esta máquina hasta que haya remoto DVC.

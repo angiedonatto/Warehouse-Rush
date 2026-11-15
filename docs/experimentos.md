@@ -1097,4 +1097,20 @@ Presupuesto efectivo 1 802 240 pasos por run; 4 runs en paralelo sin otra carga:
 |---|---:|---:|---:|---|
 | m1-c4-seed1/2/3/4 | 1 802 240 | 1/2/3/4 | 0.01 | `m1_c4_entropia_seed{1,2,3,4}.yaml` |
 
-Presupuesto real: (pendiente).
+Presupuesto efectivo 1 802 240 pasos por run. **Tiempo real:** lanzados 2026-11-14 23:30; el portátil durmió ≈ 14 h con los procesos congelados (≈ 27 min de CPU acumulados al despertar) y terminaron el 2026-11-15 ≈ 15:20. `duration_seconds` de `metadata.json` da 87–92 min (no cuenta la suspensión); el tiempo de cómputo real es ≈ 105 min por run, como en c3.
+
+### Resultados (`suite-m1-v1`, determinista, semillas 10000–10049; pares de `m1-c3` en la misma semilla)
+| Semilla | `m1-c3` (ent 0): llegan / miran / suben / cargan; recogidas/ep | `m1-c4` (ent 0.01): llegan / miran / suben / cargan; recogidas/ep | Entregas c4 | Choques c4 | Inválidas c4 | Entrenamiento c4: éxitos / episodios | Entropía final (`entropy_loss`) | Estado |
+|---|---|---|---:|---:|---:|---:|---:|---|
+| 1 | 0 / 0 / 0 / 0; 0.00 (idle) | 22 / 22 / 22 / 22; 0.44 | 0 | 0.0 | 7.0 | 0 / 13 737 | −0.76 | rechazado |
+| 2 | 42 / 15 / 0 / 0; 0.00 (4.5 choques) | **50 / 50 / 50 / 50; 3.00** | 0 | 0.0 | 0.0 | 0 / 9 422 | −0.68 | rechazado |
+| 3 | 50 / 50 / 50 / 50; 2.66 | 22 / 0 / 0 / 0; 0.00 | 0 | 0.0 | 0.0 | 0 / 13 685 | −0.36 | rechazado |
+| 4 | 22 / 22 / 0 / 0; 0.00 | 23 / 23 / 23 / 23; 0.86 | 0 | 0.0 | 0.6 | 0 / 12 882 | −0.80 | rechazado |
+Éxito 0% en las cuatro; `m1-c3` en estas semillas también 0%.
+- **Decisión por el criterio fijado antes: refutada** (0 de 4 semillas ≥ 50%; el umbral de refutación era 0 de 4). Los 4 runs `rechazado`, evidencia conservada.
+- **Lectura secundaria (declarada antes como informativa):** la entropía **mueve el cuello de botella** en 3 de 4 pares: seed1 pasa de idle a cargar, seed4 de mirar a cargar, y **seed2 pasa de chocar contra el estante a cargar las 3 líneas en los 50 episodios con 0 inválidas y 0 choques**, sin entregar ninguna (los 50 episodios acaban con carga y la **bandeja abajo**: la política puede moverse y no va al despacho). seed3 retrocede (de cargar 2.66/ep a idle). Ninguna semilla entrega nada: **0 entregas en 4 runs y ≈ 50 000 episodios de entrenamiento.**
+- **Qué dice esto del problema:** con entropía, descubrir recoger deja de ser el obstáculo (3 de 4 semillas cargan); el obstáculo pasa a ser **el tramo de entrega** tras la última recogida (objetivo salta al despacho, ≈ 15 celdas con el muro en medio, sin ninguna recompensa intermedia más que `progress` 0.3 por celda y la entrega +30/+50 al final). Es el mismo atasco que e4l-seed2, g1, f1–f3 y e4x-seed2 (7/10 fallos) en forma pura. La entropía no lo resuelve a este presupuesto. seed2 tuvo su primer retorno positivo en la evaluación intermedia a 1 460 000 pasos: puede que estuviera a punto de entregar; no probado.
+- **Acumulado del RL puro en el mapa con muro a 1 802 240 pasos:** 3 de 15 semillas completan la misión (e4x 1/3, e4y 1/3, c3 1/5, c4 0/4).
+- **Limitaciones:** 4 semillas; un solo valor de `ent_coef`; seed0 (la que funcionaba) no se corrió con entropía; sin control del presupuesto más largo; la comparación por pares es descriptiva (una semilla por celda).
+- **Siguientes pasos razonables (no hechos):** (a) continuar `m1-c4-seed2` desde su checkpoint (`parent_run_id`) con 1–2 M pasos más: ya carga todo, solo le falta el tramo de entrega; (b) una señal en el tramo de entrega que no sea el `carry_milestone` (que exige haber bajado la bandeja y se probó solo en semillas que no cargaban): p. ej. `progress` mayor solo con objetivo DELIVERY, o un hito por llegar a la celda de aproximación del despacho; (c) `ent_coef` 0.01 con seed0 para saber si la entropía perjudica a una semilla que ya funciona; (d) selección declarada de semilla + `test-final`.
+

@@ -627,3 +627,11 @@ def test_e4y_and_c3_configs_change_only_seed_stop_version_and_budget():
     assert c3["id"] == "c3" and c3["seed"] == 0 and c3["environment_version"] == "warehouse-v10"
     assert c3["recompensa"] == c1["recompensa"] and c3["ppo"] == c1["ppo"] and c3["parada_estancamiento"] == 100
     assert c3["presupuesto_pasos"] == 1800000 and c1["presupuesto_pasos"] == 600000
+
+
+def test_c3_seeds_1_to_4_change_only_the_seed():
+    base = raw("m1_c3_largo_seed0")
+    for seed in (1, 2, 3, 4):
+        cfg = raw(f"m1_c3_largo_seed{seed}")
+        assert cfg["seed"] == seed and cfg["id"] == "c3"
+        assert {k: v for k, v in cfg.items() if k not in ("seed", "hipotesis")} == {k: v for k, v in base.items() if k not in ("seed", "hipotesis")}

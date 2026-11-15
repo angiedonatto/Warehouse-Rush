@@ -1055,3 +1055,17 @@ Presupuesto efectivo 1 802 240 pasos por run. Los 4 runs corrieron en paralelo; 
 - **Lo que NO se puede afirmar:** que la receta base sea fiable (una semilla); que la parada ayude (confusión con las semillas); que 98–100% sea el rendimiento esperado: las semillas se eligieron por convocatoria, y la suite de comparación (10000–10049) es la misma con la que se decide, no el test final reservado.
 - **Notas de trazabilidad:** los runs se lanzaron con el commit `750e99f`; después se hizo la mejora de rendimiento de `Layout.distance_field` (`1cffbc0`), que no cambia resultados (equivalencia probada) y que los runs en curso no importaron. Tres manifiestos registran `git_dirty: true` por carpetas de salida de runs hermanos sin versionar.
 - **Siguiente paso razonable (no hecho):** repetir `c3` en las semillas 1 y 2 (y/o 3–5) con la misma parada para medir la fiabilidad de la receta base; elegir finalistas con tres semillas y reservar el test final.
+
+## Fiabilidad de la receta base: `m1-c3` en las semillas 1–4 (escrito antes de entrenar, 2026-11-14)
+**Contexto:** `m1-c3-seed0` (receta base: invalid −0.2, collision −1, `progress` 0.3 por defecto, parada 100, 1 802 240 pasos, mapa con muro) dio 98% (49/50), mientras `m1-e4x`/`m1-e4y` solo despegaron en 1 de 3 semillas. Instrucción del usuario: repetirla en más semillas. Sin cambio de código (`warehouse-v10`).
+- **Cambio:** solo la semilla (1, 2, 3 y 4); el resto idéntico a `m1-c3-seed0` (prueba que lo fija). 4 runs en paralelo; sin otra carga en la CPU para que el tiempo sea comparable (≈ 80–90 minutos esperados).
+- **Hipótesis:** la receta base con 1 800 000 pasos y parada completa la misión en la mayoría de las semillas.
+- **Criterio (fijado ahora):** candidata a finalista si **al menos 3 de las 5 semillas (0–4, contando `m1-c3-seed0`) alcanzan ≥ 50% de éxito en `suite-m1-v1` con choques sin subir > 10% frente a `m1-e4l` (0)**. **Se refuta** si como máximo 1 de las 4 semillas nuevas alcanza ≥ 50%. Se reportan éxito, entregas, choques y etapas de cada semilla, y la media y desviación de las 5.
+- **Métricas secundarias descriptivas:** pasos de los éxitos, primer punto de la evaluación intermedia con retorno positivo, episodios de entrenamiento con éxito.
+- **Limitaciones:** 5 semillas dan una estimación gruesa de la fiabilidad (un intervalo exacto al 95% para 3 de 5 va de ≈ 15% a ≈ 95%); sin control de la receta base sin parada en el mismo presupuesto (no se separa el efecto de la parada); todas las semillas se evalúan en la misma suite de comparación, no en el test final reservado.
+
+| Run | Pasos | Semilla | Config |
+|---|---:|---:|---|
+| m1-c3-seed1/2/3/4 | 1 802 240 | 1/2/3/4 | `m1_c3_largo_seed{1,2,3,4}.yaml` |
+
+Presupuesto real: (pendiente).

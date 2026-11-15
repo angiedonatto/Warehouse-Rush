@@ -614,3 +614,16 @@ def test_s1_configs_are_c1_plus_potential_stages_without_navigation():
         assert "progress" not in s1["recompensa"]    # progress 0.3 por defecto, igual que en c1
         assert s1["ppo"] == c1["ppo"] and s1["layout"] == c1["layout"] and s1["seed"] == c1["seed"] == seed
         assert s1["parada_estancamiento"] == c1["parada_estancamiento"] == 100 and s1["presupuesto_pasos"] == 600000
+
+
+def test_e4y_and_c3_configs_change_only_seed_stop_version_and_budget():
+    e4x = raw("m1_e4x_seed2")
+    for seed in (3, 4, 5):
+        e4y = raw(f"m1_e4y_seed{seed}")
+        assert e4y["id"] == "e4y" and e4y["seed"] == seed and e4y["environment_version"] == "warehouse-v10"
+        assert e4y["recompensa"] == e4x["recompensa"] and e4y["ppo"] == e4x["ppo"] and e4y["layout"] == e4x["layout"]
+        assert e4y["presupuesto_pasos"] == e4x["presupuesto_pasos"] == 1800000 and e4y["parada_estancamiento"] == 100
+    c1, c3 = raw("m1_c1_control_v9_seed0"), raw("m1_c3_largo_seed0")
+    assert c3["id"] == "c3" and c3["seed"] == 0 and c3["environment_version"] == "warehouse-v10"
+    assert c3["recompensa"] == c1["recompensa"] and c3["ppo"] == c1["ppo"] and c3["parada_estancamiento"] == 100
+    assert c3["presupuesto_pasos"] == 1800000 and c1["presupuesto_pasos"] == 600000

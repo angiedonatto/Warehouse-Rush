@@ -1019,3 +1019,25 @@ Presupuesto efectivo 606 208 pasos por run.
 - **Siguiente paso razonable (no hecho):** abandonar la línea del potencial por ahora y volver a la receta que sí llega al estante (`progress` 0.3 / e4) para atacar la carga y la entrega con otra palanca (presupuesto de 1 800 000 pasos con parada, o repetir `e4x` con más semillas), en lugar de seguir variando el potencial.
 - **Limitaciones:** una semilla por celda; confusión de la parada en s1; sin ablación del `K` del potencial (recoger/entregar) ni de la renormalización.
 
+
+## `e4x` en semillas nuevas con parada y `c1` con 3× pasos (`m1-e4y`, `m1-c3`, escrito antes de entrenar, 2026-11-14)
+**Contexto:** 13 runs con potencial no llegaron nunca a la celda de interacción; se abandona esa línea por ahora. Instrucción del usuario: probar las dos opciones propuestas. Sin cambio de código (`warehouse-v10`, `potential` en 0); solo configs, todas con 1 800 000 pasos (1 802 240 efectivos), mapa con muro (`layout_v0.4`), `suite-m1-v1`, PPO de C0.
+
+### Experimento A: `m1-e4y` (receta de `m1-e4x`, semillas 3, 4 y 5, con parada 100)
+- **Cambio frente a `m1-e4x`:** semillas nuevas (3–5) y parada de estancamiento de 100 pasos (e4x corrió sin parada). Recompensa e4 (manhattan 0.3, altura −0.02, invalid −0.2, collision −1, `progress` 0.3 por defecto) y PPO idénticos (prueba que lo fija).
+- **Pregunta:** ¿cuán fiable es el 80% de `m1-e4x-seed2` (0/0/80% en las semillas 0–2)? e4y no separa el efecto de las semillas del de la parada (cambian las dos); si sale bien o mal con la parada, esto no atribuye la diferencia a la parada.
+- **Hipótesis:** con 1 800 000 pasos y la parada, al menos una de las 3 semillas nuevas completa la misión. **Criterio (fijado ahora):** éxito medio de las 3 semillas en `suite-m1-v1` ≥ 5% (base `m1-e4l` 0%) y choques por episodio sin subir > 10% frente a `m1-e4l` (0). Se reporta además cuántas semillas tienen éxito > 0 (e4x: 1 de 3).
+- **Qué la refutaría:** media < 5% o choques que suben > 10%.
+
+### Experimento B: `m1-c3` (receta de `m1-c1-seed0`, 1 800 000 pasos, semilla 0, con parada 100)
+- **Cambio frente a `m1-c1-seed0`:** solo el presupuesto (3×).
+- **Motivo:** con 600 000 pasos `m1-c1-seed0` llegaba a la celda en 49/50, subía la bandeja en 41/50 y cargaba en 19/50 pero no entregaba. **Hipótesis:** con más pasos completa la cadena sin los términos de e4. **Criterio:** éxito en `suite-m1-v1` ≥ 5% (c1-seed0 a 600 000 pasos: 0%). **Qué la refutaría:** < 5%.
+- **Métricas secundarias descriptivas (ambos):** episodios que llegan / miran / suben / cargan / entregan, entregas por episodio, choques, inválidas, curva de la evaluación intermedia (primer punto con retorno positivo), episodios de entrenamiento con éxito, minutos.
+- **Limitaciones:** una semilla en B (la variación entre semillas fue enorme); en A no se separa la parada de las semillas; un control de e4 sin parada en las semillas 3–5 costaría 3 runs más de ≈ 80 minutos.
+
+| Run | Pasos | Semilla | Parada | Config |
+|---|---:|---:|---|---|
+| m1-e4y-seed3/4/5 | 1 802 240 | 3/4/5 | 100 | `m1_e4y_seed{3,4,5}.yaml` |
+| m1-c3-seed0 | 1 802 240 | 0 | 100 | `m1_c3_largo_seed0.yaml` |
+
+Presupuesto real: (pendiente). Se lanzan 4 runs en paralelo (≈ 80 minutos esperados).

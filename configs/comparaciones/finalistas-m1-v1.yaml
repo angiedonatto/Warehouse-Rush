@@ -1,0 +1,16 @@
+id: finalistas-m1-v1
+uso: comparación de 2 recetas finalistas × semillas de entrenamiento independientes en el mapa con muro (nivel m1). Regla y finalistas fijados en docs/experimentos.md («Comparación de finalistas × semillas») antes de calcular los agregados.
+suite: suite-m1-v1
+escenario: abierto
+finalistas:
+  c3:   # receta base: invalid -0.2, collision -1, progress 0.3 por defecto; parada 100
+    runs: [m1-c3-seed0, m1-c3-seed1, m1-c3-seed2, m1-c3-seed3, m1-c3-seed4]
+  e4:   # c3 + manhattan_progress 0.3 + height_mismatch -0.02; semillas 0-2 sin parada (e4x), 3-5 con parada 100 (e4y)
+    runs: [m1-e4x-seed0, m1-e4x-seed1, m1-e4x-seed2, m1-e4y-seed3, m1-e4y-seed4, m1-e4y-seed5]
+referencias:
+  c4:   # c3 + ent_coef 0.01; no finalista (ninguna semilla completa la misión)
+    runs: [m1-c4-seed1, m1-c4-seed2, m1-c4-seed3, m1-c4-seed4]
+regla:
+  umbral_exito_semilla: 0.5   # una semilla «funciona» si su modelo final llega a >= 50% en la suite
+  margen_semillas: 1          # diferencias de <= 1 semilla que funciona no se consideran distinguibles
+  desempate: menos términos de recompensa fuera del valor por defecto

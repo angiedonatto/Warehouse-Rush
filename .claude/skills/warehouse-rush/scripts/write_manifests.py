@@ -47,10 +47,13 @@ def main(decisions_path):
         level = run.split("-")[0]
         meta = json.loads(Path(f"docs/resultados/training/{run}/metadata.json").read_text())
         ev = json.loads(Path(f"docs/resultados/eval/{run}/evaluation.json").read_text())
-        exp = client.get_experiment_by_name(f"warehouse-{level}")
-        found = client.search_runs([exp.experiment_id], filter_string=f"tags.mlflow.runName = '{run}'")
+        # Busca en todos los experimentos: m1b-i1-seed0/1 quedaron en «Default» por una carrera al crear
+        # warehouse-m1b (corregido en pipelines/tracking.py::experiment_id); se registra dónde está de verdad.
+        experiments = {e.experiment_id: e.name for e in client.search_experiments()}
+        found = client.search_runs(list(experiments), filter_string=f"tags.mlflow.runName = '{run}'")
         assert len(found) == 1, (run, len(found))
         mlrun = found[0]
+        mlflow_experiment = experiments[mlrun.info.experiment_id]
         version = meta["environment_version"]
         sheet = version.replace("warehouse-v", "0.") + ".0"
         config_uri = f"configs/experiments/{d['config']}.yaml"
@@ -63,7 +66,7 @@ def main(decisions_path):
             parent_run_id=Path(meta["parent_model"]).parts[1] if meta.get("parent_model") else None,
             estado=d["estado"], created_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),
             budget_steps=meta["effective_timesteps"], budget_minutes=round(meta["duration_seconds"] / 60, 2),
-            mlflow_run_id=mlrun.info.run_id, mlflow_experiment=f"warehouse-{level}", config_uri=config_uri,
+            mlflow_run_id=mlrun.info.run_id, mlflow_experiment=mlflow_experiment, config_uri=config_uri,
             obs_spec=template["obs_spec"].replace("v5", version.split("-")[-1]),
             action_spec=template["action_spec"].replace("v5", version.split("-")[-1]),
             rules_ref=f"docs/ambiente-v{sheet[:-2]}.md",

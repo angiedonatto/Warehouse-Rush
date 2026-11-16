@@ -49,14 +49,32 @@ def flatten(data: dict, prefix="") -> dict:
     return out
 
 
+def experiment_id(name: str) -> str:
+    """Id del experimento `name`, creándolo si falta. Varios entrenamientos lanzados a la vez pueden
+    intentar crearlo al mismo tiempo; quien pierde la carrera relee el id en vez de caer en «Default»
+    (pasó con m1b-i1-seed0/1, 2026-11-15)."""
+    from mlflow.tracking import MlflowClient
+
+    client = MlflowClient()
+    found = client.get_experiment_by_name(name)
+    if found is not None:
+        return found.experiment_id
+    try:
+        return client.create_experiment(name)
+    except Exception:
+        found = client.get_experiment_by_name(name)
+        if found is None:
+            raise
+        return found.experiment_id
+
+
 @contextmanager
 def mlflow_run(*, experiment: str, run_name: str, config: dict, tags: dict):
     """Abre un run con params y tags; al salir marca estado y conserva el error si falla."""
     import mlflow
 
     mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db"))
-    mlflow.set_experiment(experiment)
-    with mlflow.start_run(run_name=run_name) as run:
+    with mlflow.start_run(run_name=run_name, experiment_id=experiment_id(experiment)) as run:
         mlflow.log_params({k: str(v)[:500] for k, v in flatten(config).items()})
         mlflow.log_dict(config, "config.json")
         mlflow.set_tags({**git_info(), **{k: str(v) for k, v in tags.items()}})

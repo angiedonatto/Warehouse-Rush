@@ -1215,4 +1215,26 @@ Presupuesto efectivo 1 802 240 pasos nuevos (3 604 480 acumulados); **70.3 minut
 |---|---:|---|---:|---|
 | m1b-i1-seed0/1/2 | 1 802 240 | m1-c3-seed0 | 0/1/2 | `m1b_i1_incidente_seed{0,1,2}.yaml` |
 
-Presupuesto efectivo (pendiente).
+Presupuesto efectivo: 1 802 240 pasos de ajuste fino por run (3 604 480 acumulados con el padre), sin parada temprana; 77–78 min reales cada uno, los 3 en paralelo (commit `37fe4c7`, `git_dirty` false).
+
+### Resultados de `m1b-i1` (2026-11-15)
+
+Modelo final de cada run, 50 episodios por escenario, semillas 10000–10049, PPO determinista (`docs/resultados/eval/m1b-i1-seed{0,1,2}/`).
+
+| Run | `suite-m1-v1` (abierto) | choques/ep | `suite-m1b-v1` (cerrado) | choques/ep | inválidas/ep (ab./cerr.) | pasos de los éxitos (ab./cerr.) |
+|---|---:|---:|---:|---:|---:|---:|
+| m1-c3-seed0 (padre) | 98% | 0.0 | 0% | 21.6 | 7.1 / 220.1 | — |
+| m1b-i1-seed0 | 94% | 0.0 | 90% | 0.0 | 0.0 / 0.0 | 83.6 / 105.6 |
+| m1b-i1-seed1 | 98% | 0.0 | 90% | 0.0 | 0.0 / 0.0 | 89.3 / 107.5 |
+| m1b-i1-seed2 | 100% | 0.0 | 96% | **7.3** | 0.0 / 0.0 | 84.0 / 108.4 |
+| **Media de 3** | **97.3%** | 0.0 | **92%** | **2.43** | | |
+| Heurística (referencia) | 100% | 0.0 | 100% | 0.0 | 0.0 / 0.0 | 79.9 / 103.1 |
+
+- **Veredicto según el criterio fijado antes: se rechaza.** Los dos umbrales de éxito se cumplen con margen (92% ≥ 50% cerrado, 97.3% ≥ 93% abierto), pero la media de choques con el paso cerrado es 2.43/ep > 0.1. El recomendado sigue siendo `m1-c3-seed0`; los tres runs quedan `rechazado` y se conservan.
+- **De dónde salen los choques:** todos son de la semilla 2 (365 en 50 episodios). En los episodios 10026 y 10044 la política recoge 2 de 3 cargas, queda en (13,4) y avanza contra el obstáculo 182 veces hasta agotar la batería; el tercero (10030) tiene 1 choque y termina con éxito. Con el paso abierto esas semillas no chocan.
+- **Fallos sin choque (semillas 0 y 1):** batería agotada (semilla 0, 3 abiertos y 5 cerrados) o límite de tiempo (semilla 1, 1 y 5), con 0 choques y 0 inválidas: no se atascan contra un muro (no se trazó dónde se pierden).
+- **Secundarias:** 2 de 3 semillas cumplen el criterio por separado (0 y 1). Éxito de entrenamiento en los últimos 200 episodios: 100% en las 3. Con el paso cerrado los éxitos tardan ~22 pasos más que abiertos, como la heurística (+23): el agente usa el paso de x=20. El olvido es pequeño (−4, 0, +2 pp frente al 98% del padre) y las inválidas abiertas bajan de 7.1 a 0.
+- **Mejor checkpoint (solo diagnóstico, `docs/resultados/eval/m1b-i1-seed{0,1,2}-best/`):** semilla 0: 98% abierto / 100% cerrado, 0 choques; semilla 1: 100% / 100%, 0 choques; semilla 2: 80% / 74%, 0 choques pero 51.5 / 92.4 inválidas/ep. Media 92.7% / 91.3%, 0 choques: el mejor checkpoint habría cumplido el criterio, pero la regla no está adoptada y no cambia el veredicto.
+- **Lectura:** la hipótesis se sostiene en lo que mide el éxito (el agente aprende la ruta por x=20 sin olvidar la normal); falla en seguridad por un modo de atasco en una semilla. El ajuste fino con `lr` 3e-4 no destruyó la política esta vez (contraste con `m1o-h1`).
+- **Qué haría falta para usarlo:** un pre-registro aparte que elija un modelo `m1b` (por ejemplo, una regla de selección por semilla como la que eligió `m1-c3-seed0`) y lo valide una sola vez en un test final reservado en ambos escenarios. Este resultado no lo autoriza por sí mismo.
+- **Incidencia de registro:** `m1b-i1-seed0` y `m1b-i1-seed1` quedaron en el experimento «Default» de MLflow (no en `warehouse-m1b`) por una carrera al crear el experimento con 3 runs lanzados a la vez. Los manifiestos registran el experimento real; corregido en `pipelines/tracking.py::experiment_id` (prueba `tests/test_tracking.py`).

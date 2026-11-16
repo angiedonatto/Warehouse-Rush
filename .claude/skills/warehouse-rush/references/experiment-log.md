@@ -136,6 +136,8 @@ Everything below: PPO C0 block ([64,64], lr 3e-4, n_steps 2048 x 4 envs, batch 6
 24. **The PPO final model can collapse right after a policy is learned** (`m1-c5-seed2`: training success 98%, dev return at heuristic level for 0.4M steps, best checkpoint 100% on the suite, final model 2%). The delivery leg was a budget problem. Pre-register the dev-selected best checkpoint as the deliverable model of a run.
 25. **The final model does not under-report 1.8M-step runs** (best checkpoints of 15 runs: same 3 of 15 seeds succeed; failing seeds' best checkpoint is often at 740k, they never improved). The c5 collapse was specific to a run that had learned.
 26. **The recommended walled-map policy memorised a route**: with gap (6,14) closed it scores 0% and hits the closed cell 21.6 times/ep while the BFS heuristic adapts (+23 steps). The target-relative observation does not carry route information.
+27. **Fine-tuning on a mixed open/closed scenario recovers the incident without forgetting** (`m1b-i1`: closed gap 0% -> 90-96%, open 94-100%, `lr` 3e-4 did not destroy the policy this time), but one seed of three learned a wall-stuck loop (182 collisions in an episode). Collision limits on the 3-seed mean are unforgiving: a single stuck seed fails the recipe.
+28. **Parallel launches that create a new MLflow experiment race**: 2 of 3 runs fell into `Default`. Resolve the experiment id explicitly (`pipelines/tracking.py::experiment_id`); manifests record the real experiment.
 23. Four parallel 1 802 240-step runs take ~105 min even on an idle machine (~270 steps/s each); 606 208-step runs ~27 min. Tests/profiling during training slow it by 10-20%.
 
 ## Open items / next candidates (none started unless marked)

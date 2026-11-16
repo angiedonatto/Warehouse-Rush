@@ -52,7 +52,7 @@
   "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
   "results_uri": "docs/resultados/eval/m1-s1-seed1/evaluation.json",
   "training_metadata_uri": "docs/resultados/training/m1-s1-seed1/metadata.json",
-  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "weights_storage": "DVC: models/m1-s1-seed1.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1-s1-seed1.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
   "git_dirty_note": "git_dirty figura false; commit 3f7cfd8",
   "evaluation": {
     "suite": "suite-m1-v1",
@@ -111,5 +111,6 @@
   },
   "decision": "rechazado",
   "decision_reason": "Rechazado por el criterio fijado antes (éxito < 5% y se pierde la llegada al estante frente a m1-c1). progress 0.3 + etapas del potencial (potential 30, potential_nav 0), parada 100: 0% de éxito; 0/50 llegan a la celda (m1-c1-seed1: 0/50, igual), 3.6 inválidas/ep. 6 060 episodios de entrenamiento, 0 con éxito.",
-  "stagnation_window": 100
+  "stagnation_window": 100,
+  "weights_dvc": "models/m1-s1-seed1.dvc"
 }

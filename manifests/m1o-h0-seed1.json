@@ -49,7 +49,7 @@
   "layout_sha256": "0bd1788a5daf4cd0857d62ef86ed48a4b2145ea6f2e050aa37eb901845e4bbca",
   "results_uri": "docs/resultados/eval/m1o-h0-seed1/evaluation.json",
   "training_metadata_uri": "docs/resultados/training/m1o-h0-seed1/metadata.json",
-  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "weights_storage": "DVC: models/m1o-h0-seed1.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1o-h0-seed1.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
   "git_dirty_note": "git_dirty puede figurar true por carpetas de salida sin versionar de runs hermanos; ningún archivo versionado cambió respecto del commit indicado",
   "evaluation": {
     "suite": "suite-m1o-v1",
@@ -137,5 +137,6 @@
         "value_explained_variance": 0.3963446105839785
       }
     }
-  }
+  },
+  "weights_dvc": "models/m1o-h0-seed1.dvc"
 }

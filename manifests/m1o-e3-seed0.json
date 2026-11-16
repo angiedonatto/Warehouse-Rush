@@ -48,7 +48,7 @@
   "layout_sha256": "0bd1788a5daf4cd0857d62ef86ed48a4b2145ea6f2e050aa37eb901845e4bbca",
   "results_uri": "docs/resultados/eval/m1o-e3-seed0/evaluation.json",
   "training_metadata_uri": "docs/resultados/training/m1o-e3-seed0/metadata.json",
-  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "weights_storage": "DVC: models/m1o-e3-seed0.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1o-e3-seed0.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
   "evaluation": {
     "suite": "suite-m1o-v1",
     "episodes": 50,
@@ -105,5 +105,6 @@
     }
   },
   "decision": "rechazado",
-  "decision_reason": "No supera al control (0 pp), 0 recogidas. Evita la celda de interacción: termina a ~3 celdas del estante y en 0/50 episodios llega a una celda de interacción (la penalización de altura la convierte en zona a evitar)."
+  "decision_reason": "No supera al control (0 pp), 0 recogidas. Evita la celda de interacción: termina a ~3 celdas del estante y en 0/50 episodios llega a una celda de interacción (la penalización de altura la convierte en zona a evitar).",
+  "weights_dvc": "models/m1o-e3-seed0.dvc"
 }

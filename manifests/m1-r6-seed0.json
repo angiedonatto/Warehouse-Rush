@@ -42,7 +42,7 @@
   "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
   "results_uri": "docs/resultados/eval/m1-r6-seed0/evaluation.json",
   "training_metadata_uri": "docs/resultados/training/m1-r6-seed0/metadata.json",
-  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "weights_storage": "DVC: models/m1-r6-seed0.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1-r6-seed0.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
   "git_dirty_note": "git_dirty figura true solo por carpetas de salida sin versionar de runs hermanos lanzados en paralelo; ningún archivo versionado cambió (commit 423a014)",
   "evaluation": {
     "suite": "suite-m1-v1",
@@ -101,5 +101,6 @@
     }
   },
   "decision": "rechazado",
-  "decision_reason": "No supera al control m1-r2 (invalid -0.2, collision -5) en >=5 pp de éxito (0 pp). FRENAR en 84.6% de los pasos; 0 entregas. En 1 de 50 episodios (semilla 10033) quedó atascada chocando 199-219 veces hasta agotar la batería. Se conserva la evidencia."
+  "decision_reason": "No supera al control m1-r2 (invalid -0.2, collision -5) en >=5 pp de éxito (0 pp). FRENAR en 84.6% de los pasos; 0 entregas. En 1 de 50 episodios (semilla 10033) quedó atascada chocando 199-219 veces hasta agotar la batería. Se conserva la evidencia.",
+  "weights_dvc": "models/m1-r6-seed0.dvc"
 }

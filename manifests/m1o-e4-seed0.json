@@ -48,7 +48,7 @@
   "layout_sha256": "0bd1788a5daf4cd0857d62ef86ed48a4b2145ea6f2e050aa37eb901845e4bbca",
   "results_uri": "docs/resultados/eval/m1o-e4-seed0/evaluation.json",
   "training_metadata_uri": "docs/resultados/training/m1o-e4-seed0/metadata.json",
-  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "weights_storage": "DVC: models/m1o-e4-seed0.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1o-e4-seed0.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
   "git_dirty_note": "git_dirty figura true solo por carpetas de salida sin versionar de runs hermanos lanzados en paralelo; ningún archivo versionado cambió (commit 2b80031)",
   "evaluation": {
     "suite": "suite-m1o-v1",
@@ -107,5 +107,6 @@
     }
   },
   "decision": "rechazado",
-  "decision_reason": "No supera al control m1o-c0 en >=5 pp de éxito (0 pp), por lo que se rechaza según los criterios; es el run más avanzado hasta ahora: recoge en 12/50 episodios (15 productos, 3 episodios con 2), baja la bandeja tras cargar en 6/50 y tuvo 1 éxito de 3 entregas en 512 episodios de entrenamiento. Gasta 159 interacciones inválidas por episodio (CARGAR con la bandeja a otra altura)."
+  "decision_reason": "No supera al control m1o-c0 en >=5 pp de éxito (0 pp), por lo que se rechaza según los criterios; es el run más avanzado hasta ahora: recoge en 12/50 episodios (15 productos, 3 episodios con 2), baja la bandeja tras cargar en 6/50 y tuvo 1 éxito de 3 entregas en 512 episodios de entrenamiento. Gasta 159 interacciones inválidas por episodio (CARGAR con la bandeja a otra altura).",
+  "weights_dvc": "models/m1o-e4-seed0.dvc"
 }

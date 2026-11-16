@@ -52,7 +52,7 @@
   "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
   "results_uri": "docs/resultados/eval/m1-e4y-seed3/evaluation.json",
   "training_metadata_uri": "docs/resultados/training/m1-e4y-seed3/metadata.json",
-  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "weights_storage": "DVC: models/m1-e4y-seed3.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1-e4y-seed3.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
   "git_dirty_note": "git_dirty figura true solo por carpetas de salida sin versionar de runs hermanos lanzados en paralelo; ningún archivo versionado cambió (commit 750e99f)",
   "evaluation": {
     "suite": "suite-m1-v1",
@@ -111,5 +111,6 @@
   },
   "decision": "candidato",
   "decision_reason": "Receta e4 con 1 802 240 pasos y parada 100 (semilla nueva 3): 100% de éxito (50/50) en suite-m1-v1, 3.00 recogidas y 3.00 entregas por episodio, 0 choques, 6.6 inválidas/ep, éxitos en 94.2 pasos de media (heurística 79.9; rango 64-263). 2 575 episodios de entrenamiento con éxito de 10 767. Primer retorno positivo de la evaluación intermedia a 820 000 pasos. Una semilla de tres: no recomendado (sin finalistas ni test final).",
-  "stagnation_window": 100
+  "stagnation_window": 100,
+  "weights_dvc": "models/m1-e4y-seed3.dvc"
 }

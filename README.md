@@ -19,7 +19,7 @@ la familia `warehouse-v1`, dos estaciones de recogida, se conserva como historia
 4. Pruebas: `python -m pytest tests -q`
 5. Visor: `npm ci --prefix web && python -m pipelines.cli view` (Node LTS, ver `.nvmrc`)
 6. Entrenar (v2): `python -m pipelines.train --config configs/experiments/m1_c0_makeup3.yaml` (los configs `c0`–`c6` son de `warehouse-v1` y ya no entrenan)
-7. Pesos grandes: `dvc pull` (remoto por acordar)
+7. Pesos grandes: `pip install dvc-s3` (ya en requirements) y `dvc pull` desde el remoto `r2` (Cloudflare R2, bucket `mlops-final-project`). Las credenciales van solo en `.dvc/config.local` (ignorado por Git): `dvc remote modify --local r2 access_key_id ...` y `... secret_access_key ...`; pídelas al equipo. Un modelo concreto: `dvc pull models/<run>.dvc`.
 
 Modelo actual, hiperparámetros y reentrenamiento: [docs/modelo-actual.md](docs/modelo-actual.md).
 Ambiente: contrato [envs/CONTRATO.md](envs/CONTRATO.md), ficha vigente [docs/ambiente-v0.2.md](docs/ambiente-v0.2.md) (v1: [ambiente-v0.1.md](docs/ambiente-v0.1.md)). Despliegue: [docs/despliegue.md](docs/despliegue.md).

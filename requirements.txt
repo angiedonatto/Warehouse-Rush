@@ -1,7 +1,9 @@
 # PyTorch CPU se instala antes (ver README): pip install torch==2.2.2 --index-url https://download.pytorch.org/whl/cpu
+aiobotocore==3.10.0
 aiohappyeyeballs==2.7.1
 aiohttp==3.14.5
 aiohttp-retry==2.9.1
+aioitertools==0.13.0
 aiosignal==1.4.0
 aiosqlite==0.22.1
 alembic==1.20.1
@@ -21,6 +23,7 @@ attrs==26.1.0
 beartype==0.23.1
 billiard==4.3.2
 blinker==1.9.0
+botocore==1.43.117
 burner-redis==0.1.7
 cachetools==7.3.0
 celery==5.7.0
@@ -54,6 +57,7 @@ dvc-data==3.18.3
 dvc-http==2.32.0
 dvc-objects==5.3.1
 dvc-render==1.0.2
+dvc-s3==3.3.0
 dvc-studio-client==0.23.0
 dvc-task==0.40.2
 entrypoints==0.4.2
@@ -101,6 +105,7 @@ iterative-telemetry==0.0.10
 itsdangerous==2.2.0
 jinja2==3.1.6
 jinja2-humanize-extension==0.4.0
+jmespath==1.1.0
 joblib==1.6.0
 jsonpatch==1.44
 jsonpointer==3.10
@@ -179,6 +184,7 @@ rich-rst==2.2.0
 rpds-py==2026.9.1
 ruamel-yaml==0.19.1
 ruamel-yaml-clib==0.2.15
+s3fs==2026.9.0
 scikit-learn==1.9.1
 scipy==1.17.1
 scmrepo==3.6.2
@@ -215,6 +221,7 @@ voluptuous==0.16.0
 wcwidth==0.9.4
 websockets==16.1.1
 werkzeug==3.1.9
+wrapt==2.5.2
 yarl==1.25.1
 zc-lockfile==4.1
 zipp==4.1.2

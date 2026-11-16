@@ -50,7 +50,7 @@
   "layout_sha256": "0bd1788a5daf4cd0857d62ef86ed48a4b2145ea6f2e050aa37eb901845e4bbca",
   "results_uri": "docs/resultados/eval/m1o-f2-seed0/evaluation.json",
   "training_metadata_uri": "docs/resultados/training/m1o-f2-seed0/metadata.json",
-  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "weights_storage": "DVC: models/m1o-f2-seed0.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1o-f2-seed0.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
   "git_dirty_note": "git_dirty figura true solo por carpetas de salida sin versionar de runs hermanos lanzados en paralelo; ningún archivo versionado cambió (commit cc968ff)",
   "evaluation": {
     "suite": "suite-m1o-v1",
@@ -110,5 +110,6 @@
     }
   },
   "decision": "rechazado",
-  "decision_reason": "44% de éxito (solo time -0.2; e4l-seed0 con -0.1: 92%). Rechazado por criterio (-48 pp frente a e4l-seed0) es el único run de v6 que aprende la cadena completa (479/1813 episodios de entrenamiento exitosos); falla 28/50 episodios, 26 por límite de tiempo con carga. Se conserva como evidencia: la penalización de tiempo -0.2 sola no impide aprender."
+  "decision_reason": "44% de éxito (solo time -0.2; e4l-seed0 con -0.1: 92%). Rechazado por criterio (-48 pp frente a e4l-seed0) es el único run de v6 que aprende la cadena completa (479/1813 episodios de entrenamiento exitosos); falla 28/50 episodios, 26 por límite de tiempo con carga. Se conserva como evidencia: la penalización de tiempo -0.2 sola no impide aprender.",
+  "weights_dvc": "models/m1o-f2-seed0.dvc"
 }

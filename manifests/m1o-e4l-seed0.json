@@ -48,7 +48,7 @@
   "layout_sha256": "0bd1788a5daf4cd0857d62ef86ed48a4b2145ea6f2e050aa37eb901845e4bbca",
   "results_uri": "docs/resultados/eval/m1o-e4l-seed0/evaluation.json",
   "training_metadata_uri": "docs/resultados/training/m1o-e4l-seed0/metadata.json",
-  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "weights_storage": "DVC: models/m1o-e4l-seed0.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1o-e4l-seed0.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
   "evaluation": {
     "suite": "suite-m1o-v1",
     "episodes": 50,
@@ -107,5 +107,6 @@
     }
   },
   "decision": "candidato",
-  "decision_reason": "Primer modelo que completa la misión: 92% de éxito (46/50) en suite-m1o-v1, 2.76 entregas y 2.92 recogidas por episodio, 95 pasos (heurística: 71), 0 choques; 73% de éxito en entrenamiento (2395/3278). Los 4 fallos terminan con 2 productos cargados y la bandeja arriba. Supera al control del mismo presupuesto (m1o-c0l, 0%). Solo 1 de 3 semillas lo logra: candidato pendiente de replicación; no se promueve a recomendado."
+  "decision_reason": "Primer modelo que completa la misión: 92% de éxito (46/50) en suite-m1o-v1, 2.76 entregas y 2.92 recogidas por episodio, 95 pasos (heurística: 71), 0 choques; 73% de éxito en entrenamiento (2395/3278). Los 4 fallos terminan con 2 productos cargados y la bandeja arriba. Supera al control del mismo presupuesto (m1o-c0l, 0%). Solo 1 de 3 semillas lo logra: candidato pendiente de replicación; no se promueve a recomendado.",
+  "weights_dvc": "models/m1o-e4l-seed0.dvc"
 }

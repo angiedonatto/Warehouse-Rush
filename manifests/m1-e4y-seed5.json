@@ -52,7 +52,7 @@
   "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
   "results_uri": "docs/resultados/eval/m1-e4y-seed5/evaluation.json",
   "training_metadata_uri": "docs/resultados/training/m1-e4y-seed5/metadata.json",
-  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "weights_storage": "DVC: models/m1-e4y-seed5.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1-e4y-seed5.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
   "git_dirty_note": "git_dirty figura true solo por carpetas de salida sin versionar de runs hermanos lanzados en paralelo; ningún archivo versionado cambió (commit 750e99f)",
   "evaluation": {
     "suite": "suite-m1-v1",
@@ -111,5 +111,6 @@
   },
   "decision": "candidato",
   "decision_reason": "Receta e4 con 1 802 240 pasos y parada 100 (semilla nueva 5): 0% de éxito; 22/50 llegan a una celda y 21/50 miran al estante, 0 suben la bandeja ni cargan; 0 inválidas y 0 choques. 14 145 episodios de entrenamiento, 0 con éxito. Evidencia de variación entre semillas.",
-  "stagnation_window": 100
+  "stagnation_window": 100,
+  "weights_dvc": "models/m1-e4y-seed5.dvc"
 }

@@ -50,7 +50,7 @@
   "layout_sha256": "0bd1788a5daf4cd0857d62ef86ed48a4b2145ea6f2e050aa37eb901845e4bbca",
   "results_uri": "docs/resultados/eval/m1o-f3-seed0/evaluation.json",
   "training_metadata_uri": "docs/resultados/training/m1o-f3-seed0/metadata.json",
-  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "weights_storage": "DVC: models/m1o-f3-seed0.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1o-f3-seed0.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
   "git_dirty_note": "git_dirty figura true solo por carpetas de salida sin versionar de runs hermanos lanzados en paralelo; ningún archivo versionado cambió (commit cc968ff)",
   "evaluation": {
     "suite": "suite-m1o-v1",
@@ -108,5 +108,6 @@
     }
   },
   "decision": "rechazado",
-  "decision_reason": "0% de éxito (solo lower_bonus 1.0). Carga y baja la bandeja en 50/50 (47/50 terminan con bandeja abajo y carga) pero gira en el sitio (GIRAR_DERECHA 825 pasos) y no entrega; 0 entregas en 1 516 episodios de entrenamiento."
+  "decision_reason": "0% de éxito (solo lower_bonus 1.0). Carga y baja la bandeja en 50/50 (47/50 terminan con bandeja abajo y carga) pero gira en el sitio (GIRAR_DERECHA 825 pasos) y no entrega; 0 entregas en 1 516 episodios de entrenamiento.",
+  "weights_dvc": "models/m1o-f3-seed0.dvc"
 }

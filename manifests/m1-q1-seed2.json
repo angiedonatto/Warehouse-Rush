@@ -54,7 +54,7 @@
   "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
   "results_uri": "docs/resultados/eval/m1-q1-seed2/evaluation.json",
   "training_metadata_uri": "docs/resultados/training/m1-q1-seed2/metadata.json",
-  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "weights_storage": "DVC: models/m1-q1-seed2.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1-q1-seed2.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
   "git_dirty_note": "git_dirty figura false; commit c1b2916",
   "evaluation": {
     "suite": "suite-m1-v1",
@@ -113,5 +113,6 @@
   },
   "decision": "rechazado",
   "decision_reason": "Rechazado por el criterio fijado antes (éxito < 5% frente a m1-e4l 0%; además los choques suben). Potencial 150 y tarea x5 + parada 100: 0% de éxito; 0 choques; 92% FRENAR y 8% CARGAR (inválidas, 19.4/ep), sin avanzar (distancia BFS 13.3). 5 327 episodios de entrenamiento, 0 con éxito.",
-  "stagnation_window": 100
+  "stagnation_window": 100,
+  "weights_dvc": "models/m1-q1-seed2.dvc"
 }

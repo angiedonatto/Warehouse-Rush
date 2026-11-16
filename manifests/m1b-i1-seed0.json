@@ -50,7 +50,7 @@
   "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
   "results_uri": "docs/resultados/eval/m1b-i1-seed0/evaluation.json",
   "training_metadata_uri": "docs/resultados/training/m1b-i1-seed0/metadata.json",
-  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "weights_storage": "DVC: models/m1b-i1-seed0.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1b-i1-seed0.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
   "git_dirty_note": "git_dirty figura false; commit 37fe4c7",
   "evaluation": {
     "suite": "suite-m1b-v1",
@@ -270,5 +270,6 @@
     }
   },
   "budget_note": "budget_steps acumula el padre m1-c3-seed0 (1 802 240) y el ajuste fino (1 802 240)",
-  "mlflow_note": "el run quedó en el experimento «Default» de MLflow por una carrera al crear warehouse-m1b con 3 runs en paralelo; corregido en pipelines/tracking.py::experiment_id"
+  "mlflow_note": "el run quedó en el experimento «Default» de MLflow por una carrera al crear warehouse-m1b con 3 runs en paralelo; corregido en pipelines/tracking.py::experiment_id",
+  "weights_dvc": "models/m1b-i1-seed0.dvc"
 }

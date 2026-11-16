@@ -46,7 +46,7 @@
   "layout_sha256": "0bd1788a5daf4cd0857d62ef86ed48a4b2145ea6f2e050aa37eb901845e4bbca",
   "results_uri": "docs/resultados/eval/m1o-c0l-seed0/evaluation.json",
   "training_metadata_uri": "docs/resultados/training/m1o-c0l-seed0/metadata.json",
-  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "weights_storage": "DVC: models/m1o-c0l-seed0.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1o-c0l-seed0.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
   "git_dirty_note": "git_dirty figura true solo por carpetas de salida sin versionar de runs hermanos lanzados en paralelo; ningún archivo versionado cambió (commit 835cf68)",
   "evaluation": {
     "suite": "suite-m1o-v1",
@@ -105,5 +105,6 @@
     }
   },
   "decision": "candidato",
-  "decision_reason": "Control del mismo presupuesto (606 208 pasos) para e4l: recompensa base (invalid -0.2, collision -1) sin términos v4/v5. 0% de éxito; con más pasos aprende a recoger (1.68 productos por episodio, 50/50 llegan al estante) pero nunca entrega (0 entregas)."
+  "decision_reason": "Control del mismo presupuesto (606 208 pasos) para e4l: recompensa base (invalid -0.2, collision -1) sin términos v4/v5. 0% de éxito; con más pasos aprende a recoger (1.68 productos por episodio, 50/50 llegan al estante) pero nunca entrega (0 entregas).",
+  "weights_dvc": "models/m1o-c0l-seed0.dvc"
 }

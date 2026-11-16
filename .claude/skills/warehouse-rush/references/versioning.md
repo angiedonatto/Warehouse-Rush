@@ -46,7 +46,9 @@ Python 3.12 in `.python-version`; PyTorch CPU installed from `https://download.p
 YAML per planned run in `configs/experiments/`; code never holds hyperparameters. At run start save an immutable resolved snapshot (`config.json`) and its **SHA-256**; log hash as param + tag. Hash over canonical JSON (sorted keys) so formatting does not change it.
 
 ## 5. DVC
-- `dvc init` done (`.dvc/`). Configure remote (DECIDE: Google Drive / S3 / DagsHub / HF bucket; must be reachable by all and by the API). Never commit remote credentials.
+- `dvc init` done (`.dvc/`). **Remote `r2` (default) = Cloudflare R2, S3 API**, bucket `mlops-final-project`, `region auto`, endpoint in `.dvc/config`; keys only in `.dvc/config.local` (git-ignored); needs `dvc-s3` (pinned). Decided 2026-11-15. Never commit or print remote credentials.
+- **Retention policy:** each run folder `models/<run>/` is tracked by its own `models/<run>.dvc` and holds `model.zip` + `best/`; intermediate `checkpoints/` stay local only (`.dvcignore`). Top-level aliases (`models/ppo_orders*_seed*.zip`) are overwritten by later runs and are not tracked. `models/n1-c0-seed0` belongs to the `train_c0` stage in `dvc.yaml` (no `dvc.lock`), so it is not `dvc add`-ed.
+- **Gotcha:** a plain `dvc push` once reported "Everything is up to date" and `dvc status -c` "in sync" with an empty bucket; push the targets explicitly (`dvc push models/*.dvc`) and verify by fetching into an empty cache.
 - Track: model weights, VecNormalize stats, any offline data/demos. Pipeline stages in `dvc.yaml` with `deps`/`params`/`outs`; commit `dvc.lock`. Existing `dvc.yaml` runs the prototype `python -m warehouse_rush train`; rewrite for `pipelines/train.py --config ...` when migrated.
 - Workflow: `dvc add models/<x>` -> commit the `.dvc` file -> `dvc push`. To restore: `git checkout <tag> && dvc pull`.
 

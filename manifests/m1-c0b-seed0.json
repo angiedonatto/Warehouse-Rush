@@ -39,7 +39,7 @@
   "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
   "results_uri": "docs/resultados/eval/m1-c0b-seed0/evaluation.json",
   "training_metadata_uri": "docs/resultados/training/m1-c0b-seed0/metadata.json",
-  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "weights_storage": "DVC: models/m1-c0b-seed0.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1-c0b-seed0.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
   "evaluation": {
     "suite": "suite-m1-v1",
     "episodes": 50,
@@ -96,5 +96,6 @@
     }
   },
   "decision": "candidato",
-  "decision_reason": "Control del barrido en warehouse-v3 con la recompensa por defecto. Reproduce m1-c0 (v2) exactamente (retorno -41.0, FRENAR 93.4%), lo que confirma el determinismo. 0% de éxito: no es un modelo útil."
+  "decision_reason": "Control del barrido en warehouse-v3 con la recompensa por defecto. Reproduce m1-c0 (v2) exactamente (retorno -41.0, FRENAR 93.4%), lo que confirma el determinismo. 0% de éxito: no es un modelo útil.",
+  "weights_dvc": "models/m1-c0b-seed0.dvc"
 }

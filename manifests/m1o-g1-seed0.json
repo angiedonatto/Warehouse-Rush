@@ -50,7 +50,7 @@
   "layout_sha256": "0bd1788a5daf4cd0857d62ef86ed48a4b2145ea6f2e050aa37eb901845e4bbca",
   "results_uri": "docs/resultados/eval/m1o-g1-seed0/evaluation.json",
   "training_metadata_uri": "docs/resultados/training/m1o-g1-seed0/metadata.json",
-  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "weights_storage": "DVC: models/m1o-g1-seed0.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1o-g1-seed0.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
   "git_dirty_note": "git_dirty figura true solo por carpetas de salida sin versionar de runs hermanos lanzados en paralelo; ningún archivo versionado cambió (commit c152c42)",
   "evaluation": {
     "suite": "suite-m1o-v1",
@@ -110,5 +110,6 @@
     }
   },
   "decision": "rechazado",
-  "decision_reason": "94% de éxito (e4l-seed0: 92%, +2 pp con 50 episodios; no es una diferencia distinguible de la variación). Sus 47 éxitos duran 72.4 pasos (e4l: 71.8). Rechazado porque el criterio es sobre la media de 3 semillas: 31.3% frente a 30.7% (+0.7 pp < 5 pp). Se conserva como evidencia."
+  "decision_reason": "94% de éxito (e4l-seed0: 92%, +2 pp con 50 episodios; no es una diferencia distinguible de la variación). Sus 47 éxitos duran 72.4 pasos (e4l: 71.8). Rechazado porque el criterio es sobre la media de 3 semillas: 31.3% frente a 30.7% (+0.7 pp < 5 pp). Se conserva como evidencia.",
+  "weights_dvc": "models/m1o-g1-seed0.dvc"
 }

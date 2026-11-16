@@ -1,0 +1,6 @@
+outs:
+- md5: b94715b684235e922fdb0eb9e89cdf9d.dir
+  size: 376445
+  nfiles: 2
+  hash: md5
+  path: m1-r2-seed0

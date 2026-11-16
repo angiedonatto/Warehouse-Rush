@@ -51,7 +51,7 @@
   "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
   "results_uri": "docs/resultados/eval/m1-j1-seed0/evaluation.json",
   "training_metadata_uri": "docs/resultados/training/m1-j1-seed0/metadata.json",
-  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "weights_storage": "DVC: models/m1-j1-seed0.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1-j1-seed0.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
   "git_dirty_note": "git_dirty figura false; commit 5968dff",
   "evaluation": {
     "suite": "suite-m1-v1",
@@ -109,5 +109,6 @@
     }
   },
   "decision": "rechazado",
-  "decision_reason": "Rechazado por el criterio fijado antes (éxito < 5% frente a m1-e4l-seed0 0%); con una semilla no descarta la idea. face_bonus 10: 0% de éxito. Cambia la conducta: 40/50 episodios llegan a la celda de interacción y miran al estante (e4l-seed0: 0/50 miran), pero ninguno sube la bandeja ni carga y se quedan quietos mirando (consistente con la medición guionizada: ir y mirar y quedarse −37.8 > quieto −40.8). Choques 2.56/ep (e4l: 0), no cumple la condición de choques."
+  "decision_reason": "Rechazado por el criterio fijado antes (éxito < 5% frente a m1-e4l-seed0 0%); con una semilla no descarta la idea. face_bonus 10: 0% de éxito. Cambia la conducta: 40/50 episodios llegan a la celda de interacción y miran al estante (e4l-seed0: 0/50 miran), pero ninguno sube la bandeja ni carga y se quedan quietos mirando (consistente con la medición guionizada: ir y mirar y quedarse −37.8 > quieto −40.8). Choques 2.56/ep (e4l: 0), no cumple la condición de choques.",
+  "weights_dvc": "models/m1-j1-seed0.dvc"
 }

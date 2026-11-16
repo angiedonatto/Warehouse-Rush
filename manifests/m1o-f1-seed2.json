@@ -51,7 +51,7 @@
   "layout_sha256": "0bd1788a5daf4cd0857d62ef86ed48a4b2145ea6f2e050aa37eb901845e4bbca",
   "results_uri": "docs/resultados/eval/m1o-f1-seed2/evaluation.json",
   "training_metadata_uri": "docs/resultados/training/m1o-f1-seed2/metadata.json",
-  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "weights_storage": "DVC: models/m1o-f1-seed2.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1o-f1-seed2.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
   "git_dirty_note": "git_dirty figura true solo por carpetas de salida sin versionar de runs hermanos lanzados en paralelo; ningún archivo versionado cambió (commit cc968ff)",
   "evaluation": {
     "suite": "suite-m1o-v1",
@@ -109,5 +109,6 @@
     }
   },
   "decision": "rechazado",
-  "decision_reason": "0% de éxito (igual que e4l-seed2). Nunca llega a una celda de interacción (0/50) ni sube la bandeja; sin recogidas."
+  "decision_reason": "0% de éxito (igual que e4l-seed2). Nunca llega a una celda de interacción (0/50) ni sube la bandeja; sin recogidas.",
+  "weights_dvc": "models/m1o-f1-seed2.dvc"
 }

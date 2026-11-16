@@ -45,7 +45,7 @@
   "layout_sha256": "0bd1788a5daf4cd0857d62ef86ed48a4b2145ea6f2e050aa37eb901845e4bbca",
   "results_uri": "docs/resultados/eval/m1o-d2-seed0/evaluation.json",
   "training_metadata_uri": "docs/resultados/training/m1o-d2-seed0/metadata.json",
-  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "weights_storage": "DVC: models/m1o-d2-seed0.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1o-d2-seed0.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
   "evaluation": {
     "suite": "suite-m1o-v1",
     "episodes": 50,
@@ -102,5 +102,6 @@
     }
   },
   "decision": "rechazado",
-  "decision_reason": "No supera al control m1o-c0 en >=5 pp de éxito (0 pp), 0 recogidas, y gira en el sitio (GIRAR 90%). Se conserva la evidencia."
+  "decision_reason": "No supera al control m1o-c0 en >=5 pp de éxito (0 pp), 0 recogidas, y gira en el sitio (GIRAR 90%). Se conserva la evidencia.",
+  "weights_dvc": "models/m1o-d2-seed0.dvc"
 }

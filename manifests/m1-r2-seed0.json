@@ -41,7 +41,7 @@
   "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
   "results_uri": "docs/resultados/eval/m1-r2-seed0/evaluation.json",
   "training_metadata_uri": "docs/resultados/training/m1-r2-seed0/metadata.json",
-  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "weights_storage": "DVC: models/m1-r2-seed0.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1-r2-seed0.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
   "git_dirty_note": "git_dirty puede figurar true en metadata.json: solo por las carpetas de salida sin versionar de los runs hermanos lanzados en paralelo; ningún archivo versionado cambió (commit 30c34fb)",
   "evaluation": {
     "suite": "suite-m1-v1",
@@ -99,5 +99,6 @@
     }
   },
   "decision": "rechazado",
-  "decision_reason": "No supera al control en >=5 pp de éxito (0 pp). La política colapsa a FRENAR (99.2%). Se conserva la evidencia."
+  "decision_reason": "No supera al control en >=5 pp de éxito (0 pp). La política colapsa a FRENAR (99.2%). Se conserva la evidencia.",
+  "weights_dvc": "models/m1-r2-seed0.dvc"
 }

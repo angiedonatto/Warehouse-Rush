@@ -50,7 +50,7 @@
   "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
   "results_uri": "docs/resultados/eval/m1-c4-seed2/evaluation.json",
   "training_metadata_uri": "docs/resultados/training/m1-c4-seed2/metadata.json",
-  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "weights_storage": "DVC: models/m1-c4-seed2.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1-c4-seed2.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
   "git_dirty_note": "git_dirty figura true solo por carpetas de salida sin versionar de runs hermanos lanzados en paralelo; ningún archivo versionado cambió (commit b5c6261)",
   "evaluation": {
     "suite": "suite-m1-v1",
@@ -109,5 +109,6 @@
   },
   "decision": "rechazado",
   "decision_reason": "Receta base + ent_coef 0.01 (único cambio frente a m1-c3), 1 802 240 pasos, parada 100, mapa con muro. Rechazado por el criterio fijado antes (0 de 4 semillas ≥ 50%). 0% de éxito pero carga las 3 líneas en los 50 episodios (3.00 recogidas/ep, 0 inválidas, 0 choques) y nunca entrega: los 50 acaban por tiempo con carga y la bandeja ABAJO (puede moverse y no va al despacho). Primer retorno positivo de la evaluación intermedia a 1 460 000 pasos. Par c3-seed2: llegaba 42/50, miraba 15, no subía, 4.5 choques/ep: avanzó hasta la última etapa. 9 422 episodios de entrenamiento, 0 con éxito.",
-  "stagnation_window": 100
+  "stagnation_window": 100,
+  "weights_dvc": "models/m1-c4-seed2.dvc"
 }

@@ -49,7 +49,7 @@
   "layout_sha256": "0bd1788a5daf4cd0857d62ef86ed48a4b2145ea6f2e050aa37eb901845e4bbca",
   "results_uri": "docs/resultados/eval/m1o-h1-seed0/evaluation.json",
   "training_metadata_uri": "docs/resultados/training/m1o-h1-seed0/metadata.json",
-  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "weights_storage": "DVC: models/m1o-h1-seed0.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1o-h1-seed0.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
   "git_dirty_note": "git_dirty puede figurar true por carpetas de salida sin versionar de runs hermanos; ningún archivo versionado cambió respecto del commit indicado",
   "evaluation": {
     "suite": "suite-m1o-v1",
@@ -109,5 +109,6 @@
     }
   },
   "decision": "rechazado",
-  "decision_reason": "88% de éxito (e4l-seed0: 92%; h0-seed0 sin ajuste fino: 100%). Rechazado por el criterio del grupo: éxito medio de las 3 semillas 93.3% (+62.7 pp frente a e4l) pero choques 2.25/ep de media frente a 0 (límite +0.1); todos vienen de esta semilla (6.74 choques/ep, 30 inválidas/ep, CARGAR repetido en el estado de carga). El ajuste fino con PPO degradó al imitador: el retorno de la evaluación periódica cae de 127 (h0) a 6 en el primer punto (20 000 pasos)."
+  "decision_reason": "88% de éxito (e4l-seed0: 92%; h0-seed0 sin ajuste fino: 100%). Rechazado por el criterio del grupo: éxito medio de las 3 semillas 93.3% (+62.7 pp frente a e4l) pero choques 2.25/ep de media frente a 0 (límite +0.1); todos vienen de esta semilla (6.74 choques/ep, 30 inválidas/ep, CARGAR repetido en el estado de carga). El ajuste fino con PPO degradó al imitador: el retorno de la evaluación periódica cae de 127 (h0) a 6 en el primer punto (20 000 pasos).",
+  "weights_dvc": "models/m1o-h1-seed0.dvc"
 }

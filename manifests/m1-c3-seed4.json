@@ -50,7 +50,7 @@
   "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
   "results_uri": "docs/resultados/eval/m1-c3-seed4/evaluation.json",
   "training_metadata_uri": "docs/resultados/training/m1-c3-seed4/metadata.json",
-  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "weights_storage": "DVC: models/m1-c3-seed4.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1-c3-seed4.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
   "git_dirty_note": "git_dirty figura false; commit 49ca3b6",
   "evaluation": {
     "suite": "suite-m1-v1",
@@ -109,5 +109,6 @@
   },
   "decision": "candidato",
   "decision_reason": "Receta base (invalid -0.2, collision -1, progress 0.3 por defecto) con 1 802 240 pasos y parada 100, mapa con muro. 0% de éxito; 22/50 llegan a una celda y 22/50 miran al estante, 0 suben la bandeja ni cargan; idle (0 inválidas, 0 choques). 14 096 episodios de entrenamiento, 0 con éxito. Evidencia de variación entre semillas.",
-  "stagnation_window": 100
+  "stagnation_window": 100,
+  "weights_dvc": "models/m1-c3-seed4.dvc"
 }

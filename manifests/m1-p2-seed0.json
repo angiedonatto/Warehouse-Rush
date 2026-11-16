@@ -51,7 +51,7 @@
   "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
   "results_uri": "docs/resultados/eval/m1-p2-seed0/evaluation.json",
   "training_metadata_uri": "docs/resultados/training/m1-p2-seed0/metadata.json",
-  "weights_storage": "local (models/* ignorado por Git); remoto DVC pendiente de acordar",
+  "weights_storage": "DVC: models/m1-p2-seed0.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1-p2-seed0.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
   "git_dirty_note": "git_dirty figura true solo por carpetas de salida sin versionar de runs hermanos lanzados en paralelo; ningún archivo versionado cambió (commit 870cf38)",
   "evaluation": {
     "suite": "suite-m1-v1",
@@ -110,5 +110,6 @@
   },
   "decision": "rechazado",
   "decision_reason": "Rechazado por el criterio fijado antes (éxito < 5% frente a m1-e4l 0%). Ablación: solo potencial (30.0) sin parada: 0% de éxito; 0/50 llegan a una celda; 85% FRENAR y 14% BAJAR (inválidas, 53.2/ep); se acerca en promedio a 11.1 desde 13.4. 1 512 episodios de entrenamiento, 0 con éxito. Misma conducta que p1: el fallo es del potencial, no de la parada.",
-  "stagnation_window": null
+  "stagnation_window": null,
+  "weights_dvc": "models/m1-p2-seed0.dvc"
 }

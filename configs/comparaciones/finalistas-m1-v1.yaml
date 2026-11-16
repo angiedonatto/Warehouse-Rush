@@ -10,6 +10,7 @@ finalistas:
 referencias:
   c4:   # c3 + ent_coef 0.01; no finalista (ninguna semilla completa la misión)
     runs: [m1-c4-seed1, m1-c4-seed2, m1-c4-seed3, m1-c4-seed4]
+linea_base_run: lineas-base-suite-m1-v1   # random y heurística en suite-m1-v1 (docs/resultados/eval/)
 regla:
   umbral_exito_semilla: 0.5   # una semilla «funciona» si su modelo final llega a >= 50% en la suite
   margen_semillas: 1          # diferencias de <= 1 semilla que funciona no se consideran distinguibles

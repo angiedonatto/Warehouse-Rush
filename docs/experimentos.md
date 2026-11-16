@@ -1267,3 +1267,14 @@ Modelo final de cada run, 50 episodios por escenario, semillas 10000–10049, PP
 - **Regla de decisión (fijada ahora):** gana la receta con mayor éxito medio **si** supera a la otra en **más de 1** semilla que llega a ≥ 50%; si la diferencia es ≤ 1 semilla, **no es distinguible** con estas semillas y se elige la receta con menos términos de recompensa fuera del valor por defecto (el mismo desempate que la selección de semilla). La decisión elige la receta de referencia para próximos experimentos; no cambia los modelos `recomendado`.
 - **Herramienta:** `pipelines/compare.py --config configs/comparaciones/finalistas-m1-v1.yaml` → `docs/resultados/comparacion/finalistas-m1-v1/` (JSON, informe y curvas separadas de entrenamiento y evaluación por run).
 - **Limitaciones:** e4 mezcla 3 semillas sin parada por estancamiento (e4x) y 3 con parada (e4y); c3 tiene parada en todas. Con 5–6 semillas y éxitos casi binarios (0% o ≥ 80%), el IC será ancho: la comparación mide sobre todo la **fiabilidad** de cada receta, no su techo.
+
+### Resultado de la comparación de finalistas (`docs/resultados/comparacion/finalistas-m1-v1/`, 2026-11-15)
+| Receta | Semillas | Éxito medio ± sd | IC 95% (bootstrap entre semillas) | Semillas ≥ 50% | Choques/ep | Inválidas/ep | Minutos de entrenamiento |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| c3 | 5 | 20% ± 44 | 0–59% | 1/5 | 0.90 | 12.6 | 523 |
+| e4 | 6 | 30% ± 47 | 0–67% | 2/6 | 0.00 | 31.4 | 520 |
+| c4 (referencia) | 4 | 0% | 0–0% | 0/4 | 0.00 | 1.9 | 355 |
+| Aleatoria / heurística (misma suite) | — | 0% / 100% | | | 15.3 / 0 | 199.6 / 0 | |
+- **Decisión por la regla fijada antes:** e4 supera a c3 en 1 semilla que funciona (2 frente a 1), dentro del margen de 1 → **no distinguible**; desempate por menos términos de recompensa → **se elige c3** como receta de referencia del nivel `m1`. No cambia los modelos `recomendado`.
+- **Lectura:** con 5–6 semillas y éxitos casi binarios los IC se solapan casi por completo; ninguna receta es fiable (≤ 1 de 3 semillas funciona). La comparación cuantifica la limitación principal del nivel N2: **la varianza entre semillas domina a la diferencia entre recetas**. Más semillas de las mismas recetas a este presupuesto difícilmente cambiarían la decisión (haría falta que una receta llegara a ≥ 3 semillas más que la otra).
+- **Curvas:** `curvas/<run>.png` separa entrenamiento (estocástico) y evaluación periódica (determinista). En las semillas que funcionan el éxito de entrenamiento salta de 0% a > 90% en pocos cientos de miles de pasos, tarde en el presupuesto (`m1-c3-seed0` hacia 1.55 M).

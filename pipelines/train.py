@@ -194,6 +194,9 @@ def train_ppo(*, timesteps=20_000, seed=42, orders=1, blocked=False, layout_path
         write_json(alias.with_suffix(".json"), metadata)
         summarize_training(run_dir)
         plot_training_curve(run_dir / "episodes.monitor.csv", run_dir / "training_curve.png")
+        from pipelines.compare import plot_learning_curves  # entrenamiento y evaluación por separado
+
+        plot_learning_curves(name, run_dir / "learning_curves.png", train_root=run_dir.parent)
         return metadata
     except Exception as exc:
         metadata.update(status="failed", duration_seconds=time.perf_counter() - started,

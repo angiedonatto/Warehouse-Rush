@@ -1168,4 +1168,51 @@ Presupuesto efectivo 1 802 240 pasos nuevos (3 604 480 acumulados); **70.3 minut
 
 | Runs | Checkpoint | Suite | Resultado |
 |---|---|---|---|
-| 15 runs de 1 802 240 pasos | `best/best_model.zip` | `suite-m1-v1` | (pendiente) |
+| 15 runs de 1 802 240 pasos | `best/best_model.zip` | `suite-m1-v1` | ver abajo |
+
+### Resultados (`suite-m1-v1`, determinista; salidas en `docs/resultados/eval/<run>-best/`)
+| Run | Mejor checkpoint (pasos) | Éxito modelo final | Éxito mejor checkpoint | Choques/ep (mejor) | Recogidas/ep (mejor) | Pasos (mejor) |
+|---|---:|---:|---:|---:|---:|---:|
+| m1-e4x-seed0 | 1 340 000 | 0% | 0% | 0.00 | 0.00 | 400 |
+| m1-e4x-seed1 | 1 340 000 | 0% | 0% | 0.00 | 0.00 | 400 |
+| **m1-e4x-seed2** | 1 240 000 | 80% | **100%** | 0.00 | 3.00 | 88.2 |
+| **m1-e4y-seed3** | 1 700 000 | 100% | **100%** | 0.00 | 3.00 | 87.6 |
+| m1-e4y-seed4 | 740 000 | 0% | 0% | 0.00 | 0.00 | 400 |
+| m1-e4y-seed5 | 740 000 | 0% | 0% | 0.00 | 0.00 | 400 |
+| **m1-c3-seed0** | 1 780 000 | 98% | **100%** | 0.02 | 3.00 | 88.4 |
+| m1-c3-seed1 | 1 380 000 | 0% | 0% | 0.00 | 0.00 | 400 |
+| m1-c3-seed2 | 740 000 | 0% | 0% | 0.00 | 0.00 | 400 |
+| m1-c3-seed3 | 1 400 000 | 0% | 0% | 0.00 | 2.74 | 400 |
+| m1-c3-seed4 | 740 000 | 0% | 0% | 0.00 | 0.00 | 400 |
+| m1-c4-seed1 | 1 800 000 | 0% | 0% | 0.00 | 0.44 | 393.3 |
+| m1-c4-seed2 | 1 700 000 | 0% | 0% | 0.00 | 2.86 | 386.9 |
+| m1-c4-seed3 | 1 380 000 | 0% | 0% | 0.00 | 0.00 | 400 |
+| m1-c4-seed4 | 1 340 000 | 0% | 0% | 0.00 | 0.58 | 400 |
+- **Pregunta 1 (regla): no se adopta.** (a) se cumple: ningún run que ya funcionaba baja (e4x-seed2 80 → 100%, e4y-seed3 100 → 100%, c3-seed0 98 → 100%). (b) falla: **ningún run de los 15 con modelo final < 50% llega a ≥ 50% con su mejor checkpoint**. `m1-c5-seed2` se dejó fuera de este criterio a propósito (se conocía antes de pre-registrar), así que no cuenta como confirmación. Los runs futuros siguen entregando el modelo final; el mejor checkpoint se reporta como diagnóstico.
+- **Pregunta 2 (fiabilidad): ninguna receta es finalista.** Semillas con ≥ 50%: e4 **2 de 6**, c3 **1 de 5**, c4 **0 de 4** (umbral 3). La tasa sigue en **3 de 15 semillas** y son las mismas tres. La comparación de finalistas × 3 semillas no sale de runs existentes.
+- **Lectura:** a 1.8 M pasos el modelo final no subestima los runs: las semillas que fallan nunca aprendieron (en 4 runs el mejor checkpoint es de 740 000 pasos, es decir, la política nunca mejoró después). El colapso de c5 fue un caso propio de un run que sí había aprendido. El mejor checkpoint solo pule semillas que ya funcionan (80 → 100%).
+- **Limitaciones:** selección del checkpoint con 5 episodios; 15 semillas de tres recetas distintas.
+
+## Incidente N3: paso x=6 cerrado (degradación medida 2026-11-15, antes de decidir la intervención)
+**Perturbación:** el paso cerrable (6,14) del muro interior queda cerrado; el único paso es x=20. La ruta de la base a P1 pasa de 20 a 48 celdas (prueba `test_closed_gap_is_a_real_detour_and_still_solvable`). Suite nueva `suite-m1b-v1`: mismas 50 semillas que `suite-m1-v1` (misma demanda), solo cambia el paso. Salidas: `docs/resultados/eval/incidente-m1-c3-seed0/`.
+
+| Política | `suite-m1-v1` (paso abierto) | `suite-m1b-v1` (paso cerrado) |
+|---|---|---|
+| Aleatoria | 0%, 15.3 choques/ep, 199.6 inválidas/ep | 0%, 16.0 choques/ep, 199.6 inválidas/ep |
+| Heurística (BFS) | 100%, 79.9 pasos | 100%, 103.1 pasos |
+| **m1-c3-seed0** (recomendado) | 98%, 0 choques/ep, 7.1 inválidas/ep | **0%**, **21.6 choques/ep**, 220.1 inválidas/ep, 0 recogidas; fin: 45 time_limit, 5 batería agotada |
+- **Degradación:** total. El modelo recomendado no recoge ningún producto con el paso cerrado y choca 21.6 veces por episodio (contra la celda cerrada): aprendió una ruta fija, no a rodear. La heurística, que planifica con BFS, se adapta con +23 pasos. La política aleatoria no completa ninguna misión en ningún escenario.
+
+## Intervención del incidente: ajuste fino con el paso cerrado en la mitad de los ambientes (`m1b-i1`, escrito antes de entrenar, 2026-11-15)
+- **Cambio:** punto de partida `m1-c3-seed0` (`parent_run_id`) y escenario de entrenamiento `mixto` (nivel `m1b`: de los 4 ambientes, los pares con el paso cerrado y los impares abiertos; código `pipelines/train.py::training_env_blocked`, sin cambio del ambiente, `warehouse-v10`). Recompensa, PPO (`ent_coef` 0), parada 100 y presupuesto (1 800 000 pasos) iguales a `m1-c3` (prueba `test_i1_configs_are_c3_seed0_fine_tuned_on_m1b`). La evaluación periódica (elige `best/`) usa el paso cerrado.
+- **Hipótesis:** entrenar con el paso a veces cerrado enseña la ruta por x=20 sin olvidar la ruta normal.
+- **Criterio (fijado ahora):** se **acepta** la intervención si la **media de las 3 semillas** da **≥ 50% en `suite-m1b-v1`** y **≥ 93% en `suite-m1-v1`** (98% del original − 5 pp, control de olvido), con **≤ 0.1 choques/ep en ambas**. Si no, se **rechaza**: el recomendado sigue siendo `m1-c3-seed0` y los runs se conservan. Artefacto evaluado: el modelo final de cada run (la regla «mejor checkpoint» no se adoptó); el mejor checkpoint se reporta como diagnóstico.
+- **Qué no decide este experimento:** aceptar la intervención no cambia el modelo `recomendado`. Promover un modelo `m1b` exige una pre-registración aparte con un test final reservado en ambos escenarios. `m1-c3-seed0` es el modelo al que se vuelve (rollback) si la intervención se descarta.
+- **Métricas secundarias:** k de 3 semillas que cumplen por separado, choques e inválidas por escenario, pasos de los éxitos en cada escenario, éxitos de entrenamiento.
+- **Limitaciones:** 3 semillas de ajuste fino desde un mismo padre (no son entrenamientos independientes desde cero); `lr` 3e-4 ya destruyó una política buena en `m1o-h1` (lección 11), y aquí se mantiene para cambiar una sola dimensión; sin control «ajuste fino con el paso siempre abierto».
+
+| Run | Pasos | Padre | Semilla | Config |
+|---|---:|---|---:|---|
+| m1b-i1-seed0/1/2 | 1 802 240 | m1-c3-seed0 | 0/1/2 | `m1b_i1_incidente_seed{0,1,2}.yaml` |
+
+Presupuesto efectivo (pendiente).

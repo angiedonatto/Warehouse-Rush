@@ -73,6 +73,20 @@ DEFAULT_DQN = dict(learning_rate=5e-4, buffer_size=100_000, learning_starts=5_00
                    max_grad_norm=10.0, net_arch=[64, 64])
 
 
+def training_env_blocked(index: int, blocked) -> bool:
+    """Si el ambiente de entrenamiento `index` tiene el paso cerrable cerrado.
+
+    `blocked` viene del nivel (configs/niveles.yaml): false, true o 'mixto'. 'mixto' (nivel m1b,
+    incidente N3) cierra el paso en los ambientes pares y lo deja abierto en los impares, para
+    aprender la ruta alternativa sin olvidar el mapa normal.
+    """
+    if blocked == "mixto":
+        return index % 2 == 0
+    if blocked in (False, True):
+        return bool(blocked)
+    raise ValueError("blocked debe ser false, true o 'mixto'")
+
+
 def train_ppo(*, timesteps=20_000, seed=42, orders=1, blocked=False, layout_path=None,
               n_steps=None, batch_size=None, run_name=None, ppo=None, n_envs=1,
               eval_every=5_000, eval_episodes=5, parent_model=None, algo="ppo",
@@ -86,6 +100,7 @@ def train_ppo(*, timesteps=20_000, seed=42, orders=1, blocked=False, layout_path
 
     if algo not in ("ppo", "dqn"):
         raise ValueError("algo debe ser ppo o dqn")
+    training_env_blocked(0, blocked)  # valida antes de crear carpetas
     params = {**(DEFAULT_PPO if algo == "ppo" else DEFAULT_DQN), **(ppo or {})}
     if batch_size is not None:
         params["batch_size"] = batch_size
@@ -107,8 +122,9 @@ def train_ppo(*, timesteps=20_000, seed=42, orders=1, blocked=False, layout_path
     model_dir = Path("models") / name
     run_dir.mkdir(parents=True, exist_ok=False)
     model_dir.mkdir(parents=True, exist_ok=False)
-    env = make_env(blocked, layout_path, orders, reward_overrides)  # referencia para metadatos
-    eval_env = Monitor(make_env(blocked, layout_path, orders, reward_overrides))
+    blocked_eval = training_env_blocked(0, blocked)  # 'mixto': la evaluación periódica usa el paso cerrado
+    env = make_env(blocked_eval, layout_path, orders, reward_overrides)  # referencia para metadatos
+    eval_env = Monitor(make_env(blocked_eval, layout_path, orders, reward_overrides))
     eval_env.reset(seed=20_000)
     net_arch = params.pop("net_arch")
     arch = {"pi": list(net_arch), "vf": list(net_arch)} if algo == "ppo" else list(net_arch)
@@ -133,11 +149,11 @@ def train_ppo(*, timesteps=20_000, seed=42, orders=1, blocked=False, layout_path
     write_json(run_dir / "metadata.json", metadata)
     from stable_baselines3.common.vec_env import DummyVecEnv, VecMonitor
 
-    def make_train_env():
-        train_env = make_env(blocked, layout_path, orders, reward_overrides)
+    def make_train_env(index=0):
+        train_env = make_env(training_env_blocked(index, blocked), layout_path, orders, reward_overrides)
         return StagnationStop(train_env, stagnation_window) if stagnation_window else train_env
 
-    vec_env = DummyVecEnv([make_train_env for _ in range(n_envs)])
+    vec_env = DummyVecEnv([lambda i=i: make_train_env(i) for i in range(n_envs)])
     monitor = VecMonitor(vec_env, str(run_dir / "episodes"),
                          info_keywords=("success", "deliveries", "collisions", "end_reason"))
     started = time.perf_counter()

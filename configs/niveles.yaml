@@ -24,3 +24,10 @@ m1o:
   descripcion: Maquillaje v3, 3 productos aleatorios por episodio, mapa abierto sin muro interior
   orders: 3
   blocked: false
+# m1b (incidente N3 del mapa con muro, 2026-11-15): mismo mapa y pedidos que m1; el paso cerrable (6,14)
+# se cierra en la mitad de los ambientes de entrenamiento ('mixto': pares cerrados, impares abiertos) para
+# aprender la ruta por x=20 sin olvidar la normal. Se evalúa en suite-m1b-v1 (paso cerrado) y suite-m1-v1 (olvido).
+m1b:
+  descripcion: Incidente N3, 3 productos aleatorios, mapa con muro y paso x=6 cerrado en la mitad de los ambientes
+  orders: 3
+  blocked: mixto

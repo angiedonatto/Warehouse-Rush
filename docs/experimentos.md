@@ -1127,7 +1127,19 @@ Presupuesto efectivo 1 802 240 pasos por run. **Tiempo real:** lanzados 2026-11-
 |---|---:|---|---:|---|
 | m1-c5-seed2 | 1 802 240 | m1-c4-seed2 | 2 | `m1_c5_continuar_seed2.yaml` |
 
-Presupuesto efectivo (pendiente).
+Presupuesto efectivo 1 802 240 pasos nuevos (3 604 480 acumulados); **70.3 minutos** (corrió solo, ≈ 427 pasos/s), commit `80b5628`, árbol limpio.
+
+### Resultados (`suite-m1-v1`, determinista, semillas 10000–10049; heurística 100%, 79.9 pasos)
+| Modelo | Éxito | Entregas/ep | Llegan / cargan (de 50) | Choques/ep | Inválidas/ep | Pasos | Fin |
+|---|---:|---:|---|---:|---:|---:|---|
+| `m1-c4-seed2` (padre, 1.8 M) | 0% | 0.00 | 50 / 50 | 0.0 | 0.0 | 400 | 50 time_limit con carga |
+| **`m1-c5-seed2` final (3.6 M)** | **2%** (1/50) | 0.06 | 1 / 1 | 0.0 | 0.0 | 396 | 49 time_limit sin carga |
+| `m1-c5-seed2` mejor checkpoint (3.12 M, diagnóstico) | 100% (50/50) | 3.00 | 50 / 50 | 0.0 | 0.78 | 84.3 | 50 success |
+- **Decisión por el criterio fijado antes (≥ 50% con ≤ 0.1 choques/ep, modelo final como en todos los runs): refutada.** `m1-c5-seed2` queda `rechazado`, evidencia conservada.
+- **Pero la hipótesis de fondo sí tiene apoyo (diagnósticos declarados después, no cambian el estado):** el tramo de entrega **se aprendió con más presupuesto**. Éxitos de entrenamiento: 0% en los primeros 2 000 episodios, **97.9%** a mitad de la continuación, 93.0% en los últimos 2 000 (13 372 de 16 597). La evaluación intermedia (`dev-m1-v1`) dio el retorno de la heurística (≈ 115) en casi todos los puntos de 3.08 M a 3.50 M y cayó a −38 en el último punto. El mejor checkpoint por la suite dev (3 122 240 pasos) completa la misión en 50/50 episodios de `suite-m1-v1`, 84.3 pasos, 0 choques. La evaluación estocástica del modelo final da 66–72%.
+- **Qué pasó al final:** la política determinista **colapsó en los últimos ≈ 100 000 pasos**: el modelo final ya no llega al estante (1/50), mientras la política muestreada sigue completando la misión. Es la inestabilidad de PPO ya vista en `m1o-h1` (lección 11): el modelo final es solo el punto donde se cortó el entrenamiento. Con `ent_coef` 0.01 las probabilidades quedan repartidas y el argmax puede cambiar de acción con una actualización pequeña (lección 9).
+- **Lo que cambia:** el cuello de botella del tramo de entrega era de presupuesto, no de señal; **no hace falta una v11**. Lo que falta es **elegir el checkpoint con una regla declarada** en lugar de tomar el último. El `best_model.zip` se elige con la suite dev (semillas 1000–1009), así que evaluarlo en `suite-m1-v1` es legítimo, pero hacerlo criterio oficial exige pre-registrarlo para los próximos runs.
+- **Limitaciones:** una semilla; la regla «mejor checkpoint» se mira después de ver el colapso; sin control de 3.6 M pasos desde cero; la suite dev tiene solo 10 episodios.
 
 ## Selección declarada de semilla y test final reservado (escrito antes de evaluar, 2026-11-15)
 **Contexto:** en el mapa con muro a 1 802 240 pasos, 3 de 15 semillas completan la misión en `suite-m1-v1` (`m1-e4y-seed3` 100%, `m1-c3-seed0` 98%, `m1-e4x-seed2` 80%); ninguna receta es fiable entre semillas y no hay modelo `recomendado`. La única vía legítima hacia un modelo desplegable con la evidencia actual es **elegir una semilla con una regla declarada y validarla una sola vez en el test final reservado**. No se entrena nada.

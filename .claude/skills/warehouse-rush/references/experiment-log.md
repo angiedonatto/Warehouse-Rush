@@ -138,6 +138,7 @@ Everything below: PPO C0 block ([64,64], lr 3e-4, n_steps 2048 x 4 envs, batch 6
 26. **The recommended walled-map policy memorised a route**: with gap (6,14) closed it scores 0% and hits the closed cell 21.6 times/ep while the BFS heuristic adapts (+23 steps). The target-relative observation does not carry route information.
 27. **Fine-tuning on a mixed open/closed scenario recovers the incident without forgetting** (`m1b-i1`: closed gap 0% -> 90-96%, open 94-100%, `lr` 3e-4 did not destroy the policy this time), but one seed of three learned a wall-stuck loop (182 collisions in an episode). Collision limits on the 3-seed mean are unforgiving: a single stuck seed fails the recipe.
 28. **Parallel launches that create a new MLflow experiment race**: 2 of 3 runs fell into `Default`. Resolve the experiment id explicitly (`pipelines/tracking.py::experiment_id`); manifests record the real experiment.
+29. **A rejected recipe can still yield a certified artifact** if selection is pre-registered separately: `m1b-i1` failed on the 3-seed mean, but its seed-1 best checkpoint, chosen by a declared rule among 6 artifacts, scored 100/100 in both scenarios on a fresh reserved test. Report both facts; never let the artifact stand in for the recipe.
 23. Four parallel 1 802 240-step runs take ~105 min even on an idle machine (~270 steps/s each); 606 208-step runs ~27 min. Tests/profiling during training slow it by 10-20%.
 
 ## Open items / next candidates (none started unless marked)

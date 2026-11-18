@@ -3,17 +3,19 @@ import json
 
 import pytest
 
-from warehouse_rush.cli import demo_transitions, main
-from warehouse_rush.evaluate import evaluate
+from pipelines.cli import demo_transitions, main
+from pipelines.evaluate import evaluate
 
 
 def test_demo_contains_real_contiguous_step_results():
     rows = demo_transitions()
     assert len(rows) == 5
-    assert rows[0]["resulting_state"]["colisiones"] == 1
-    assert rows[2]["resulting_state"]["x"] == 3
-    assert rows[3]["resulting_state"]["v"] == 0
-    assert rows[4]["resulting_state"]["interacciones_invalidas"] == 1
+    assert rows[0]["resulting_state"]["y"] == 15 and rows[0]["resulting_state"]["colisiones"] == 0
+    assert rows[1]["resulting_state"]["colisiones"] == 1
+    assert rows[2]["resulting_state"]["v"] == 0
+    assert [r["action_name"] for r in rows[3:]] == ["SUBIR", "CARGAR"]
+    assert rows[4]["resulting_state"]["interacciones_invalidas"] == 2
+    assert len(rows[0]["observation"]) == 27
     for previous, current in zip(rows, rows[1:]):
         assert previous["new_observation"] == current["observation"]
     for row in rows:

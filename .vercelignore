@@ -6,7 +6,11 @@
 web/node_modules
 web/test-results
 web/playwright-report
-artifacts
+mlruns
+mlflow.db
+.dvc
+models/ppo_*
+docs
 build
 dist
 .env*

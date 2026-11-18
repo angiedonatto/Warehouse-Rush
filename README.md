@@ -1,147 +1,99 @@
-# Warehouse Rush v0.2 — visor 3D y ambiente v0.1
+# Warehouse Rush
 
 > **Antes de modificar el proyecto:** lee [AGENTS.md](AGENTS.md). Incluye el relevo de Naomi, el alcance visual, las funcionalidades que deben conservarse y cómo actualizarse desde GitHub y comprobar producción antes de subir cambios.
 
-Demo del experimento 001: **https://warehouse-rush-experiment-001.vercel.app**
+Proyecto final de MLOps (Universidad Externado de Colombia). Un robot de bodega atiende pedidos de productos de
+estantería (3 niveles de altura) con un elevador telescópico y los entrega en una cinta de despacho (ambiente vigente `warehouse-v10`,
+mapa con muro; `warehouse-v1` a `v9` se conservan como historia con sus etiquetas `env/warehouse-vN`). Niveles: N1 mapa abierto, N2 mapa con muro, N3 paso (6,14) cerrado ([docs/niveles.md](docs/niveles.md)).
+Modelos recomendados: `m1b-i1-seed1-best` (producción, N3) y `m1-c3-seed0` (N2, rollback). PPO (Stable-Baselines3) sobre un ambiente Gymnasium; visor Three.js desplegado en Vercel
+(https://warehouse-rush-experiment-001.vercel.app); experimentos en MLflow ([DagsHub](https://dagshub.com/mamezquita/Warehouse-Rush.mlflow)); versionado con Git + DVC.
 
-Un robot recoge y entrega paquetes en una bodega 2D mediante un entorno
-Gymnasium. Incluye políticas Random y BFS, entrenamiento PPO con Stable-Baselines3,
-CLI, pruebas y evaluación reproducible. Cinemática discreta de 1 m y 1 s por paso.
+## Estructura
+`envs/` ambiente · `configs/` niveles, experimentos, suites, criterios · `pipelines/` entrenamiento, evaluación, tracking ·
+`api/` entrada de Vercel y servidor del visor · `tests/` · `web/` Vite+TS+Three.js · `manifests/` modelos recuperables ·
+`models/` pesos (DVC; `experiment-001` en Git) · `docs/` ficha del ambiente, decisiones, experimentos, resultados.
 
-La versión 0.2 añade una interfaz **Three.js** local basada en la referencia
-industrial: bodega 3D, cuatro cámaras, telemetría y minimapa. El ambiente de
-aprendizaje mantiene su versión 0.1 y las mismas reglas y resultados.
+## Arquitectura
+| Capa | Dónde | Qué hay |
+|---|---|---|
+| Web, catálogo y comparación | Vercel (estático, `web/dist`) | Vite + Three.js: bodega 3D, catálogo de productos (Naomi) y catálogo «Modelos y experimentos» (`web/public/modelos/catalogo.json`, generado por `pipelines/catalogo.py`) |
+| Simulación e inferencia | Función Python de Vercel (`api/index.py`, 60 s) | La simulación en Python es la autoridad. API sin estado: cada visitante tiene una cookie firmada y la sesión se reconstruye en cada paso. Rutas `GET health\|layout\|state` y `POST reset\|step\|evaluate` |
+| Modelos servidos | Git (`models/servidos/`, `configs/modelos_servidos.json`) | Los recomendados de `warehouse-v10`, con SHA-256 verificado al cargar (`pipelines/servir.py`) |
+| Pesos de todos los runs | DVC → Cloudflare R2 (remoto `r2`) | `models/<run>.dvc`; `dvc pull` |
+| Experimentos y registro | MLflow en DagsHub (lectura pública) | Runs, métricas y artefactos; Model Registry `warehouse-m1` y `warehouse-m1b` con alias `recomendado` |
+| Identidad de modelos | Git (`manifests/`) | Un manifiesto por modelo: run, ambiente, config y su hash, pesos, suite, decisión |
+| Entrenamiento y evaluación | PC del equipo | `pipelines/train.py` y `pipelines/evaluate.py`, suites fijas en `configs/suites/` |
+| Orquestación | Pendiente (R3) | Flujo Prefect: validar → probar → entrenar o cargar → evaluar → registrar → decidir → publicar → verificar lo servido |
 
-El primer experimento está congelado en
-[`experiments/experiment-001/`](experiments/experiment-001/README.md), con su
-modelo PPO real, hashes, semillas y resultados. El modelo pesa aproximadamente
-170 KiB y permite inferencia reproducible en el despliegue.
-
-La configuración para publicar frontend y Python está en `vercel.json`; ver
-[despliegue y sesiones por visitante](docs/despliegue.md).
-
-## Abrir la interfaz 3D
-
-Con el entorno Python ya instalado, desde la raíz del repositorio:
-
-```bash
-source .venv-rl/bin/activate
-python -m warehouse_rush.cli view
 ```
-
-Se abre **http://127.0.0.1:8080** en el navegador. La primera vez prepara las
-dependencias de la interfaz y la compila automáticamente; requiere Node.js
-reciente (verificado con Node 24.17.0). Si prefieres prepararla antes:
-
-```bash
-npm ci --prefix web
-npm run build --prefix web
-python -m warehouse_rush.cli view --port 8080 --no-open
+entrenamiento (PC) ──► MLflow/DagsHub (runs, registro) ──► manifiestos (Git) ──► pipelines/catalogo.py ──► web (Vercel)
+        │                                                        │
+        └──► pesos ──► DVC/R2                    pipelines/servir.py ──► models/servidos ──► API (Vercel) ◄── web
 ```
+Licencias de assets y dependencias: [docs/licencias.md](docs/licencias.md).
 
-Pulsa **Iniciar** para ver al heurístico completar los dos pedidos con bloqueo.
-Puedes pausar, avanzar **Un paso**, reiniciar, seleccionar agente y cambiar misión
-o bloqueo. Cambiar estos últimos prepara un episodio nuevo. Las miniaturas
-cambian entre cámara isométrica, primera persona, seguimiento lateral y estación.
-Arrastra la escena para orbitar y usa la rueda para acercar.
+## Reproducir
+1. Python 3.12: `python3.12 -m venv .venv && source .venv/bin/activate` (Windows: `.venv\Scripts\python.exe`)
+2. PyTorch CPU: `pip install torch==2.2.2 --index-url https://download.pytorch.org/whl/cpu`
+3. `pip install -r requirements.txt`
+4. Pruebas: `python -m pytest tests -q`
+5. Visor: `npm ci --prefix web && python -m pipelines.cli view` (Node LTS, ver `.nvmrc`)
+6. Entrenar (v10): `python -m pipelines.train --config configs/experiments/m1_c3_largo_seed0.yaml` (receta del modelo recomendado de N2; hipótesis de cada config en [docs/experimentos.md](docs/experimentos.md); los configs `c0`–`c6` son de `warehouse-v1` y ya no entrenan)
+7. Pesos grandes: `pip install dvc-s3` (ya en requirements) y `dvc pull` desde el remoto `r2` (Cloudflare R2, bucket `mlops-final-project`). Las credenciales van solo en `.dvc/config.local` (ignorado por Git): `dvc remote modify --local r2 access_key_id ...` y `... secret_access_key ...`; pídelas al equipo. Un modelo concreto: `dvc pull models/<run>.dvc`.
+8. MLflow (historial de experimentos, persistente y compartido): [DagsHub](https://dagshub.com/mamezquita/Warehouse-Rush.mlflow), lectura pública sin instalar nada. Para registrar runs: copia `.env.example` a `.env`, pon tu usuario y token de DagsHub (Settings → Tokens) y carga las variables antes de entrenar: `set -a; source .env; set +a`. Sin `MLFLOW_TRACKING_URI` el entrenamiento se detiene (no queda en un sqlite local); `MLFLOW_PERMITIR_LOCAL=1` solo para pruebas deliberadas. El historial anterior (96 runs del `mlflow.db` local) se copió con `python -m pipelines.migrar_mlflow`; mapa de ids en `docs/resultados/mlflow-migracion.json`; copia del sqlite original en DVC (`dvc pull mlflow.db.dvc mlruns.dvc`).
 
-El modo **Control manual** habilita cinco botones y teclas W/A/D/S/E. Ruta BFS y
-sensores se pueden mostrar u ocultar. La ruta dibujada siempre es una referencia
-BFS; no se atribuye al modelo PPO. El PPO de un pedido está disponible cuando
-existe su modelo guardado y conserva su comportamiento real de frenado.
+Modelo actual, hiperparámetros y reentrenamiento: [docs/modelo-actual.md](docs/modelo-actual.md).
+Ambiente: contrato [envs/CONTRATO.md](envs/CONTRATO.md), ficha vigente [docs/ambiente-v0.10.md](docs/ambiente-v0.10.md) (anteriores: `docs/ambiente-v0.1.md` a `v0.9.md`). Despliegue: [docs/despliegue.md](docs/despliegue.md).
+Decisiones: [docs/decisiones.md](docs/decisiones.md). Variables: `.env.example`.
 
-La interfaz representa las transiciones ejecutadas por el mismo `WarehouseRushEnv`
-del CLI; no reimplementa la misión en JavaScript. El mapa y las estaciones proceden
-del JSON canónico. Detalles en [docs/visor-v0.2.md](docs/visor-v0.2.md).
+## Catálogo y estética de Trendy (Naomi)
 
-## Instalar
+Esta rama integra los **27 productos del PDF de Naomi**, organizados en seis
+categorías, con modelos Three.js, assets GLB descargables y una bodega en tonos
+rosa y lavanda. «Explorar los 27 productos» abre el catálogo 3D con búsqueda y filtros.
+Las misiones conservan Gymnasium y el inventario real por sesión.
 
-Desde una terminal nueva, dentro del repositorio y en `dev/angie`:
+Ver [entrega Naomi](docs/entrega-naomi.md) para el catálogo completo, referencias,
+ubicaciones, regeneración de assets y verificaciones.
 
-```bash
-git switch dev/angie
-python3.12 -m venv .venv-rl
-source .venv-rl/bin/activate
-python -m pip install -r requirements-lock.txt
-python -m pip install --no-deps -e .
-```
 
-Python 3.12 es la versión verificada en macOS Intel; las versiones fijadas también
-evitan la incompatibilidad de PyTorch con Python 3.13 en ese equipo. Se usa un
-único entorno local, `.venv-rl/`. Las dependencias directas están en `requirements.txt` y
-`pyproject.toml`; `requirements-lock.txt` registra todas las versiones ejecutadas.
-El snapshot inicial de dependencias se conserva en `docs/requirements-original.txt`.
+## Versión integrada de Naomi
 
-## Usar y verificar
+`dev/naomi` reúne la interfaz rosa y el catálogo visual de 27 productos con el
+mapa amplio, elevador, planificación de carga y cinta/caja de Angie. Las misiones
+mantienen sus 18 identificadores TMP y las cookies existentes. Los modelos se
+asocian visualmente sin cambiar las transacciones; el catálogo permite consultar
+los 27 assets. Ver [integración y alcance](docs/integracion-rosa.md).
 
-```bash
-python -m warehouse_rush.cli map
-python -m warehouse_rush.cli map --blocked
-python -m warehouse_rush.cli validate
-python -m warehouse_rush.cli demo-transitions --steps 5
-python -m warehouse_rush.cli play --policy random --orders 1 --delay 0
-python -m warehouse_rush.cli play --policy heuristic --orders 2 --delay 0.05
-python -m warehouse_rush.cli play --policy heuristic --orders 2 --blocked --no-render
-```
+Esta rama desactiva sus despliegues automáticos de Vercel en `vercel.json`.
+Para verla en el Mac: actualizar `dev/naomi`, compilar con `npm run build --prefix web`
+y ejecutar `python -m pipelines.cli view --no-open` desde el entorno Python.
 
-El mapa JSON es la fuente compartida del simulador, CLI y pruebas. `--orders 1`
-es P1→entrega; `--orders 2` añade P2→entrega en ese orden. `--blocked` cierra un
-tramo y mantiene una ruta alternativa. El robot debe frenar y mirar hacia una
-estación adyacente para interactuar. `--delay` controla la animación de terminal
-y `--no-render` muestra únicamente el resumen final.
 
-## Repetir los experimentos
+## Catálogo operativo de 27 productos
 
-```bash
-# Integración corta; modelo separado del principal mediante seed=7.
-python -m warehouse_rush.cli train --algo ppo --orders 1 --timesteps 128 --n-steps 64 --batch-size 32 --seed 7
+Las sesiones nuevas ya generan pedidos con los 27 productos definitivos del PDF.
+Cada producto tiene nombre, SKU TRD, estante/nivel, modelo y stock inicial fijo entre
+5 y 10 unidades: **202 unidades** en total. Cada kit se cuenta como una unidad.
+La distribución, los stocks exactos y la compatibilidad con sesiones TMP anteriores
+se documentan en [catálogo operativo](docs/catalogo-operativo.md).
 
-# Experimento principal: 20 000 pasos efectivos, un pedido, semilla 42.
-python -m warehouse_rush.cli train --algo ppo --orders 1 --timesteps 20000 --seed 42
+Después de actualizar el repositorio en el Mac, recompilar y reiniciar el servidor
+para crear un inventario local con el nuevo catálogo. Las sesiones antiguas firmadas
+conservan sus productos y cantidades; una sesión nueva/privada utiliza TRD. Generar
+otro pedido no repone stock ni convierte productos antiguos automáticamente.
 
-# 20 episodios × 3 políticas × 2 escenarios, semillas 10000–10019.
-python -m warehouse_rush.cli compare --orders 1 --episodes 20 --seed-start 10000
 
-# Ver exclusivamente el modelo aprendido y evaluar un escenario concreto.
-python -m warehouse_rush.cli play --policy ppo --orders 1 --delay 0.05
-python -m warehouse_rush.cli evaluate --policy ppo --orders 1 --episodes 20 --output results/ppo-only
-python -m warehouse_rush.cli evaluate --policy ppo --orders 1 --blocked --episodes 20 --output results/ppo-blocked
+## Revisar modelos desde la web
+«Modelos y experimentos ↗» abre el catálogo de los 82 modelos, generado con `python -m pipelines.catalogo` a partir de los manifiestos y de MLflow.
+Cada ficha muestra hipótesis, cambios frente a la base, run, semilla, presupuesto, estado y enlace a MLflow, evaluación con causas de fin, test final y curva de entrenamiento.
+Los dos modelos recomendados se pueden **cargar en la bodega** y **evaluar** (10 episodios en el servidor, con latencia de inferencia y hash servido), y hasta 3 modelos se pueden **comparar**.
+La barra muestra el modo activo: control manual, aleatorio, referencia, evaluación o entrenamiento.
+Enlaces directos: `?modelo=m1b-i1-seed1-best&cerrado=1&semilla=10000` carga el modelo y `?catalogo=m1-c3-seed0` abre su ficha.
 
-# Baselines para la misión de dos pedidos; no implica haber entrenado PPO nivel 2.
-python -m warehouse_rush.cli compare --orders 2 --policies random heuristic --episodes 20 --output results/level2
-```
-
-Todos los comandos se ejecutan desde la raíz. Las carpetas de entrenamiento
-tienen nombres únicos para conservar ejecuciones previas. El alias
-`artifacts/models/ppo_orders1_seed42.zip` apunta mediante copia al último modelo
-final de esa misión/semilla; `--model ruta.zip` selecciona otro. Los modelos y
-entornos virtuales se ignoran en git. Los modelos no se descargan del repositorio:
-se generan localmente al entrenar. No se requiere red para entrenar o evaluar una
-vez instaladas las dependencias.
-
-## Resultados y documentación
-
-- [Informe medido de las tres políticas](results/report.md).
-- [Episodios CSV](results/evaluation.csv) y [configuración, agregados y hashes JSON](results/evaluation.json).
-- [Curva de entrenamiento](results/training_curve.png).
-- [Baselines de dos pedidos](results/level2/report.md).
-- [Ficha académica: estado, 22 observaciones, acciones, recompensas y transiciones](docs/ambiente-v0.1.md).
-
-Cada entrenamiento registra metadatos, duración real, versiones, Monitor,
-`progress.csv`, evaluaciones periódicas, checkpoints y modelo final. Las
-comparaciones registran errores reales y salen con código no cero si alguna
-combinación falla. Para comparar configuraciones distintas usa carpetas
-`--output` diferentes.
-
-PPO sólo decide con observaciones normalizadas; el BFS es un baseline que conoce
-mapa y estado completos. Un entrenamiento que termine sin errores puede tener
-0% de éxito. El informe presenta esa diferencia y no sustituye PPO por la
-heurística. La escena 3D de v0.2 interpola la cinemática discreta; no incorpora
-física continua ni infraestructura cloud.
-
-En el experimento ejecutado de 20 000 pasos (semilla 42, 118.10 s), PPO obtuvo
-**0% de éxito** y permaneció frenando en BASE. El heurístico logró **100%** con y
-sin bloqueo (47 y 63 pasos para un pedido); Random obtuvo 0%. Son 20 episodios por
-combinación con semillas 10000–10019. El ciclo completo funciona; el modelo corto
-todavía no aprende la misión. El informe explica también por qué una recompensa
-mayor bajo bloqueo no implica una ruta más eficiente.
+### Catálogo en el ambiente y en la web
+El catálogo es un parámetro del escenario (`envs.inventory.CATALOGS`): `warehouse-v10` se entrenó y evaluó con
+`legacy-18` (18 productos TMP), y `make_env` lo mantiene para que las suites y los tests finales sigan siendo reproducibles.
+La web usa `trendy-27-v1`, también al ejecutar los modelos recomendados. Diagnóstico sobre las 50 semillas de la suite:
+100% de éxito con el catálogo de 27 en los dos modelos y escenarios, sin degradación frente a `legacy-18`
+([resultados](docs/resultados/eval/catalogo-trendy-27/resultados.json)).

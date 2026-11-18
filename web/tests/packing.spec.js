@@ -1,7 +1,7 @@
 import {test,expect} from '@playwright/test';
 
 test('confirmed delivery travels on a raised conveyor into a gift box, once',async({page})=>{
-  let payload=await(await page.request.post('/api/reset',{data:{makeup:true,orders:1,seed:42,blocked:true,policy:'heuristic'}})).json();
+  let payload=await(await page.request.post('/api/reset',{data:{makeup:true,orders:1,seed:24,blocked:true,policy:'heuristic'}})).json();
   for(let n=0;!(payload.state.x===21&&payload.state.y===16&&payload.state.theta===1&&payload.state.v===0&&payload.state.lift.phase==='idle');n++){
     expect(n).toBeLessThan(250);expect(payload.done).toBe(false);
     payload=await(await page.request.post('/api/step',{data:{}})).json();
@@ -22,7 +22,7 @@ test('confirmed delivery travels on a raised conveyor into a gift box, once',asy
     return {y:p.positionFor(first.sku,first.index).y,count:p.items.size,compact:p.compact,box:p.boxX};
   });
   expect(moving).toEqual({y:.75,count:3,compact:false,box:1});
-  await page.screenshot({path:'/workspace/artifacts/warehouse-rush/09-cinta-transferencia.png'});
+  await page.screenshot({path: `${process.env.SHOT_DIR || 'test-results/capturas'}/09-cinta-transferencia.png`});
   await expect(page.locator('.dispatch-panel')).toHaveAttribute('data-phase','ready',{timeout:15000});
   await expect(page.locator('#packing-status')).toContainText('Caja preparada');
   const packed=await page.evaluate(()=>{
@@ -33,7 +33,7 @@ test('confirmed delivery travels on a raised conveyor into a gift box, once',asy
   expect(packed.done).toBe(true);expect(packed.status.packed).toBe(3);expect(Math.abs(packed.lid)).toBeLessThan(.02);
   for(const [x,y,z] of packed.items){expect(x).toBeGreaterThan(.57);expect(x).toBeLessThan(1.43);expect(y).toBe(.47);expect(Math.abs(z)).toBeLessThan(.43);}
   expect(packed.ledger.every(l=>l.quantity===l.delivered)).toBe(true);
-  await page.screenshot({path:'/workspace/artifacts/warehouse-rush/10-caja-lista.png'});
+  await page.screenshot({path: `${process.env.SHOT_DIR || 'test-results/capturas'}/10-caja-lista.png`});
   await page.reload();await expect(page.locator('#scene-loading')).toBeHidden();
   await expect(page.locator('.dispatch-panel')).toHaveAttribute('data-phase','ready');
   expect(await page.evaluate(()=>window.warehouseViewer.scene.stockVisuals.packing.items.size)).toBe(3);

@@ -1,0 +1,26 @@
+id: c0
+hipotesis: >
+  Baseline PPO en el ambiente v2 (solo maquillaje: Box(27), Discrete(8), bandeja por posiciones).
+  Cada episodio sortea 3 productos distintos de 1 unidad para que el modelo aprenda lo general de
+  reunir paquetes y no una sola ruta. Mismo modelo, hiperparámetros y presupuesto que C0 de la
+  familia v1; solo cambia el ambiente.
+nivel: m1
+environment_version: warehouse-v2
+parent_run_id: null
+seed: 0
+presupuesto_pasos: 200000
+ppo:
+  learning_rate: 3.0e-4
+  n_steps: 2048
+  n_envs: 4
+  batch_size: 64
+  n_epochs: 10
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_range: 0.2
+  ent_coef: 0.0
+  net_arch: [64, 64]
+evaluacion:
+  intermedia: dev-m1-v1
+  cada_pasos: 20000
+  final: suite-m1-v1

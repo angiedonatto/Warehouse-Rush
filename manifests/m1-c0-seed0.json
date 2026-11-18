@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "run_id": "m1-c0-seed0",
+  "level_id": "m1",
+  "environment_version": "warehouse-v2",
+  "git_commit": "b87876203c2764cfd8717d42c6264aa9ab3ae7c9",
+  "config_sha256": "cea7f1c9ef5c06eac3ec5ba98637399c355c0a5c1546c649ec3c0517b3f5c477",
+  "model_uri": "models/m1-c0-seed0/model.zip",
+  "model_sha256": "5b2d734e8ac994dd4b270adef3746c195e33180e3a23e71852ae736eeb373c0c",
+  "normalization_uri": null,
+  "runtime_ref": "env/warehouse-v2",
+  "evaluation_suite_id": "suite-m1-v1",
+  "seed": 0,
+  "parent_run_id": null,
+  "estado": "candidato",
+  "created_at": "2026-11-13T21:15:12.842430+00:00",
+  "author": "lis",
+  "algorithm": "PPO",
+  "policy": "MlpPolicy",
+  "budget_steps": 204800,
+  "budget_minutes": 7.91,
+  "mlflow_run_id": "bd4fc44c54cb433992b3a583556c1cbc",
+  "mlflow_experiment": "warehouse-m1",
+  "config_uri": "configs/experiments/m1_c0_makeup3.yaml",
+  "obs_spec": "envs/CONTRATO.md@env/warehouse-v2 (Box(27), todo en [0,1], sin VecNormalize)",
+  "action_spec": "envs/CONTRATO.md@env/warehouse-v2 (Discrete(8): AVANZAR, GIRAR_I, GIRAR_D, FRENAR, CARGAR, DESCARGAR, SUBIR, BAJAR)",
+  "rules_ref": "docs/ambiente-v0.2.md",
+  "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
+  "results_uri": "docs/resultados/eval/m1-c0-seed0/evaluation.json",
+  "training_metadata_uri": "docs/resultados/training/m1-c0-seed0/metadata.json",
+  "weights_storage": "DVC: models/m1-c0-seed0.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1-c0-seed0.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
+  "evaluation": {
+    "suite": "suite-m1-v1",
+    "episodes": 50,
+    "seeds": "10000-10049",
+    "scenario": "pasillo abierto",
+    "deterministic": true,
+    "policies": {
+      "random": {
+        "success_rate": 0.0,
+        "mean_total_reward": -517.9304799999975,
+        "mean_steps": 400.0,
+        "mean_battery_used": 96.12399999999847,
+        "mean_collisions": 15.34,
+        "mean_invalid_interactions": 199.6,
+        "mean_deliveries": 0.0,
+        "mean_pickups": 0.0,
+        "end_reasons": {
+          "time_limit": 50
+        },
+        "action_counts": {
+          "0": 2585,
+          "1": 2543,
+          "2": 2463,
+          "3": 2429,
+          "4": 2468,
+          "5": 2493,
+          "6": 2506,
+          "7": 2513
+        }
+      },
+      "heuristic": {
+        "success_rate": 1.0,
+        "mean_total_reward": 115.85822079999998,
+        "mean_steps": 79.92,
+        "mean_battery_used": 49.68896000000024,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 3.0,
+        "mean_pickups": 3.0,
+        "end_reasons": {
+          "success": 50
+        },
+        "action_counts": {
+          "0": 2474,
+          "1": 308,
+          "2": 278,
+          "3": 186,
+          "4": 150,
+          "5": 50,
+          "6": 275,
+          "7": 275
+        }
+      },
+      "ppo": {
+        "success_rate": 0.0,
+        "mean_total_reward": -40.95899999999981,
+        "mean_steps": 400.0,
+        "mean_battery_used": 42.84999999999759,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 0.0,
+        "mean_pickups": 0.0,
+        "end_reasons": {
+          "time_limit": 50
+        },
+        "action_counts": {
+          "0": 17,
+          "1": 284,
+          "2": 1022,
+          "3": 18677,
+          "4": 0,
+          "5": 0,
+          "6": 0,
+          "7": 0
+        }
+      }
+    }
+  },
+  "decision": "candidato",
+  "decision_reason": "Primer run de la familia warehouse-v2 (baseline). 0% de éxito: la política elige FRENAR en 93% de los pasos; no es un modelo útil. Se conserva como evidencia; la heurística BFS logra 100% y la aleatoria 0%.",
+  "weights_dvc": "models/m1-c0-seed0.dvc",
+  "mlflow_run_id_local": "f494073adf3d4b95ab512a81efe8e46a",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
+}

@@ -1,0 +1,6 @@
+# Add patterns of files dvc should ignore, which could improve
+# the performance. Learn more at
+# https://dvc.org/doc/user-guide/dvcignore
+
+# Retención (2026-11-15): los checkpoints intermedios quedan solo en local; DVC guarda model.zip y best/ de cada run.
+models/*/checkpoints/

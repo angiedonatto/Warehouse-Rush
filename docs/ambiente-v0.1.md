@@ -1,5 +1,7 @@
 # Warehouse Rush — ficha del ambiente v0.1
 
+> **Sustituida para entrenamiento por [ambiente-v0.2.md](ambiente-v0.2.md) (`warehouse-v2`, 2026-11-13).** Esta ficha describe la familia `warehouse-v1` (Box(22), Discrete(5)) y se conserva porque sus modelos y resultados (experiment-001, n1-c0…c6) se explican con estas reglas.
+
 ## 1. Objetivo y misión
 
 Un robot debe recoger paquetes identificados y entregarlos en una bodega antes de
@@ -268,7 +270,7 @@ distribución de acciones y razones de cierre para apoyar el diagnóstico.
 
 ## 10. Cinco transiciones ejecutadas
 
-Se generan con `python -m warehouse_rush.cli demo-transitions --steps 5`, semilla
+Se generan con `python -m pipelines.cli demo-transitions --steps 5`, semilla
 42. El JSON completo en [`transitions-v0.1.json`](transitions-v0.1.json) contiene
 Observación → Acción → Estado → Recompensa y componentes → Nueva observación.
 Los siguientes datos se extraen de `step()`, sin construir trayectorias ficticias.
@@ -284,12 +286,12 @@ Los siguientes datos se extraen de `step()`, sin construir trayectorias ficticia
 ## 11. Resultados experimentales y verificaciones
 
 Resultados principales y sus limitaciones:
-[`results/report.md`](../results/report.md),
-[`results/evaluation.csv`](../results/evaluation.csv),
-[`results/evaluation.json`](../results/evaluation.json) y
-[`results/training_curve.png`](../results/training_curve.png).
+[`resultados/report.md`](resultados/report.md),
+[`resultados/evaluation.csv`](resultados/evaluation.csv),
+[`resultados/evaluation.json`](resultados/evaluation.json) y
+[`resultados/training_curve.png`](resultados/training_curve.png).
 Los datos de entrenamiento, hiperparámetros, versiones y duración están en
-`results/training/`; los modelos locales en `artifacts/models/` (ignorados por git).
+`docs/resultados/training/`; los modelos locales en `models/` (ignorados por git).
 
 Experimento principal ejecutado: **20 000 pasos efectivos**, semilla 42, un pedido,
 CPU, **118.10 s** reales de entrenamiento y evaluaciones periódicas. Ochenta
@@ -306,10 +308,10 @@ demostrar que PPO haya aprendido la misión. No se alteraron las recompensas
 iniciales para aparentar éxito.
 
 La prueba de ambos pedidos se conserva adicionalmente en
-[`results/level2/report.md`](../results/level2/report.md).
+[`resultados/level2/report.md`](resultados/level2/report.md).
 El heurístico completó los dos pedidos en 75/91 pasos y 48/64 m, también con 100%
 de éxito en las 20 semillas por escenario. No se entrenó un modelo PPO de nivel 2.
-`python -m warehouse_rush.cli validate` ejecuta `check_env`, búsqueda de rutas y
+`python -m pipelines.cli validate` ejecuta `check_env`, búsqueda de rutas y
 toda la suite pytest. La suite cubre sensores, contabilidad, observaciones,
 acciones, colisiones, reglas de carga, pedidos permanentes, fin de episodio,
 desvíos, reproducibilidad, ciclos improductivos y exportación de errores reales.

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('order checklist follows real pickup, delivery and stock; rack details and mobile', async ({ page, request }) => {
-  const response = await request.post('/api/reset', { data: { makeup: true, seed: 42, orders: 1, policy: 'heuristic', blocked: true } });
+  const response = await request.post('/api/reset', { data: { makeup: true, seed: 24, orders: 1, policy: 'heuristic', blocked: true } });
   expect(response.ok()).toBeTruthy();
   const initial = await response.json();
   const initialUnits = initial.state.inventory.products.reduce((n, p) => n + p.stock_total, 0);
@@ -11,15 +11,15 @@ test('order checklist follows real pickup, delivery and stock; rack details and 
   await expect(page.locator('#order-sheet li')).toHaveCount(3);
   expect(await page.locator('#order-sheet input:checked').count()).toBe(0);
   await page.getByLabel('Seleccionar estantería').selectOption('E06');
-  await expect(page.locator('#rack-detail')).toContainText('Toy Story');
-  await expect(page.locator('#rack-detail')).toContainText('TMP-E06-L3');
+  await expect(page.locator('#rack-detail')).toContainText('Rubor Lotso');
+  await expect(page.locator('#rack-detail')).toContainText('TRD-06-03');
   const visuals = await page.evaluate(() => {
     const scene = window.warehouseViewer.scene;
     return { background: scene.scene.background.getHexString(), body: getComputedStyle(document.documentElement).backgroundColor,
       legacy: scene.legacyStations.visible, genericCargo: scene.cargo.visible,
       units: [...scene.stockVisuals.products.values()].reduce((n, p) => n + p.shelf.count, 0) };
   });
-  expect(visuals).toEqual({background: '132534', body: 'rgb(8, 21, 33)', legacy: false, genericCargo: false, units: initialUnits});
+  expect(visuals).toEqual({background: 'f8e7ef', body: 'rgb(255, 245, 249)', legacy: false, genericCargo: false, units: initialUnits});
   await page.locator('#speed').selectOption('4');
   await page.locator('#play').click();
   await expect(page.locator('#order-sheet li.picked').first()).toBeVisible({ timeout: 45000 });

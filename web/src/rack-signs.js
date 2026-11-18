@@ -37,9 +37,12 @@ export function mountRackSigns(view, rack, rackId) {
     const bracket = new THREE.Mesh(new THREE.BoxGeometry(.035, .49, .035), edge);
     bracket.position.set(x, 2.81, z);group.add(bracket);
   }
-  const levels = products.map(product => {
-    const mesh = board(product.subcategory, product.level.slice(-2), .125, product.height_m - .04, true);
-    mesh.userData.level = product.level;
+  const levels = [1,2,3].map(index => {
+    const level=`${rackId}-L${index}`, entries=products.filter(p=>p.level===level);
+    const height=entries[0]?.height_m ?? [.99,1.79,2.6][index-1];
+    const label=[...new Set(entries.map(p=>p.subcategory))].join(' / ') || 'Disponible';
+    const mesh=board(label, `L${index}`, .125, height-.04, true);
+    mesh.userData.level=level;
     return mesh;
   });
   view.scene.add(group);

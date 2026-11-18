@@ -7,9 +7,9 @@ from urllib.request import Request, urlopen
 
 import pytest
 
-from warehouse_rush.env import WarehouseRushEnv
-from warehouse_rush.policies import HeuristicPolicy
-from warehouse_rush.viewer import ViewerHandler, ViewerSession
+from envs.env import WarehouseRushEnv
+from pipelines.baselines import HeuristicPolicy
+from api._viewer import ViewerHandler, ViewerSession
 
 
 @pytest.mark.parametrize("orders,blocked", [(1, False), (1, True), (2, False), (2, True)])
@@ -66,8 +66,8 @@ def test_reference_route_respects_same_map_and_blockage():
 
 
 def test_missing_ppo_does_not_destroy_current_session(tmp_path, monkeypatch):
-    monkeypatch.setattr("warehouse_rush.viewer.default_model", lambda order: tmp_path / "absent.zip")
-    monkeypatch.setattr("warehouse_rush.viewer.EXPERIMENT_MODEL", tmp_path / "absent.zip")
+    monkeypatch.setattr("api._viewer.default_model", lambda order: tmp_path / "absent.zip")
+    monkeypatch.setattr("api._viewer.EXPERIMENT_MODEL", tmp_path / "absent.zip")
     session = ViewerSession()
     before = session.payload()
     with pytest.raises(FileNotFoundError):

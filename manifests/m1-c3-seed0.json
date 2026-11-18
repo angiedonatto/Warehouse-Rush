@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "run_id": "m1-c3-seed0",
+  "level_id": "m1",
+  "environment_version": "warehouse-v10",
+  "git_commit": "750e99fd375b9eb28d3795e6373d9a62de6393f9",
+  "config_sha256": "8003baa07224d1084f011a7e86e63a4bc95071c26a7d86d45337367d4107f23d",
+  "model_uri": "models/m1-c3-seed0/model.zip",
+  "model_sha256": "b6034b3396a676d8d9edd27c4229be239f8d0cf9b3ccd712bb0437c67d76b9a7",
+  "normalization_uri": null,
+  "runtime_ref": "env/warehouse-v10",
+  "evaluation_suite_id": "suite-m1-v1",
+  "seed": 0,
+  "parent_run_id": null,
+  "estado": "recomendado",
+  "created_at": "2026-11-15T20:46:26.861579+00:00",
+  "author": "lis",
+  "algorithm": "PPO",
+  "policy": "MlpPolicy",
+  "budget_steps": 1802240,
+  "budget_minutes": 99.67,
+  "mlflow_run_id": "e8fd6c8d7dfb420dbb997a7c80e3028f",
+  "mlflow_experiment": "warehouse-m1",
+  "config_uri": "configs/experiments/m1_c3_largo_seed0.yaml",
+  "obs_spec": "envs/CONTRATO.md@env/warehouse-v10 (Box(27), todo en [0,1], sin VecNormalize)",
+  "action_spec": "envs/CONTRATO.md@env/warehouse-v10 (Discrete(8): AVANZAR, GIRAR_I, GIRAR_D, FRENAR, CARGAR, DESCARGAR, SUBIR, BAJAR)",
+  "rules_ref": "docs/ambiente-v0.10.md",
+  "reward": {
+    "pickup": 10.0,
+    "delivery": 30.0,
+    "completion": 50.0,
+    "progress": 0.3,
+    "time": -0.1,
+    "battery": -0.02,
+    "collision": -1.0,
+    "invalid_interaction": -0.2,
+    "distance": 0.0,
+    "manhattan_progress": 0.0,
+    "height_mismatch": 0.0,
+    "potential": 0.0,
+    "potential_nav": 0.4,
+    "face_bonus": 0.0,
+    "carry_milestone": 0.0
+  },
+  "reward_overrides": {
+    "invalid_interaction": -0.2,
+    "collision": -1.0
+  },
+  "layout_path": "configs/layout_v0.4.json",
+  "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
+  "results_uri": "docs/resultados/eval/m1-c3-seed0/evaluation.json",
+  "training_metadata_uri": "docs/resultados/training/m1-c3-seed0/metadata.json",
+  "weights_storage": "DVC: models/m1-c3-seed0.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1-c3-seed0.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
+  "git_dirty_note": "git_dirty figura false; commit 750e99f",
+  "evaluation": {
+    "suite": "suite-m1-v1",
+    "episodes": 50,
+    "seeds": "10000-10049",
+    "scenario": "mapa con muro layout_v0.4",
+    "deterministic": true,
+    "policies": {
+      "heuristic": {
+        "success_rate": 1.0,
+        "mean_total_reward": 115.85822079999998,
+        "mean_steps": 79.92,
+        "mean_battery_used": 49.68896000000024,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 3.0,
+        "mean_pickups": 3.0,
+        "end_reasons": {
+          "success": 50
+        },
+        "action_counts": {
+          "0": 2474,
+          "1": 308,
+          "2": 278,
+          "3": 186,
+          "4": 150,
+          "5": 50,
+          "6": 275,
+          "7": 275
+        }
+      },
+      "ppo": {
+        "success_rate": 0.98,
+        "mean_total_reward": 111.23405439999996,
+        "mean_steps": 93.04,
+        "mean_battery_used": 52.79728000000019,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 7.1,
+        "mean_deliveries": 2.94,
+        "mean_pickups": 2.98,
+        "end_reasons": {
+          "success": 49,
+          "time_limit": 1
+        },
+        "action_counts": {
+          "0": 2597,
+          "1": 381,
+          "2": 264,
+          "3": 311,
+          "4": 149,
+          "5": 49,
+          "6": 628,
+          "7": 273
+        }
+      }
+    }
+  },
+  "decision": "recomendado",
+  "decision_reason": "Elegido por la regla de selección declarada el 2026-11-15 (mayor éxito en suite-m1-v1 con 0 choques; a <= 2 pp gana la receta con menos términos: 98% frente a e4y-seed3 100%, receta base sin términos e4). Validado UNA vez en el test final reservado test-final-m1-v1 (100 episodios, semillas 30000-30099, nunca vistas): 100% de éxito (100/100), 0 choques/ep, 0 inválidas/ep, 3.00 entregas/ep, 90.6 pasos (heurística 100%, 80.2 pasos). Criterio fijado antes (>= 90% con <= 0.1 choques/ep): cumplido. Certifica este artefacto (sha256 del modelo), no la receta: c3 completa la misión en 1 de 5 semillas.",
+  "stagnation_window": 100,
+  "test_final": {
+    "suite": "test-final-m1-v1",
+    "episodes": 100,
+    "seeds": "reservadas (fuera del repo público)",
+    "run_once_at": "2026-11-15",
+    "deterministic": true,
+    "criterion": "exito >= 90% y choques <= 0.1/ep",
+    "met": true,
+    "model_sha256_evaluated": "b6034b3396a676d8d9edd27c4229be239f8d0cf9b3ccd712bb0437c67d76b9a7",
+    "policies": {
+      "heuristic": {
+        "success_rate": 1.0,
+        "mean_steps": 80.15,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 3.0
+      },
+      "ppo": {
+        "success_rate": 1.0,
+        "mean_steps": 90.55,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 3.0
+      }
+    },
+    "results_uri": "configs/suites/test-final-results/m1-c3-seed0/evaluation.json (local, ignorado por Git)"
+  },
+  "weights_dvc": "models/m1-c3-seed0.dvc",
+  "mlflow_run_id_local": "7d16f61c8a674fa0b327fcf1efdc7109",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
+}

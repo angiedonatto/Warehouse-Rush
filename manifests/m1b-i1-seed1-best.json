@@ -1,0 +1,194 @@
+{
+  "schema_version": 1,
+  "run_id": "m1b-i1-seed1-best",
+  "level_id": "m1b",
+  "environment_version": "warehouse-v10",
+  "git_commit": "37fe4c7a8569e7762f2795bdd3ae6271d1bc7a93",
+  "config_sha256": "fa1abfaa1b0c2a12b0b08854bfcac639b76f710730d6f275883aeaa959f4d261",
+  "model_uri": "models/m1b-i1-seed1/best/best_model.zip",
+  "model_sha256": "46984e97b032920cd8e041e44b4f5d27751235cb7f4e04c634f523c2c41fdbb7",
+  "normalization_uri": null,
+  "runtime_ref": "env/warehouse-v10",
+  "evaluation_suite_id": "suite-m1b-v1",
+  "seed": 1,
+  "parent_run_id": "m1-c3-seed0",
+  "estado": "recomendado",
+  "created_at": "2026-11-16T02:56:34.393161+00:00",
+  "author": "lis",
+  "algorithm": "PPO",
+  "policy": "MlpPolicy",
+  "budget_steps": 3604480,
+  "budget_minutes": 77.09,
+  "mlflow_run_id": "fe27cee6f22c4fb2ad37c105f1d1ec20",
+  "mlflow_experiment": "warehouse-m1b",
+  "config_uri": "configs/experiments/m1b_i1_incidente_seed1.yaml",
+  "obs_spec": "envs/CONTRATO.md@env/warehouse-v10 (Box(27), todo en [0,1], sin VecNormalize)",
+  "action_spec": "envs/CONTRATO.md@env/warehouse-v10 (Discrete(8): AVANZAR, GIRAR_I, GIRAR_D, FRENAR, CARGAR, DESCARGAR, SUBIR, BAJAR)",
+  "rules_ref": "docs/ambiente-v0.10.md",
+  "reward": {
+    "pickup": 10.0,
+    "delivery": 30.0,
+    "completion": 50.0,
+    "progress": 0.3,
+    "time": -0.1,
+    "battery": -0.02,
+    "collision": -1.0,
+    "invalid_interaction": -0.2,
+    "distance": 0.0,
+    "manhattan_progress": 0.0,
+    "height_mismatch": 0.0,
+    "potential": 0.0,
+    "potential_nav": 0.4,
+    "face_bonus": 0.0,
+    "carry_milestone": 0.0
+  },
+  "reward_overrides": {
+    "invalid_interaction": -0.2,
+    "collision": -1.0
+  },
+  "layout_path": "configs/layout_v0.4.json",
+  "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
+  "results_uri": "docs/resultados/eval/m1b-i1-seed1-best/evaluation.json",
+  "training_metadata_uri": "docs/resultados/training/m1b-i1-seed1/metadata.json",
+  "weights_storage": "DVC: models/m1b-i1-seed1.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1b-i1-seed1.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
+  "git_dirty_note": "git_dirty figura true solo por carpetas de salida sin versionar de runs hermanos lanzados en paralelo; ningún archivo versionado cambió (commit 37fe4c7)",
+  "evaluation": {
+    "suite": "suite-m1b-v1",
+    "episodes": 50,
+    "seeds": "10000-10049",
+    "scenario": "mapa con muro layout_v0.4; ambos escenarios con las semillas 10000-10049",
+    "deterministic": true,
+    "policies": {
+      "ppo": {
+        "success_rate": 1.0,
+        "mean_total_reward": 119.59646079999995,
+        "mean_steps": 106.92,
+        "mean_battery_used": 70.3769600000003,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 3.0,
+        "mean_pickups": 3.0,
+        "end_reasons": {
+          "success": 50
+        },
+        "action_counts": {
+          "0": 3748,
+          "1": 474,
+          "2": 188,
+          "3": 186,
+          "4": 150,
+          "5": 50,
+          "6": 275,
+          "7": 275
+        }
+      }
+    },
+    "by_scenario": {
+      "suite-m1-v1 (paso abierto)": {
+        "ppo": {
+          "success_rate": 1.0,
+          "mean_total_reward": 115.74494079999998,
+          "mean_steps": 82.32,
+          "mean_battery_used": 51.15296000000024,
+          "mean_collisions": 0.0,
+          "mean_invalid_interactions": 0.0,
+          "mean_deliveries": 3.0,
+          "mean_pickups": 3.0,
+          "end_reasons": {
+            "success": 50
+          },
+          "action_counts": {
+            "0": 2556,
+            "1": 365,
+            "2": 259,
+            "3": 186,
+            "4": 150,
+            "5": 50,
+            "6": 275,
+            "7": 275
+          }
+        }
+      },
+      "suite-m1b-v1 (paso (6,14) cerrado)": {
+        "ppo": {
+          "success_rate": 1.0,
+          "mean_total_reward": 119.59646079999995,
+          "mean_steps": 106.92,
+          "mean_battery_used": 70.3769600000003,
+          "mean_collisions": 0.0,
+          "mean_invalid_interactions": 0.0,
+          "mean_deliveries": 3.0,
+          "mean_pickups": 3.0,
+          "end_reasons": {
+            "success": 50
+          },
+          "action_counts": {
+            "0": 3748,
+            "1": 474,
+            "2": 188,
+            "3": 186,
+            "4": 150,
+            "5": 50,
+            "6": 275,
+            "7": 275
+          }
+        }
+      }
+    }
+  },
+  "decision": "recomendado",
+  "decision_reason": "Elegido por la selección declarada de un modelo m1b (docs/experimentos.md, pre-registro en el commit 0a443ec) entre los 6 artefactos de m1b-i1, y validado una sola vez en test-final-m1b-v1: 100/100 con el paso abierto y 100/100 con el paso (6,14) cerrado, 0 choques, 0 inválidas. Recomendado para el nivel m1b (tolera el incidente N3); m1-c3-seed0 sigue recomendado para m1 y es el rollback. La receta m1b-i1 sigue rechazada.",
+  "stagnation_window": 100,
+  "budget_note": "budget_steps acumula el padre m1-c3-seed0 (1 802 240) y el ajuste fino (1 802 240)",
+  "mlflow_note": "el run quedó en el experimento «Default» de MLflow por una carrera al crear warehouse-m1b con 3 runs en paralelo; corregido en pipelines/tracking.py::experiment_id; al migrar a DagsHub (2026-11-18) el run se copió a warehouse-m1b (pipelines/migrar_mlflow.py::REUBICAR)",
+  "artifact_note": "mejor checkpoint del run m1b-i1-seed1 (paso 3 582 240, retorno de la evaluación periódica 120.6), no su modelo final; mismo run de MLflow; budget_steps es el del run completo",
+  "test_final": {
+    "suite": "test-final-m1b-v1",
+    "episodes": 100,
+    "episodes_note": "100 por escenario, las mismas semillas en ambos",
+    "seeds": "reservadas (fuera del repo público)",
+    "run_once_at": "2026-11-15",
+    "deterministic": true,
+    "criterion": "exito >= 90% y choques <= 0.1/ep en cada escenario",
+    "met": true,
+    "model_sha256_evaluated": "46984e97b032920cd8e041e44b4f5d27751235cb7f4e04c634f523c2c41fdbb7",
+    "by_scenario": {
+      "abierto": {
+        "heuristic": {
+          "success_rate": 1.0,
+          "mean_steps": 78.33,
+          "mean_collisions": 0.0,
+          "mean_invalid_interactions": 0.0,
+          "mean_deliveries": 3.0
+        },
+        "ppo": {
+          "success_rate": 1.0,
+          "mean_steps": 81.51,
+          "mean_collisions": 0.0,
+          "mean_invalid_interactions": 0.0,
+          "mean_deliveries": 3.0
+        }
+      },
+      "cerrado (6,14)": {
+        "heuristic": {
+          "success_rate": 1.0,
+          "mean_steps": 102.03,
+          "mean_collisions": 0.0,
+          "mean_invalid_interactions": 0.0,
+          "mean_deliveries": 3.0
+        },
+        "ppo": {
+          "success_rate": 1.0,
+          "mean_steps": 106.05,
+          "mean_collisions": 0.0,
+          "mean_invalid_interactions": 0.0,
+          "mean_deliveries": 3.0
+        }
+      }
+    },
+    "results_uri": "configs/suites/test-final-results/m1b-i1-seed1-best/evaluation.json (local, ignorado por Git)"
+  },
+  "weights_dvc": "models/m1b-i1-seed1.dvc",
+  "mlflow_run_id_local": "7e9c353e34ca4350b695ab56b5a8ba92",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
+}

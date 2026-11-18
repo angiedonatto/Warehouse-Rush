@@ -22,7 +22,7 @@ test('real WebGL scene, six racks, same layout and no horizontal overflow', asyn
   await expect(page.locator('#deliveries')).toHaveText('0 / 2');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   expect(errors).toEqual([]);
-  await page.screenshot({ path: '../results/viewer-v0.2.png', fullPage: true });
+  await page.screenshot({ path: '../docs/resultados/viewer-v0.2.png', fullPage: true });
 });
 
 test('step, play, pause and reset change the real Python episode', async ({ page, request }) => {
@@ -87,7 +87,7 @@ test('mobile layout remains usable without horizontal scrolling', async ({ page 
   await expect(page.locator('#steps')).toHaveText('1');
   // El canvas WebGL usa el viewport: capturar el área visible real, no una
   // página completa con vistas que todavía no han entrado en pantalla.
-  await page.screenshot({ path: '../results/viewer-mobile-v0.2.png' });
+  await page.screenshot({ path: '../docs/resultados/viewer-mobile-v0.2.png' });
 });
 
 test('PPO and random selections execute their actual Python policies', async ({ page, request }) => {

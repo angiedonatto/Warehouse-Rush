@@ -7,10 +7,18 @@
   "functions": {
     "api/index.py": {
       "maxDuration": 60,
-      "excludeFiles": "{.venv*/**,web/**,tests/**,results/**,docs/**,.superdesign/**,build/**,.git/**}"
+      "excludeFiles": "{.venv*/**,web/**,tests/**,docs/**,mlruns/**,mlflow.db,configs/experiments/**,configs/suites/**,pipelines/__pycache__/**,.superdesign/**,build/**,.git/**}"
     }
   },
   "rewrites": [
-    { "source": "/api/:path*", "destination": "/api?route=:path*" }
-  ]
+    {
+      "source": "/api/:path*",
+      "destination": "/api?route=:path*"
+    }
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "dev/naomi": false
+    }
+  }
 }

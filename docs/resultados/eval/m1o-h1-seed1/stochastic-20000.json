@@ -1,0 +1,40 @@
+{
+  "run": "m1o-h1-seed1",
+  "suite_seeds": "20000-20049",
+  "deterministic": false,
+  "repeats": [
+    {
+      "sampling_seed": 1000,
+      "success_rate": 1.0,
+      "mean_steps_of_successes": 80.74,
+      "mean_deliveries": 3.0,
+      "mean_invalid": 0.14,
+      "mean_collisions": 0.0,
+      "end_reasons": {
+        "success": 50
+      }
+    },
+    {
+      "sampling_seed": 1001,
+      "success_rate": 1.0,
+      "mean_steps_of_successes": 78.3,
+      "mean_deliveries": 3.0,
+      "mean_invalid": 0.04,
+      "mean_collisions": 0.0,
+      "end_reasons": {
+        "success": 50
+      }
+    },
+    {
+      "sampling_seed": 1002,
+      "success_rate": 1.0,
+      "mean_steps_of_successes": 79.12,
+      "mean_deliveries": 3.0,
+      "mean_invalid": 0.02,
+      "mean_collisions": 0.1,
+      "end_reasons": {
+        "success": 50
+      }
+    }
+  ]
+}

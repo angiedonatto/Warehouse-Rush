@@ -4,10 +4,10 @@ import numpy as np
 import pytest
 from stable_baselines3.common.env_checker import check_env
 
-from warehouse_rush.env import Action, SimulationConfig, WarehouseRushEnv
-from warehouse_rush.layout import DIRECTIONS, Layout
-from warehouse_rush.policies import HeuristicPolicy
-from warehouse_rush.rewards import RewardConfig
+from envs.env import Action, SimulationConfig, WarehouseRushEnv
+from envs.layout import DIRECTIONS, Layout
+from pipelines.baselines import HeuristicPolicy
+from envs.rewards import RewardConfig
 
 
 @pytest.fixture
@@ -32,7 +32,7 @@ def put_in_front(env, station):
 
 def pickup(env):
     put_in_front(env, "P1")
-    return env.step(Action.INTERACTUAR)
+    return env.step(Action.CARGAR)
 
 
 @pytest.mark.parametrize("orders,blocked", [(1, False), (1, True), (2, False), (2, True)])
@@ -47,7 +47,7 @@ def test_observations_are_float32_finite_and_bounded(blocked):
     obs, _ = environment.reset(seed=71)
     rng = np.random.default_rng(71)
     for _ in range(600):
-        assert obs.shape == (22,)
+        assert obs.shape == (27,)
         assert obs.dtype == np.float32
         assert np.isfinite(obs).all()
         assert environment.observation_space.contains(obs)
@@ -65,7 +65,7 @@ def test_all_valid_actions_execute(env, action):
     assert not terminated and not truncated
 
 
-@pytest.mark.parametrize("bad_action", [-1, 5, 1.5, "forward"])
+@pytest.mark.parametrize("bad_action", [-1, 8, 1.5, "forward"])
 def test_out_of_space_actions_rejected_without_state_change(env, bad_action):
     before = env.snapshot()
     with pytest.raises(ValueError):
@@ -140,7 +140,7 @@ def test_invalid_pickup_does_not_change_mission_and_never_pays(env, kind):
     else:
         put_in_front(env, "P2")
     mission = (env.state.carga, env.state.pedido_actual, env.state.etapa, env.state.objetivo)
-    _, reward, _, _, info = env.step(Action.INTERACTUAR)
+    _, reward, _, _, info = env.step(Action.CARGAR)
     assert (env.state.carga, env.state.pedido_actual, env.state.etapa, env.state.objetivo) == mission
     assert not env.picked_packages and not env.completed_packages
     assert info["invalid_interactions"] == 1
@@ -149,7 +149,7 @@ def test_invalid_pickup_does_not_change_mission_and_never_pays(env, kind):
 
 def test_delivery_without_package_is_invalid(env):
     put_in_front(env, "DELIVERY")
-    _, reward, _, _, info = env.step(Action.INTERACTUAR)
+    _, reward, _, _, info = env.step(Action.DESCARGAR)
     assert env.state.carga is None
     assert env.state.entregas == 0
     assert reward < 0 and info["reward_components"]["delivery"] == 0
@@ -162,7 +162,7 @@ def test_pickup_once_cannot_drop_or_duplicate(env):
     assert env.picked_packages == {"P1"}
     assert info["reward_components"]["pickup"] == 10
     for _ in range(3):
-        _, reward, _, _, info = env.step(Action.INTERACTUAR)
+        _, reward, _, _, info = env.step(Action.CARGAR)
         assert reward < 0
         assert info["reward_components"]["pickup"] == 0
         assert env.state.carga == "P1"
@@ -172,7 +172,7 @@ def test_wrong_carried_package_cannot_be_delivered(env):
     pickup(env)
     put_in_front(env, "DELIVERY")
     env.state.carga = "P2"  # Caso defensivo: estado inconsistente externo.
-    _, reward, _, _, info = env.step(Action.INTERACTUAR)
+    _, reward, _, _, info = env.step(Action.DESCARGAR)
     assert env.state.entregas == 0 and not env.completed_packages
     assert env.state.carga == "P2" and reward < 0
     assert info["reward_components"]["delivery"] == 0
@@ -181,17 +181,17 @@ def test_wrong_carried_package_cannot_be_delivered(env):
 def test_delivery_is_permanent_and_cannot_be_rewarded_twice(env):
     pickup(env)
     put_in_front(env, "DELIVERY")
-    _, _, terminated, _, info = env.step(Action.INTERACTUAR)
+    _, _, terminated, _, info = env.step(Action.DESCARGAR)
     assert not terminated  # Aún falta P2.
     assert info["reward_components"]["delivery"] == 30
     assert env.completed_packages == {"P1"}
     assert env.state.carga is None and env.state.objetivo == "P2"
     for _ in range(3):
-        _, reward, _, _, info = env.step(Action.INTERACTUAR)
+        _, reward, _, _, info = env.step(Action.DESCARGAR)
         assert reward < 0 and info["reward_components"]["delivery"] == 0
         assert env.state.entregas == 1
     put_in_front(env, "P1")
-    _, reward, _, _, info = env.step(Action.INTERACTUAR)
+    _, reward, _, _, info = env.step(Action.CARGAR)
     assert reward < 0 and info["reward_components"]["pickup"] == 0
     assert env.completed_packages == {"P1"}
 
@@ -200,7 +200,7 @@ def test_target_switch_does_not_pay_fake_progress(env):
     _, _, _, _, info = pickup(env)
     assert info["reward_components"]["progress"] == 0
     put_in_front(env, "DELIVERY")
-    _, _, _, _, info = env.step(Action.INTERACTUAR)
+    _, _, _, _, info = env.step(Action.DESCARGAR)
     assert info["reward_components"]["progress"] == 0
 
 
@@ -224,10 +224,10 @@ def test_heuristic_completes_full_mission(orders, blocked):
     assert info["collisions"] == info["invalid_interactions"] == 0
     assert completed == list(environment.packages)
     assert info["reward_components"]["completion"] == 50
-    assert observation[19] == 1 and observation[21] == 1
+    assert observation[21] == 1 and observation[23] == 1
     before = environment.snapshot()
     with pytest.raises(RuntimeError):
-        environment.step(Action.INTERACTUAR)
+        environment.step(Action.DESCARGAR)
     assert environment.snapshot() == before
 
 
@@ -249,7 +249,7 @@ def test_time_limit_is_truncation():
     observation, _, terminated, truncated, info = environment.step(Action.FRENAR)
     assert truncated and not terminated
     assert info["end_reason"] == "time_limit" and not info["success"]
-    assert observation[20] == 0
+    assert observation[22] == 0
 
 
 def test_unreachable_goal_is_effective_failure(env):

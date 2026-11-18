@@ -1,0 +1,5 @@
+id: suite-m1o-v1
+uso: comparar candidatos en el mapa abierto (warehouse-v3, nivel m1o, mapa configs/layout_v0.5.json)
+nivel: m1o
+episodios: 50
+semillas_rango: [10000, 10049]   # inclusivo; mismas semillas que suite-m1-v1, otro mapa

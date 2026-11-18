@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "run_id": "m1o-h0-seed1",
+  "level_id": "m1o",
+  "environment_version": "warehouse-v7",
+  "git_commit": "d1d91c9a8df86e4ab3d100257a8f34af72f67a0b",
+  "config_sha256": "e80e2873d8e9068c11812700de9ee4d87f6cde618c9f6860f1c29cebafa61796",
+  "model_uri": "models/m1o-h0-seed1/model.zip",
+  "model_sha256": "b4ef53f8f7bf7afb2afd365cbe9e3e1ed9b02488f711e1f63c444f978c69b32b",
+  "normalization_uri": null,
+  "runtime_ref": "env/warehouse-v7",
+  "evaluation_suite_id": "suite-m1o-v1",
+  "seed": 1,
+  "parent_run_id": null,
+  "estado": "candidato",
+  "created_at": "2026-11-14T04:28:04.595950+00:00",
+  "author": "lis",
+  "algorithm": "PPO (clonación de comportamiento)",
+  "policy": "MlpPolicy",
+  "budget_steps": 0,
+  "budget_minutes": 9.89,
+  "mlflow_run_id": "a054cbad33274db086199366a4460c89",
+  "mlflow_experiment": "warehouse-m1o",
+  "config_uri": "configs/experiments/m1o_h0_bc_seed1.yaml",
+  "obs_spec": "envs/CONTRATO.md@env/warehouse-v7 (Box(27), todo en [0,1], sin VecNormalize)",
+  "action_spec": "envs/CONTRATO.md@env/warehouse-v7 (Discrete(8): AVANZAR, GIRAR_I, GIRAR_D, FRENAR, CARGAR, DESCARGAR, SUBIR, BAJAR)",
+  "rules_ref": "docs/ambiente-v0.7.md",
+  "reward": {
+    "pickup": 10.0,
+    "delivery": 30.0,
+    "completion": 50.0,
+    "progress": 0.3,
+    "time": -0.1,
+    "battery": -0.02,
+    "collision": -1.0,
+    "invalid_interaction": -0.2,
+    "distance": 0.0,
+    "manhattan_progress": 0.3,
+    "height_mismatch": -0.02,
+    "carry_milestone": 0.0
+  },
+  "reward_overrides": {
+    "invalid_interaction": -0.2,
+    "collision": -1.0,
+    "manhattan_progress": 0.3,
+    "height_mismatch": -0.02
+  },
+  "layout_path": "configs/layout_v0.5.json",
+  "layout_sha256": "0bd1788a5daf4cd0857d62ef86ed48a4b2145ea6f2e050aa37eb901845e4bbca",
+  "results_uri": "docs/resultados/eval/m1o-h0-seed1/evaluation.json",
+  "training_metadata_uri": "docs/resultados/training/m1o-h0-seed1/metadata.json",
+  "weights_storage": "DVC: models/m1o-h0-seed1.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1o-h0-seed1.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
+  "git_dirty_note": "git_dirty puede figurar true por carpetas de salida sin versionar de runs hermanos; ningún archivo versionado cambió respecto del commit indicado",
+  "evaluation": {
+    "suite": "suite-m1o-v1",
+    "episodes": 50,
+    "seeds": "10000-10049",
+    "scenario": "mapa abierto layout_v0.5",
+    "deterministic": true,
+    "policies": {
+      "heuristic": {
+        "success_rate": 1.0,
+        "mean_total_reward": 127.29630080000004,
+        "mean_steps": 71.32,
+        "mean_battery_used": 44.464960000000225,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 3.0,
+        "mean_pickups": 3.0,
+        "end_reasons": {
+          "success": 50
+        },
+        "action_counts": {
+          "0": 2182,
+          "1": 191,
+          "2": 257,
+          "3": 186,
+          "4": 150,
+          "5": 50,
+          "6": 275,
+          "7": 275
+        }
+      },
+      "ppo": {
+        "success_rate": 1.0,
+        "mean_total_reward": 127.29630080000004,
+        "mean_steps": 71.32,
+        "mean_battery_used": 44.464960000000225,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 3.0,
+        "mean_pickups": 3.0,
+        "end_reasons": {
+          "success": 50
+        },
+        "action_counts": {
+          "0": 2182,
+          "1": 191,
+          "2": 257,
+          "3": 186,
+          "4": 150,
+          "5": 50,
+          "6": 275,
+          "7": 275
+        }
+      }
+    }
+  },
+  "decision": "candidato",
+  "decision_reason": "Solo imitación de la heurística: 100% de éxito en la suite (71 pasos). Precisión del actor en validación 99.8%. Referencia descriptiva; no se recomienda.",
+  "bc": {
+    "episodes": 1000,
+    "val_episodes": 100,
+    "noise": [
+      0.0,
+      0.25
+    ],
+    "epochs": 30,
+    "lr": 0.001,
+    "batch_size": 256,
+    "demo_seed_start": 40000,
+    "val_seed_start": 50000,
+    "demo_steps": 84356,
+    "demos_sha256": "6f25042cd9f0460f097d6d3411a6684721c58c02889e8965c964d054c53f1d9d",
+    "expert": "pipelines.baselines.HeuristicPolicy",
+    "fit": {
+      "train": {
+        "accuracy": 0.9984944757930675,
+        "accuracy_clean_states": 1.0,
+        "accuracy_noisy_states": 0.9973830080982505,
+        "value_explained_variance": 0.4340945026224752
+      },
+      "validation": {
+        "accuracy": 0.9983363042186572,
+        "accuracy_clean_states": 1.0,
+        "accuracy_noisy_states": 0.997119341563786,
+        "value_explained_variance": 0.3963446105839785
+      }
+    }
+  },
+  "weights_dvc": "models/m1o-h0-seed1.dvc",
+  "mlflow_run_id_local": "2df70cc95f9141de830cb0ba5dd9623a",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
+}

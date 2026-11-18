@@ -2,8 +2,8 @@ import time
 
 import pytest
 
-from warehouse_rush.cloud import CloudAPI, SignedSessions
-from warehouse_rush.viewer import ViewerSession
+from api._cloud import CloudAPI, SignedSessions
+from api._viewer import ViewerSession
 
 TEST_SECRET = "local-unit-test-key-32-characters-minimum"
 

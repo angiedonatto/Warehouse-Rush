@@ -2,10 +2,10 @@
 
 ## Abrir
 
-Desde el checkout del proyecto, con `.venv-rl` activo:
+Desde el checkout del proyecto, con `.venv` activo:
 
 ```bash
-python -m warehouse_rush.cli view
+python -m pipelines.cli view
 ```
 
 El comando sirve la aplicación y abre `http://127.0.0.1:8080`. Ctrl+C detiene el

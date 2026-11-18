@@ -1,0 +1,5 @@
+id: suite-m1-v1
+uso: comparar candidatos y elegir finalistas (warehouse-v2, nivel m1)
+nivel: m1
+episodios: 50
+semillas_rango: [10000, 10049]   # inclusivo; cada semilla fija el pedido de 3 SKU distintos de 1 unidad

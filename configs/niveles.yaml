@@ -1,0 +1,33 @@
+# Perfiles por nivel (Enunciado sec. 06). Cada nivel conserva su ambiente accesible.
+# NOTA: la guía R2 propone 3 pedidos en N2; el ambiente v0.1 soporta 1 o 2 pedidos.
+# Hasta que R1 amplíe el ambiente, N2 = 2 pedidos (anotado en docs/decisiones.md).
+n1:
+  descripcion: Misión base, 1 pedido, pasillo abierto
+  orders: 1
+  blocked: false
+n2:
+  descripcion: Más decisiones, 2 pedidos, pasillo abierto
+  orders: 2
+  blocked: false
+n3:
+  descripcion: Operación exigente, 2 pedidos, pasillo cerrado (incidente)
+  orders: 2
+  blocked: true
+# v2 (warehouse-v2, solo modo maquillaje): cada episodio sortea `orders` productos distintos (1 unidad)
+# y repone el stock al reiniciar. n1-n3 describen la familia warehouse-v1 y se conservan como historia.
+m1:
+  descripcion: Maquillaje v2, 3 productos aleatorios por episodio, pasillo abierto
+  orders: 3
+  blocked: false
+# m1o: m1 en el mapa abierto configs/layout_v0.5.json (v0.4 sin muro interior ni pasos estrechos), para probar el término de distancia.
+m1o:
+  descripcion: Maquillaje v3, 3 productos aleatorios por episodio, mapa abierto sin muro interior
+  orders: 3
+  blocked: false
+# m1b (incidente N3 del mapa con muro, 2026-11-15): mismo mapa y pedidos que m1; el paso cerrable (6,14)
+# se cierra en la mitad de los ambientes de entrenamiento ('mixto': pares cerrados, impares abiertos) para
+# aprender la ruta por x=20 sin olvidar la normal. Se evalúa en suite-m1b-v1 (paso cerrado) y suite-m1-v1 (olvido).
+m1b:
+  descripcion: Incidente N3, 3 productos aleatorios, mapa con muro y paso x=6 cerrado en la mitad de los ambientes
+  orders: 3
+  blocked: mixto

@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "run_id": "m1-q2-seed2",
+  "level_id": "m1",
+  "environment_version": "warehouse-v9",
+  "git_commit": "ebcc2558998e913103391740941c0aba7c7ae217",
+  "config_sha256": "3f56a7c128397904322ba30293f92cfcc38fd99bda57a4df74f5967d039cbb55",
+  "model_uri": "models/m1-q2-seed2/model.zip",
+  "model_sha256": "95f2775ed755cc06e326c7fe5eb2efebba4e0a2897890203c82194450b09cb52",
+  "normalization_uri": null,
+  "runtime_ref": "env/warehouse-v9",
+  "evaluation_suite_id": "suite-m1-v1",
+  "seed": 2,
+  "parent_run_id": null,
+  "estado": "rechazado",
+  "created_at": "2026-11-14T22:20:44.712363+00:00",
+  "author": "lis",
+  "algorithm": "PPO",
+  "policy": "MlpPolicy",
+  "budget_steps": 606208,
+  "budget_minutes": 27.1,
+  "mlflow_run_id": "11439add7f4a42acb5d9bddc42fc6056",
+  "mlflow_experiment": "warehouse-m1",
+  "config_uri": "configs/experiments/m1_q2_escala3_seed2.yaml",
+  "obs_spec": "envs/CONTRATO.md@env/warehouse-v9 (Box(27), todo en [0,1], sin VecNormalize)",
+  "action_spec": "envs/CONTRATO.md@env/warehouse-v9 (Discrete(8): AVANZAR, GIRAR_I, GIRAR_D, FRENAR, CARGAR, DESCARGAR, SUBIR, BAJAR)",
+  "rules_ref": "docs/ambiente-v0.9.md",
+  "reward": {
+    "pickup": 30.0,
+    "delivery": 90.0,
+    "completion": 150.0,
+    "progress": 0.0,
+    "time": -0.1,
+    "battery": -0.02,
+    "collision": -3.0,
+    "invalid_interaction": -0.6,
+    "distance": 0.0,
+    "manhattan_progress": 0.0,
+    "height_mismatch": 0.0,
+    "potential": 90.0,
+    "face_bonus": 0.0,
+    "carry_milestone": 0.0
+  },
+  "reward_overrides": {
+    "invalid_interaction": -0.6,
+    "collision": -3.0,
+    "progress": 0.0,
+    "pickup": 30.0,
+    "delivery": 90.0,
+    "completion": 150.0,
+    "potential": 90.0
+  },
+  "layout_path": "configs/layout_v0.4.json",
+  "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
+  "results_uri": "docs/resultados/eval/m1-q2-seed2/evaluation.json",
+  "training_metadata_uri": "docs/resultados/training/m1-q2-seed2/metadata.json",
+  "weights_storage": "DVC: models/m1-q2-seed2.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1-q2-seed2.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
+  "git_dirty_note": "git_dirty figura false; commit ebcc255",
+  "evaluation": {
+    "suite": "suite-m1-v1",
+    "episodes": 50,
+    "seeds": "10000-10049",
+    "scenario": "mapa con muro layout_v0.4",
+    "deterministic": true,
+    "policies": {
+      "heuristic": {
+        "success_rate": 1.0,
+        "mean_total_reward": 381.1217905735979,
+        "mean_steps": 79.92,
+        "mean_battery_used": 49.68896000000024,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 3.0,
+        "mean_pickups": 3.0,
+        "end_reasons": {
+          "success": 50
+        },
+        "action_counts": {
+          "0": 2474,
+          "1": 308,
+          "2": 278,
+          "3": 186,
+          "4": 150,
+          "5": 50,
+          "6": 275,
+          "7": 275
+        }
+      },
+      "ppo": {
+        "success_rate": 0.0,
+        "mean_total_reward": -61.99884497546916,
+        "mean_steps": 400.0,
+        "mean_battery_used": 40.96399999999774,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 7.12,
+        "mean_deliveries": 0.0,
+        "mean_pickups": 0.0,
+        "end_reasons": {
+          "time_limit": 50
+        },
+        "action_counts": {
+          "0": 60,
+          "1": 62,
+          "2": 0,
+          "3": 19522,
+          "4": 0,
+          "5": 0,
+          "6": 0,
+          "7": 356
+        }
+      }
+    }
+  },
+  "decision": "rechazado",
+  "decision_reason": "Rechazado por el criterio fijado antes (éxito < 5% frente a m1-e4l 0%). Potencial 90, tarea y contactos x3 + parada 100: 0% de éxito; 0 choques, 7.1 inválidas/ep, 0/50 llegan a una celda; 97% FRENAR (idle). 5 176 episodios de entrenamiento, 0 con éxito.",
+  "stagnation_window": 100,
+  "weights_dvc": "models/m1-q2-seed2.dvc",
+  "mlflow_run_id_local": "1c21ee46f2da47e686654b9ce79cd357",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
+}

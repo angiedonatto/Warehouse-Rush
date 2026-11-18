@@ -1,0 +1,6 @@
+id: suite-m1b-v1
+uso: incidente N3 del mapa con muro (warehouse-v10, layout_v0.4) con el paso cerrable (6,14) cerrado; degradación del modelo recomendado y comparación de la intervención m1b
+nivel: m1b
+escenario: bloqueado   # evaluate(..., scenarios=(True,))
+episodios: 50
+semillas_rango: [10000, 10049]   # las mismas semillas que suite-m1-v1: misma demanda, solo cambia el paso

@@ -1,0 +1,5 @@
+id: suite-n1-v1
+uso: comparar candidatos y elegir finalistas
+nivel: n1
+episodios: 50
+semillas_rango: [10000, 10049]   # inclusivo

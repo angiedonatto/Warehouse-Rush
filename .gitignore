@@ -36,3 +36,5 @@ web/playwright-report/
 .vercel/
 .vercel
 .env*
+# .env.example es la plantilla sin secretos y sí va a Git; debe ir después de «.env*» para que la excepción gane
+!.env.example

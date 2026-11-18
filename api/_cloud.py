@@ -25,7 +25,7 @@ from envs.layout import DEFAULT_LAYOUT, WIDE_LAYOUT, PACKING_LAYOUT
 from envs.missions import MakeupMissionEnv
 from envs.inventory import ALL_CATALOG, Inventory
 from pipelines.baselines import make_policy
-from api._viewer import ViewerSession, WEB_ROOT, evaluate_served
+from api._viewer import ViewerSession, WEB_ROOT, evaluate_served, served_models
 
 COOKIE_NAME = "warehouse_session"
 MAX_AGE = 7200
@@ -140,9 +140,12 @@ class CloudAPI:
 
     def handle(self, method, endpoint, body=None, token=None):
         if method == "GET" and endpoint == "health":
-            return {"status": "ok", "experiment": "001", "environment_version": ENV_VERSION,
-                    "session_mode": "signed-per-visitor",
-                    "commit": os.getenv("VERCEL_GIT_COMMIT_SHA", "local")}, None
+            # Deploy por CLI: Vercel deja VERCEL_GIT_COMMIT_SHA vacío; el commit llega en WAREHOUSE_DEPLOY_COMMIT.
+            commit = os.getenv("VERCEL_GIT_COMMIT_SHA") or os.getenv("WAREHOUSE_DEPLOY_COMMIT") or "local"
+            served = [{"id": model_id, "estado": spec.get("estado"), "model_sha256": spec.get("model_sha256")}
+                      for model_id, spec in served_models().items()]
+            return {"status": "ok", "environment_version": ENV_VERSION, "served_models": served,
+                    "session_mode": "signed-per-visitor", "commit": commit}, None
         if method == "GET" and endpoint == "layout":
             try:
                 session = self.sessions.load(token)

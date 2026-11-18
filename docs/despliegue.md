@@ -99,6 +99,7 @@ El sitio anterior (`warehouse-rush-experiment-001.vercel.app`, cuenta de Angie) 
 - Verificación tras el deploy: `/api/health` → `warehouse-v10`; `/api/layout` sirve `m1b-i1-seed1-best` y `m1-c3-seed0` con el `model_sha256`
   de sus manifiestos; `POST /api/evaluate` 20 episodios N3 cerrado en 4,1 s (100 %, 0 choques, inferencia 0,55 ms/paso, 0 errores);
   sesión interactiva `reset`/`step` con cookie firmada OK.
-- Limitación: `/api/health` devuelve `commit` vacío porque el deploy por CLI desde un clon local no lleva metadatos de GitHub;
-  el commit desplegado queda registrado aquí.
+- Identidad del deploy: por CLI, Vercel deja `VERCEL_GIT_COMMIT_SHA` vacío, así que se despliega con
+  `vercel deploy --prod --env WAREHOUSE_DEPLOY_COMMIT=$(git rev-parse --short HEAD)` y `/api/health` devuelve ese `commit`
+  más `served_models` (id, estado y `model_sha256` de cada modelo servido). Solo se despliegan commits ya subidos a GitHub.
 - Rollback de la web: `vercel rollback <deployment anterior>` o `vercel promote <url>` en el proyecto `warehouse-rush`.

@@ -1,0 +1,25 @@
+{
+  "etapa": "registrar",
+  "numero": 5,
+  "inicio": "2026-11-18T23:50:45.522861+00:00",
+  "entradas": {
+    "run_id": "m1b-i1-seed1-best",
+    "model_sha256": "46984e97b032920cd8e041e44b4f5d27751235cb7f4e04c634f523c2c41fdbb7"
+  },
+  "estado": "ok",
+  "salidas": {
+    "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow",
+    "experimento": "warehouse-pipeline",
+    "mlflow_run_id": "547febbde1d74218a0b8351f74e2b140",
+    "run_reutilizado": false,
+    "clave_registro": "547a08895d2f215f2c4ca58abd994a99e653518b2a83c5b4ca20955d2ec4335b",
+    "origen_mlflow_run_id": "fe27cee6f22c4fb2ad37c105f1d1ec20",
+    "modelo_registrado": {
+      "nombre": "warehouse-m1b",
+      "version": "1",
+      "reutilizada": true
+    }
+  },
+  "fin": "2026-11-18T23:51:05.497696+00:00",
+  "duracion_s": 19.975
+}

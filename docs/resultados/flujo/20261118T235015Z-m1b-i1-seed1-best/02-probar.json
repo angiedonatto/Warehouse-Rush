@@ -1,0 +1,39 @@
+{
+  "etapa": "probar",
+  "numero": 2,
+  "inicio": "2026-11-18T23:50:15.312120+00:00",
+  "entradas": {
+    "conjunto": "rapidas",
+    "archivos": [
+      "tests/test_env.py",
+      "tests/test_lift.py",
+      "tests/test_reward_config.py",
+      "tests/test_inventory_missions.py",
+      "tests/test_layouts.py",
+      "tests/test_layout_perf.py",
+      "tests/test_packing.py",
+      "tests/test_stagnation.py",
+      "tests/test_registry.py"
+    ]
+  },
+  "estado": "ok",
+  "salidas": {
+    "conjunto": "rapidas",
+    "archivos": [
+      "tests/test_env.py",
+      "tests/test_lift.py",
+      "tests/test_reward_config.py",
+      "tests/test_inventory_missions.py",
+      "tests/test_layouts.py",
+      "tests/test_layout_perf.py",
+      "tests/test_packing.py",
+      "tests/test_stagnation.py",
+      "tests/test_registry.py"
+    ],
+    "resumen": "189 passed, 84 warnings in 18.88s",
+    "junit": "docs/resultados/flujo/20261118T235015Z-m1b-i1-seed1-best/02-probar.junit.xml",
+    "log": "docs/resultados/flujo/20261118T235015Z-m1b-i1-seed1-best/02-probar.log"
+  },
+  "fin": "2026-11-18T23:50:34.653841+00:00",
+  "duracion_s": 19.342
+}

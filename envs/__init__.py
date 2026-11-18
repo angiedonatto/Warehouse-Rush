@@ -24,7 +24,10 @@ def make_env(blocked: bool = False, layout_path=None, orders: int | None = None,
              reward_overrides: dict | None = None, **kwargs):
     """Ambiente v7 (misiones de maquillaje). Con `orders=N` cada episodio sortea N productos
     distintos de 1 unidad y repone el stock al reiniciar (entrenamiento/evaluación).
-    `reward_overrides` cambia coeficientes de recompensa; sin él rige la recompensa del mapa (= v2)."""
+    `reward_overrides` cambia coeficientes de recompensa; sin él rige la recompensa del mapa (= v2).
+    `catalog`: versión de catálogo de productos; warehouse-v10 = "legacy-18" (con la que se entrenaron y
+    evaluaron todos los runs). La web usa "trendy-27-v1" (catálogo operativo de R4)."""
+    kwargs.setdefault("catalog", "legacy-18")
     if orders is not None:
         kwargs = {"lines": orders, "max_per_line": 1, "restock": True, **kwargs}
     if reward_overrides:

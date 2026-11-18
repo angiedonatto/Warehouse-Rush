@@ -26,6 +26,9 @@ from pipelines.tracking import sha256_file
 SERVIDOS = Path("models/servidos")
 FICHAS = Path("configs/modelos_servidos.json")
 NIVELES = {"m1o": "N1 · mapa abierto", "m1": "N2 · mapa con muro", "m1b": "N3 · paso (6,14) cerrado"}
+# Catálogo con que se certificaron (v10) y el que usa la web, con su diagnóstico (docs/resultados/eval/).
+CATALOGO_EVALUACION, CATALOGO_WEB = "legacy-18", "trendy-27-v1"
+DIAGNOSTICO_WEB = Path("docs/resultados/eval/catalogo-trendy-27/resultados.json")
 REGISTRO = {"m1-c3-seed0": "warehouse-m1 v1", "m1b-i1-seed1-best": "warehouse-m1b v1"}
 
 
@@ -43,7 +46,7 @@ def resultados_ppo(bloque: dict | None) -> dict:
             "criterion": bloque.get("criterion"), "ppo": out}
 
 
-def ficha(nombre: str, m: dict, niveles: dict) -> dict:
+def ficha(nombre: str, m: dict, niveles: dict, diagnostico: dict) -> dict:
     return {
         "id": nombre, "run_id": m["run_id"], "level_id": m["level_id"],
         "nivel": NIVELES.get(m["level_id"], m["level_id"]), "estado": m["estado"],
@@ -53,6 +56,9 @@ def ficha(nombre: str, m: dict, niveles: dict) -> dict:
         "layout_path": m["layout_path"], "layout_sha256": m["layout_sha256"],
         "orders": niveles[m["level_id"]]["orders"], "reward_overrides": m.get("reward_overrides") or {},
         "evaluation_suite_id": m["evaluation_suite_id"],
+        "catalogo_evaluacion": CATALOGO_EVALUACION, "catalogo_web": CATALOGO_WEB,
+        "diagnostico_catalogo_web": {k.split(" | ", 2)[2]: v for k, v in diagnostico.items()
+                                     if k.startswith(CATALOGO_WEB) and f"| {nombre} |" in k},
         "evaluacion": resultados_ppo(m.get("evaluation")), "test_final": resultados_ppo(m.get("test_final")),
         "mlflow": {"tracking_uri": m.get("mlflow_tracking_uri"), "run_id": m.get("mlflow_run_id"),
                    "experiment": m.get("mlflow_experiment"), "registry": REGISTRO.get(nombre)},
@@ -76,7 +82,7 @@ def main() -> None:
             raise SystemExit(f"{destino} ya existe con otro contenido: un modelo nuevo necesita otro nombre")
         if not destino.exists():
             shutil.copyfile(origen, destino)
-        fichas.append(ficha(p.stem, m, niveles))
+        fichas.append(ficha(p.stem, m, niveles, json.loads(DIAGNOSTICO_WEB.read_text())["resultados"]))
     # N3 primero: es el modelo de producción; N2 queda como rollback.
     fichas.sort(key=lambda f: (f["level_id"] != "m1b", f["id"]))
     FICHAS.write_text(json.dumps({"environment_version": ENV_VERSION, "modelos": fichas},

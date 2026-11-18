@@ -1,0 +1,41 @@
+{
+ "tipo": "diagnóstico (no pre-registrado; no reemplaza el test final)",
+ "fecha": "2026-11-18",
+ "pregunta": "¿Los modelos recomendados de warehouse-v10 (entrenados y certificados con el catálogo legacy-18) mantienen su desempeño con el catálogo operativo trendy-27-v1 de la web?",
+ "suite": "suite-m1-v1 / suite-m1b-v1 (semillas 10000-10049, 50 episodios, política determinista)",
+ "diferencia_de_escenario": "legacy-18: 18 productos, 1 por nivel de estante, 5 unidades; trendy-27-v1: 27 productos, E01 con 12, un nivel con 6, stock 5-10",
+ "resultados": {
+  "legacy-18 | m1-c3-seed0 | abierto": {
+   "exito": 0.98,
+   "pasos_exito": 86.8,
+   "choques_ep": 0.0
+  },
+  "legacy-18 | m1b-i1-seed1-best | abierto": {
+   "exito": 1.0,
+   "pasos_exito": 82.3,
+   "choques_ep": 0.0
+  },
+  "legacy-18 | m1b-i1-seed1-best | cerrado": {
+   "exito": 1.0,
+   "pasos_exito": 106.9,
+   "choques_ep": 0.0
+  },
+  "trendy-27-v1 | m1-c3-seed0 | abierto": {
+   "exito": 1.0,
+   "pasos_exito": 82.3,
+   "choques_ep": 0.0
+  },
+  "trendy-27-v1 | m1b-i1-seed1-best | abierto": {
+   "exito": 1.0,
+   "pasos_exito": 79.6,
+   "choques_ep": 0.0
+  },
+  "trendy-27-v1 | m1b-i1-seed1-best | cerrado": {
+   "exito": 1.0,
+   "pasos_exito": 105.2,
+   "choques_ep": 0.0
+  }
+ },
+ "conclusion": "Sin degradación: 100% con trendy-27-v1 en los tres casos (control legacy-18 reproduce los manifiestos: 98%, 100%, 100%). Se adopta trendy-27-v1 para ejecutar los modelos en la web; entrenamiento y evaluación siguen con legacy-18.",
+ "script": "inline en la sesión del 2026-11-18; equivalente a pipelines.evaluate con make_env(..., catalog=<versión>)"
+}

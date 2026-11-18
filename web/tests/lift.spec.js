@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('upper shelf requires a raised platform, real pickup and lowering before travel', async ({ page, request }) => {
-  let payload=await (await request.post('/api/reset',{data:{makeup:true,orders:1,seed:42,policy:'heuristic',blocked:true}})).json();
+  let payload=await (await request.post('/api/reset',{data:{makeup:true,orders:1,seed:24,policy:'heuristic',blocked:true}})).json();
   const top=payload.state.order.lines.find(l=>l.height_m===2.6);
   expect(top).toBeTruthy();
   const initial=payload.state.inventory.products.find(p=>p.sku===top.sku).stock_total;

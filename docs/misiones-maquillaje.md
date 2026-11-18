@@ -1,4 +1,6 @@
-# Misiones de maquillaje — dev/angie
+# Misiones de maquillaje — base de dev/angie
+
+> En `dev/naomi`, el catálogo provisional descrito aquí se sustituye por los 27 productos del PDF. Ver [entrega Naomi](entrega-naomi.md) para categorías, SKU y assets vigentes.
 
 El visor local (`warehouse-rush view --no-open`) inicia pedidos automáticos de 1–3 SKUs temporales. «Generar pedido» crea y reserva otro pedido usando la semilla visible y el stock disponible; no repone inventario. El modo maquillaje usa el escenario amplio v0.4: conserva las seis categorías y estructuras de estantería, con posiciones y pasillos más separados. El escenario v0.1 conserva sus posiciones originales para entrenamiento y compatibilidad. Seleccionar una etiqueta E01–E06 o el selector muestra los tres niveles y sus existencias. El checklist consume cantidades confirmadas por Python; no permite marcar manualmente las líneas.
 

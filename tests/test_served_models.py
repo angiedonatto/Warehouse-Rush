@@ -34,7 +34,8 @@ def test_served_models_match_their_manifests():
 @pytest.mark.parametrize("model_id,blocked,seed", [("m1-c3-seed0", False, 10003), ("m1b-i1-seed1-best", True, 10004)])
 def test_cloud_episode_is_identical_to_direct_evaluation(model_id, blocked, seed):
     spec = next(s for s in SPECS if s["id"] == model_id)
-    env = make_env(blocked, spec["layout_path"], spec["orders"], spec["reward_overrides"] or None)
+    env = make_env(blocked, spec["layout_path"], spec["orders"], spec["reward_overrides"] or None,
+                   catalog=spec["catalogo_web"])
     policy = make_policy("ppo", model_path=spec["archivo"])
     obs, _ = env.reset(seed=seed)
     direct, done = [], False

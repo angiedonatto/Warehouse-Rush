@@ -21,6 +21,20 @@
         "collision": -1.0
       },
       "evaluation_suite_id": "suite-m1b-v1",
+      "catalogo_evaluacion": "legacy-18",
+      "catalogo_web": "trendy-27-v1",
+      "diagnostico_catalogo_web": {
+        "abierto": {
+          "exito": 1.0,
+          "pasos_exito": 79.6,
+          "choques_ep": 0.0
+        },
+        "cerrado": {
+          "exito": 1.0,
+          "pasos_exito": 105.2,
+          "choques_ep": 0.0
+        }
+      },
       "evaluacion": {
         "suite": "suite-m1b-v1",
         "episodes": 50,
@@ -84,6 +98,15 @@
         "collision": -1.0
       },
       "evaluation_suite_id": "suite-m1-v1",
+      "catalogo_evaluacion": "legacy-18",
+      "catalogo_web": "trendy-27-v1",
+      "diagnostico_catalogo_web": {
+        "abierto": {
+          "exito": 1.0,
+          "pasos_exito": 82.3,
+          "choques_ep": 0.0
+        }
+      },
       "evaluacion": {
         "suite": "suite-m1-v1",
         "episodes": 50,

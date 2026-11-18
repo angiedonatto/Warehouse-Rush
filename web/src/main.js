@@ -1,3 +1,4 @@
+import { setupCatalog } from './catalog.js';
 import './style.css';
 import { renderOrderSheet, renderRack } from './order-sheet.js';
 import { WarehouseScene } from './warehouse.js';
@@ -139,8 +140,8 @@ function renderState(payload, instant = false) {
       handling.textContent=`${phases[s.lift.phase]} · ${s.lift.height.toFixed(2)} m / ${s.lift.target.toFixed(2)} m · ${reasons[s.lift.plan.reason] || ''} · Viajes a despacho: ${s.lift.dispatch_visits}`;
       if (s.lift.phase !== 'idle' && !payload.done) $('#robot-activity').textContent=phases[s.lift.phase];
     }
-    $('#cargo').textContent = s.cargo_lines?.length ? s.cargo_lines.map(l => `${l.subcategory} × ${l.quantity}`).join(' · ') : 'Sin productos';
-    $('#target').textContent = !s.objetivo ? 'Entrega confirmada' : s.objetivo === 'DELIVERY' ? 'Despacho' : line ? `${line.level} · ${line.subcategory} × ${line.quantity}` : 'Entrega confirmada';
+    $('#cargo').textContent = s.cargo_lines?.length ? s.cargo_lines.map(l => `${l.name || l.subcategory} × ${l.quantity}`).join(' · ') : 'Sin productos';
+    $('#target').textContent = !s.objetivo ? 'Entrega confirmada' : s.objetivo === 'DELIVERY' ? 'Despacho' : line ? `${line.level} · ${line.name || line.subcategory} × ${line.quantity}` : 'Entrega confirmada';
     $('#mission-title').textContent = `ORDEN ${s.order.id.slice(0, 8)} · ${s.order.state}`;
     $('#mission-sequence').textContent = s.order.lines.map(l => `${l.level} ${l.delivered ? '✓' : l.picked ? '→ Despacho' : '○'}`).join(' · ');
   }
@@ -248,4 +249,5 @@ async function start() {
     $('#connection-label').textContent = 'Sin conexión';$('#connection-dot').style.background = '#ff6767';toast(error.message);console.error(error);
   }
 }
+setupCatalog();
 start();

@@ -25,3 +25,48 @@ la familia `warehouse-v1`, dos estaciones de recogida, se conserva como historia
 Modelo actual, hiperparámetros y reentrenamiento: [docs/modelo-actual.md](docs/modelo-actual.md).
 Ambiente: contrato [envs/CONTRATO.md](envs/CONTRATO.md), ficha vigente [docs/ambiente-v0.2.md](docs/ambiente-v0.2.md) (v1: [ambiente-v0.1.md](docs/ambiente-v0.1.md)). Despliegue: [docs/despliegue.md](docs/despliegue.md).
 Decisiones: [docs/decisiones.md](docs/decisiones.md). Variables: `.env.example`.
+
+## Catálogo y estética de Trendy (Naomi)
+
+Esta rama integra los **27 productos del PDF de Naomi**, organizados en seis
+categorías, con modelos Three.js, assets GLB descargables y una bodega en tonos
+rosa y lavanda. «Explorar los 27 productos» abre el catálogo 3D con búsqueda y filtros.
+Las misiones conservan Gymnasium y el inventario real por sesión.
+
+Ver [entrega Naomi](docs/entrega-naomi.md) para el catálogo completo, referencias,
+ubicaciones, regeneración de assets y verificaciones.
+
+
+## Versión integrada de Naomi
+
+`dev/naomi` reúne la interfaz rosa y el catálogo visual de 27 productos con el
+mapa amplio, elevador, planificación de carga y cinta/caja de Angie. Las misiones
+mantienen sus 18 identificadores TMP y las cookies existentes. Los modelos se
+asocian visualmente sin cambiar las transacciones; el catálogo permite consultar
+los 27 assets. Ver [integración y alcance](docs/integracion-rosa.md).
+
+Esta rama desactiva sus despliegues automáticos de Vercel en `vercel.json`.
+Para verla en el Mac: actualizar `dev/naomi`, compilar con `npm run build --prefix web`
+y ejecutar `python -m pipelines.cli view --no-open` desde el entorno Python.
+
+
+## Catálogo operativo de 27 productos
+
+Las sesiones nuevas ya generan pedidos con los 27 productos definitivos del PDF.
+Cada producto tiene nombre, SKU TRD, estante/nivel, modelo y stock inicial fijo entre
+5 y 10 unidades: **202 unidades** en total. Cada kit se cuenta como una unidad.
+La distribución, los stocks exactos y la compatibilidad con sesiones TMP anteriores
+se documentan en [catálogo operativo](docs/catalogo-operativo.md).
+
+Después de actualizar el repositorio en el Mac, recompilar y reiniciar el servidor
+para crear un inventario local con el nuevo catálogo. Las sesiones antiguas firmadas
+conservan sus productos y cantidades; una sesión nueva/privada utiliza TRD. Generar
+otro pedido no repone stock ni convierte productos antiguos automáticamente.
+
+
+### Catálogo en el ambiente y en la web
+El catálogo es un parámetro del escenario (`envs.inventory.CATALOGS`): `warehouse-v10` se entrenó y evaluó con
+`legacy-18` (18 productos TMP), y `make_env` lo mantiene para que las suites y los tests finales sigan siendo reproducibles.
+La web usa `trendy-27-v1`, también al ejecutar los modelos recomendados. Diagnóstico sobre las 50 semillas de la suite:
+100% de éxito con el catálogo de 27 en los dos modelos y escenarios, sin degradación frente a `legacy-18`
+([resultados](docs/resultados/eval/catalogo-trendy-27/resultados.json)).

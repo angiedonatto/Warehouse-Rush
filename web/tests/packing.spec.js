@@ -1,7 +1,7 @@
 import {test,expect} from '@playwright/test';
 
 test('confirmed delivery travels on a raised conveyor into a gift box, once',async({page})=>{
-  let payload=await(await page.request.post('/api/reset',{data:{makeup:true,orders:1,seed:42,blocked:true,policy:'heuristic'}})).json();
+  let payload=await(await page.request.post('/api/reset',{data:{makeup:true,orders:1,seed:24,blocked:true,policy:'heuristic'}})).json();
   for(let n=0;!(payload.state.x===21&&payload.state.y===16&&payload.state.theta===1&&payload.state.v===0&&payload.state.lift.phase==='idle');n++){
     expect(n).toBeLessThan(250);expect(payload.done).toBe(false);
     payload=await(await page.request.post('/api/step',{data:{}})).json();

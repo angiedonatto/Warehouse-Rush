@@ -36,9 +36,9 @@ export class WarehouseScene {
     this.renderer.toneMappingExposure = 1.18;
     this.renderer.autoClear = false;
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x132534);
-    this.scene.fog = new THREE.FogExp2(0x132534, 0.015);
-    this.scene.add(new THREE.HemisphereLight(0xaecfe7, 0x655647, 2.1));
+    this.scene.background = new THREE.Color(0xf8e7ef);
+    this.scene.fog = new THREE.FogExp2(0xf8e7ef, 0.015);
+    this.scene.add(new THREE.HemisphereLight(0xfff3fa, 0xb689a1, 2.1));
     this.sun = new THREE.DirectionalLight(0xffe1b4, 3.8);
     this.sun.position.set(-8, 17, 7);
     this.sun.castShadow = true;
@@ -48,7 +48,7 @@ export class WarehouseScene {
     this.sun.shadow.normalBias = 0.035;
     this.sun.shadow.radius = 3;
     this.scene.add(this.sun);
-    const fill = new THREE.DirectionalLight(0x79b7ec, 1.5);
+    const fill = new THREE.DirectionalLight(0xe9c9f6, 1.5);
     fill.position.set(10, 10, -8);
     this.scene.add(fill);
     this.camera = new THREE.PerspectiveCamera(34, 1, 0.08, 110);
@@ -140,7 +140,7 @@ export class WarehouseScene {
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = 512;
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#6a6d6b';
+    ctx.fillStyle = '#f3e4e9';
     ctx.fillRect(0, 0, 512, 512);
     let seed = 173;
     const rand = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
@@ -149,7 +149,7 @@ export class WarehouseScene {
       ctx.fillStyle = `rgba(${value},${value},${value},.13)`;
       ctx.fillRect(rand() * 512, rand() * 512, rand() * 2 + .5, rand() * 2 + .5);
     }
-    ctx.strokeStyle = '#3f484966';
+    ctx.strokeStyle = '#c89cad33';
     ctx.lineWidth = 2;
     ctx.strokeRect(1, 1, 510, 510);
     ctx.strokeStyle = '#989c9328';
@@ -184,17 +184,17 @@ export class WarehouseScene {
     floor.position.y = -.12;
     floor.receiveShadow = true;
     this.scene.add(floor);
-    const pedestal = new THREE.Mesh(new THREE.BoxGeometry(W + .5, .28, H + .5), this.material('base-edge', 0x1a2731, { metalness: .3 }));
+    const pedestal = new THREE.Mesh(new THREE.BoxGeometry(W + .5, .28, H + .5), this.material('base-edge', 0xc783a2, { metalness: .3 }));
     pedestal.position.y = -.36;
     this.scene.add(pedestal);
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(150, 150), this.material('outside', 0x10212f, { roughness: 1 }));
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(150, 150), this.material('outside', 0xf9e6ef, { roughness: 1 }));
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -.52;
     ground.receiveShadow = true;
     this.scene.add(ground);
-    const wall = this.material('wall', 0x68717a, { metalness: .25 });
-    const wallEdge = this.material('wall-edge', 0x3c4952, { metalness: .6 });
-    const wallLine = this.material('wall-line', 0x303e48, { metalness: .55 });
+    const wall = this.material('wall', 0xfff0f6, { metalness: .25 });
+    const wallEdge = this.material('wall-edge', 0xd59bb6, { metalness: .6 });
+    const wallLine = this.material('wall-line', 0xe5b4cb, { metalness: .55 });
     const yellow = this.material('safety-yellow', 0xbca47c, { roughness: .8 });
     for (let x = 0; x < W; x++) {
       for (const y of [0, H - 1]) {
@@ -256,10 +256,10 @@ export class WarehouseScene {
     const [x0, y0, x1, y1] = rack.bounds;
     const center = this.world((x0 + x1) / 2, (y0 + y1) / 2);
     const width = x1 - x0 + .8, depth = y1 - y0 + .8;
-    const steel = this.material('steel', 0x939ca4, { metalness: .72, roughness: .43 });
-    const beam = this.material('beam', 0xd2a2b8, { metalness: .45, roughness: .58 });
-    const shelf = this.material('shelf', 0xc7ced1, { metalness: .55, roughness: .65 });
-    this.outline(center, width + .32, depth + .32, 0xc8b3bc, .025);
+    const steel = this.material('steel', 0xc68aa5, { metalness: .72, roughness: .43 });
+    const beam = this.material('beam', 0xe16ca7, { metalness: .45, roughness: .58 });
+    const shelf = this.material('shelf', 0xffeef5, { metalness: .55, roughness: .65 });
+    this.outline(center, width + .32, depth + .32, 0xe1a3bd, .025);
     for (const dx of [-width / 2, width / 2]) for (const dz of [-depth / 2, depth / 2]) {
       this.box([.065, 2.65, .065], center.clone().add(new THREE.Vector3(dx, 1.325, dz)), steel);
       this.box([.14, .065, .14], center.clone().add(new THREE.Vector3(dx, .04, dz)), steel);
@@ -386,7 +386,7 @@ export class WarehouseScene {
     this.robot.position.copy(this.targetPosition);
     this.targetYaw = 0;
     this.avatarScene = new THREE.Scene();
-    this.avatarScene.background = new THREE.Color(0x102534);
+    this.avatarScene.background = new THREE.Color(0xf8e7ef);
     this.avatarScene.add(new THREE.HemisphereLight(0xd9efff, 0x2f4355, 3));
     const light = new THREE.DirectionalLight(0xffe9c6, 3);light.position.set(-2, 4, 3);this.avatarScene.add(light);
     this.avatar = this.robot.clone(true);this.avatar.position.set(0, -.05, 0);this.avatar.rotation.y = -.4;this.avatarScene.add(this.avatar);

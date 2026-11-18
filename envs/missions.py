@@ -3,14 +3,14 @@ from copy import deepcopy
 import math
 from envs.env import Action, WarehouseRushEnv
 from envs.handling import LiftConfig
-from envs.inventory import Inventory
+from envs.inventory import Inventory, initial_stock
 from envs.layout import Layout, PACKING_LAYOUT
 
 
 class MakeupMissionEnv(WarehouseRushEnv):
     def __init__(self, orders=1, blocked=False, layout_path=None, simulation=None,
                  rewards=None, render_mode=None, *, capacity=3, inventory=None, restock=False,
-                 lines=None, max_per_line=None):
+                 lines=None, max_per_line=None, catalog=None):
         if type(capacity) is not int or capacity < 1:
             raise ValueError('Capacidad inválida')
         super().__init__(orders, blocked, layout_path or PACKING_LAYOUT,
@@ -20,7 +20,9 @@ class MakeupMissionEnv(WarehouseRushEnv):
         self.max_per_line = max_per_line or capacity
         self.lift_config = LiftConfig()
         self.restock = bool(restock) and inventory is None   # entrenamiento: stock nuevo en cada episodio
-        self.inventory = inventory or Inventory()
+        # catalog=None: catálogo por defecto del inventario (web); make_env fija el de la versión del ambiente.
+        self._stock = initial_stock(catalog) if catalog else None
+        self.inventory = inventory or Inventory(self._stock)
         data = deepcopy(self.layout.data)
         for i, rack in enumerate(data['racks'], 1):
             # Cara norte: celda física del estante; interacción sólo desde adyacencia.
@@ -35,7 +37,7 @@ class MakeupMissionEnv(WarehouseRushEnv):
 
     def reset(self, *, seed=None, options=None):
         if self.restock:
-            self.inventory = Inventory()
+            self.inventory = Inventory(self._stock)
         elif self.order_id:
             self.inventory.close(self.order_id, time=self.state.tiempo)
         # Con seed explícita el pedido es reproducible; sin ella se sortea desde el RNG del entorno.
@@ -295,4 +297,4 @@ class MakeupMissionEnv(WarehouseRushEnv):
                     order=deepcopy(self.inventory.orders[self.order_id]), capacity=self.capacity,
                     lift=self.mechanism_snapshot(),
                     cargo_lines=[dict(sku=l['sku'], quantity=l['picked'] - l['delivered'],
-                                      level=l['level'], subcategory=l['subcategory']) for l in self.carried_lines])
+                                      level=l['level'], subcategory=l['subcategory'], name=l.get('name', l['subcategory'])) for l in self.carried_lines])

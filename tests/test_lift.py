@@ -97,7 +97,7 @@ def test_empty_robot_does_not_begin_unaffordable_mission():
     assert done and not truncated and info['failure']
     assert info['end_reason'] == 'insufficient_budget'
     assert env.position == position
-    assert sum(env.inventory.total.values()) == 90
+    assert env.inventory.total == env.inventory.initial
     assert sum(env.inventory.reserved(s) for s in env.inventory.total) == 0
 
 

@@ -70,7 +70,8 @@ def model_summary(model_id):
         return None
     spec = served_models()[model_id]
     keys = ("id", "run_id", "level_id", "nivel", "estado", "environment_version", "algorithm", "model_sha256",
-            "manifiesto", "evaluation_suite_id", "evaluacion", "test_final", "mlflow", "orders")
+            "manifiesto", "evaluation_suite_id", "evaluacion", "test_final", "mlflow", "orders",
+            "catalogo_evaluacion", "catalogo_web", "diagnostico_catalogo_web")
     return {key: spec[key] for key in keys}
 
 
@@ -88,12 +89,12 @@ def ppo_compatible(orders, layout_path=None) -> bool:
 
 
 class ViewerSession:
-    def __init__(self, layout_path=None, policy_factory=make_policy, settings=None):
+    def __init__(self, layout_path=None, policy_factory=make_policy, settings=None, inventory=None):
         self.lock = RLock()
         self.layout_path = layout_path
         self.policy_factory = policy_factory
         self.env = None
-        self.inventory = Inventory()
+        self.inventory = inventory if inventory is not None else Inventory()
         self.model_id = None
         self.reset(settings or {"orders": 2, "blocked": True, "policy": "heuristic", "seed": 10000})
 
@@ -151,8 +152,9 @@ class ViewerSession:
         path = _verified_model_path(model_id)
         spec = served_models()[model_id]
         policy = self.policy_factory("ppo", seed, path)
+        # Catálogo operativo de la web (trendy-27-v1); diagnóstico frente al de su certificación en la ficha.
         environment = make_env(blocked, WEB_ROOT.parent / spec["layout_path"], spec["orders"],
-                               spec["reward_overrides"] or None)
+                               spec["reward_overrides"] or None, catalog=spec["catalogo_web"])
         if environment.layout.digest != spec["layout_sha256"]:
             raise ValueError(f"El mapa de {model_id} no coincide con el de su evaluación")
         observation, info = environment.reset(seed=seed)
@@ -233,7 +235,7 @@ class ViewerSession:
             return self.payload()
 
     def layout_payload(self):
-        return {"layout": self.env.layout.data, "catalog": list(CATALOG.values()), "layout_sha256": self.env.layout.digest,
+        return {"layout": self.env.layout.data, "catalog": list(self.inventory.catalog.values()), "catalog_version": self.inventory.catalog_version, "layout_sha256": self.env.layout.digest,
                 "available_ppo": {str(order): ppo_compatible(order, self.layout_path) for order in (1, 2)},
                 "models": [model_summary(model_id) for model_id in served_models()],
                 "environment_version": self.env.layout.data["version"]}

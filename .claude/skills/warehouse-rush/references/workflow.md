@@ -69,3 +69,30 @@ Observed: the machine has 16 cores and 7.6 GB RAM; 4-5 runs in parallel each tra
 
 ## Manifests (how they were written in the 2026-11-14/15 campaign)
 `scripts/write_manifests.py` takes a JSON `{run: {"estado": ..., "reason": ..., "config": "<yaml basename>"}}`, templates the manifest from an existing one, fills git commit, sha256 of config and model, budget from `metadata.json`, the suite evaluation summary, `reward`/`reward_overrides`/`stagnation_window`, validates it with `jsonschema` and sets the MLflow tag `estado`. The decision reason must state the numbers (success, reach/face/raise/load, collisions, invalid, training successes) and the pre-registered criterion it was judged by.
+
+## MLflow on DagsHub (2026-11-18)
+- Load credentials before training: `set -a; source .env; set +a` (`.env` has `MLFLOW_TRACKING_URI=https://dagshub.com/mamezquita/Warehouse-Rush.mlflow`, `MLFLOW_TRACKING_USERNAME`, `MLFLOW_TRACKING_PASSWORD` = personal DagsHub token; never print it). Without the URI `pipelines/tracking.py::tracking_uri` raises (`MLFLOW_PERMITIR_LOCAL=1` = deliberate local sqlite).
+- Migration of the old local history: `python -m pipelines.migrar_mlflow [--solo <run>]` (idempotent via tags `origen_run_id` / `migracion=completa`), then `--manifiestos` to rewrite manifest ids. Deleted local runs are not copied.
+- Reading is public (no token): useful for `pipelines/catalogo.py`.
+
+## Web and API (2026-11-18)
+- Publish models to the web: `python -m pipelines.servir` then `python -m pipelines.catalogo`, then `npm run build --prefix web`.
+- API routes: `GET health|layout|state`, `POST reset|step|evaluate`. **Cloud mode allow-lists routes in `api/_cloud.py::CloudHandler._dispatch`; add new routes there** (and in `api/_viewer.py::ViewerHandler.do_POST` for the local viewer).
+- Two servers, two kinds of web tests: the local viewer (`python -m pipelines.cli view --no-open`, port 8080, one shared session) is what most Playwright tests expect (they set state through `request` and read it in `page`); the cloud mode (`python -c "from api._cloud import preview; preview(8090)"`, per-visitor signed cookie) is what Vercel runs. Run `npx playwright test` in `web/` with `WAREHOUSE_TEST_URL=http://127.0.0.1:<port>` for the cloud mode.
+- Test screenshots go to `SHOT_DIR` (default `web/test-results/capturas`, gitignored). Viewer tests also overwrite `docs/resultados/viewer-*.png`: `git checkout` them unless you mean to update them.
+
+## Browser tests in this WSL without sudo
+Chromium needs `libnss3`, `libnspr4`, `libasound2`. Download and extract them locally, then point Playwright at the installed Chromium:
+```
+mkdir -p $SCRATCH/libs/debs && cd $SCRATCH/libs/debs && apt-get download libnss3 libnspr4 libasound2t64
+for d in *.deb; do dpkg -x "$d" $SCRATCH/libs/root; done
+export LD_LIBRARY_PATH=$SCRATCH/libs/root/usr/lib/x86_64-linux-gnu
+export CHROMIUM_PATH=$HOME/.cache/ms-playwright/chromium-1148/chrome-linux/chrome
+cd web && npx playwright test
+```
+(`playwright.config.js` reads `CHROMIUM_PATH`; the bundled headless shell version 1248 is not installed.)
+
+## Pitfalls added 2026-11-18
+- A unit test that calls `CloudAPI.handle` directly does not exercise the HTTP route allow-list; keep a real-HTTP test (`tests/test_served_models.py::test_evaluate_route_over_real_http`).
+- Teammates' tests may encode an older env (Naomi's assumed lift phases `raising`/`lowering`, removed 2026-11-13). Adapt them to the documented change, keep their intent, comment why.
+- Reusing a teammate's CSS class for a new component can break their strict locators (`.catalog-dialog` matched two dialogs). Copy the rules to a new class instead.

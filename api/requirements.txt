@@ -1,0 +1,12 @@
+# Dependencias mínimas de la función de Vercel (api/index.py): solo inferencia.
+# Vercel usa este archivo en lugar del requirements.txt de la raíz, que es el entorno
+# completo de desarrollo (mlflow, dvc, prefect...) y en Linux traería torch con CUDA.
+# Versiones iguales a las del entorno donde se entrenaron y evaluaron los modelos servidos.
+--extra-index-url https://download.pytorch.org/whl/cpu
+numpy==1.26.4
+gymnasium==1.0.0
+torch==2.2.2+cpu
+stable-baselines3==2.4.1
+cloudpickle==3.1.2
+pandas==3.0.6
+matplotlib==3.9.4

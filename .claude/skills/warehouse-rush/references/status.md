@@ -19,7 +19,7 @@ Snapshot written 2026-11-18 after PR #2 was merged into `main` (merge commit `da
 | Asset licenses | done | `docs/licencias.md` |
 | **Orchestrated pipeline (Prefect/Airflow)** | **missing (R3)** | `pipelines/flow.py` does not exist; `dvc.yaml` only has the old stage `train_c0` |
 | **Rollback documented and tested** | **missing (R3)** | no `docs/rollback.md`, no rollback test |
-| Deployed URL serving the current version | done 2026-11-18 (Lis) | https://warehouse-rush-psi.vercel.app, Vercel project `warehouse-rush` in Lis's team `lis-team2`, commit `1af8cf6`; see `docs/despliegue.md` |
+| Deployed URL serving the current version | done 2026-11-18 (Lis) | https://warehouse-rush-psi.vercel.app, Vercel project `warehouse-rush` in Lis's team `lis-team2`, commit `49b8463` (visible in `/api/health`, deployed with `--env WAREHOUSE_DEPLOY_COMMIT`); see `docs/despliegue.md` |
 | Release tag `v1.0`, short report, final presentation | missing (whole team, after R3) | — |
 
 ## What R3 still has to do (concrete, reuse what exists)

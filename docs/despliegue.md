@@ -91,7 +91,8 @@ Pruebas de navegador: con el visor local (`python -m pipelines.cli view --no-ope
 URL pública: **https://warehouse-rush-psi.vercel.app** (proyecto `warehouse-rush`, equipo Vercel de Lis `lis-team2`).
 El sitio anterior (`warehouse-rush-experiment-001.vercel.app`, cuenta de Angie) queda como historia del experimento 001.
 
-- Commit desplegado: `1af8cf6` (rama `dev/lis`). Deployment `dpl_AUWE3KkZg24X6m6u3CiaCaiP6Bw7`.
+- Commit desplegado en producción: `49b8463` (rama `dev/lis`, en GitHub), deployment `dpl_5DjgXk6Eh1SiMd6A6w1njNopoeFe`;
+  `/api/health` lo confirma. Primer deploy: `1af8cf6` (`dpl_AUWE3KkZg24X6m6u3CiaCaiP6Bw7`), queda como deploy anterior para rollback.
 - Se despliega desde un clon limpio del commit (`git clone --branch dev/lis . <tmp>` y `vercel deploy` dentro), no desde la carpeta de trabajo:
   con `.vercelignore` la CLI ignora `.gitignore` y subiría checkpoints locales y la suite reservada `configs/suites/test-final*`.
 - La función usa `api/requirements.txt` (solo inferencia, torch CPU); el `requirements.txt` de la raíz es el entorno de desarrollo completo.

@@ -20,9 +20,11 @@ test('upper shelf requires a raised platform, real pickup and lowering before tr
     s.camera.position.set(p.x-4.5,4.2,p.z-2);s.controls.update();s.dirty=true;
   });
   await page.waitForFunction(()=>Math.abs(window.warehouseViewer.scene.stockVisuals.lift.height-2.6)<.01);
-  await page.screenshot({path:'/workspace/artifacts/warehouse-rush/05-elevador-nivel-superior.png'});
+  await page.screenshot({path: `${process.env.SHOT_DIR || 'test-results/capturas'}/05-elevador-nivel-superior.png`});
   payload=await(await request.post('/api/step',{data:{}})).json();
-  expect(payload.state.lift.phase).toBe('lowering');
+  // Desde 2026-11-13 el elevador es instantáneo por acción (sin fase 'lowering', docs/decisiones.md):
+  // tras recoger sigue arriba ('ready') y baja con BAJAR sin desplazarse (bucle siguiente).
+  expect(payload.state.lift.phase).toBe('ready');
   expect(payload.state.order.lines.find(l=>l.sku===top.sku).picked).toBe(top.quantity);
   expect(payload.state.inventory.products.find(p=>p.sku===top.sku).stock_total).toBe(initial-top.quantity);
   while(payload.state.lift.phase!=='idle') {

@@ -22,10 +22,10 @@ test('wide warehouse has mounted signs, no floating rack labels and selectable r
   await page.mouse.click(point.x,point.y);
   await expect(page.locator('#rack-detail')).toContainText('E04 · Accesorios');
   await expect(page.locator('#rack-detail')).toContainText('Disponible');
-  await page.screenshot({path:'/workspace/artifacts/warehouse-rush/06-bodega-amplia.png'});
+  await page.screenshot({path: `${process.env.SHOT_DIR || 'test-results/capturas'}/06-bodega-amplia.png`});
   await page.setViewportSize({width:390,height:844});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-  await page.screenshot({path:'/workspace/artifacts/warehouse-rush/07-bodega-amplia-movil.png',fullPage:true});
+  await page.screenshot({path: `${process.env.SHOT_DIR || 'test-results/capturas'}/07-bodega-amplia-movil.png`,fullPage:true});
   expect(errors).toEqual([]);
 });
 

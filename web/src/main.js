@@ -1,4 +1,5 @@
 import { setupCatalog } from './catalog.js';
+import { setupModelCatalog } from './models-catalog.js';
 import './style.css';
 import { renderOrderSheet, renderRack } from './order-sheet.js';
 import { WarehouseScene } from './warehouse.js';
@@ -20,7 +21,18 @@ const makeupLabel = document.createElement('label');makeupLabel.className = 'mak
 makeupLabel.innerHTML = '<input id="makeup" type="checkbox"> Pedidos de maquillaje';
 const seedInput = document.createElement('input');seedInput.id = 'order-seed';seedInput.type = 'number';seedInput.min = '0';seedInput.max = '4294967295';seedInput.value = '10000';seedInput.setAttribute('aria-label', 'Semilla del pedido');
 const newOrder = document.createElement('button');newOrder.textContent = 'Generar pedido';newOrder.className = 'button';newOrder.addEventListener('click', () => { $('#makeup').checked = true;reset(); });
-document.querySelector('.toolbar').append(makeupLabel, seedInput, newOrder);
+// Modo visible (enunciado: manual / aleatorio / referencia / evaluación / entrenamiento).
+const modeBadge = document.createElement('span');modeBadge.id = 'mode-badge';modeBadge.className = 'mode-badge';modeBadge.setAttribute('role', 'status');
+document.querySelector('.toolbar').append(makeupLabel, seedInput, newOrder, modeBadge);
+const MODES = { manual: ['manual', 'MODO · CONTROL MANUAL'], random: ['random', 'MODO · ALEATORIO'], heuristic: ['reference', 'MODO · REFERENCIA (REGLA BFS)'], ppo: ['evaluation', 'MODO · EVALUACIÓN · MODELO CONGELADO'] };
+// Enlace directo: ?modelo=<id>&cerrado=1&semilla=N carga ese modelo; ?catalogo=<id> abre su ficha.
+const params = new URLSearchParams(location.search);
+function syncUrl(payload) {
+  const next = new URLSearchParams(location.search);
+  for (const key of ['modelo', 'cerrado', 'semilla', 'catalogo']) next.delete(key);
+  if (payload.model) { next.set('modelo', payload.model.id);if (payload.state.pasillo_bloqueado) next.set('cerrado', '1');next.set('semilla', payload.seed); }
+  history.replaceState(null, '', `${location.pathname}${next.size ? `?${next}` : ''}`);
+}
 $('#makeup').addEventListener('change', reset);
 const names = { iso: 'VISTA ISOMÉTRICA', fpv: 'PRIMERA PERSONA', side: 'VISTA LATERAL', station: 'DETALLE DE ESTACIÓN' };
 const actionNames = { AVANZAR: 'Navegando al objetivo', GIRAR_IZQUIERDA: 'Girando a la izquierda', GIRAR_DERECHA: 'Girando a la derecha', FRENAR: 'Robot detenido', INTERACTUAR: 'Interactuando con estación' };
@@ -120,6 +132,8 @@ function renderState(payload, instant = false) {
   $('#last-event').textContent = last?.text || 'Simulador listo';
   $('#event-step').textContent = `${String(Math.floor(s.tiempo / 60)).padStart(2, '0')}:${String(s.tiempo % 60).padStart(2, '0')}`;
   $('#footer-detail').textContent = `1 paso = 1 s · Semilla ${payload.seed} · ${payload.model ? `PPO ${modelDetail(payload.model)}` : payload.policy === 'ppo' ? 'PPO real, sin acciones BFS' : payload.policy === 'manual' ? 'Acciones manuales' : payload.policy === 'heuristic' ? 'Baseline heurístico BFS' : 'Baseline aleatorio'}`;
+  const [modeKind, modeText] = MODES[payload.policy] || ['', payload.policy];
+  modeBadge.className = `mode-badge ${modeKind}`;modeBadge.textContent = payload.model ? `${modeText} · ${payload.model.id}` : modeText;
   const banner = $('#mission-banner');banner.hidden = !payload.done;
   if (payload.done) {
     banner.classList.toggle('warning', !payload.info.success);
@@ -188,7 +202,7 @@ async function reset() {
       mountScene();
     }
     renderState(result, true);
-    $('#makeup').checked = result.makeup;
+    $('#makeup').checked = result.makeup;syncUrl(result);
     if (result.model) toast(`Modelo ${modelDetail(result.model)}`);
     else if (result.policy === 'ppo') toast('El PPO de 20 000 pasos obtuvo 0% de éxito. Se muestra su comportamiento real.');
   } catch (error) {
@@ -242,6 +256,12 @@ async function start() {
     mountScene();
     renderState(current, true);
     $('#scene-loading').hidden = true;
+    const linked = params.get('modelo');
+    if (linked && layoutInfo.models?.some(m => m.id === linked)) {
+      $('#policy').value = `model:${linked}`;$('#blocked').checked = params.get('cerrado') === '1';
+      if (/^\d+$/.test(params.get('semilla') || '')) seedInput.value = params.get('semilla');
+      await reset();
+    } else if (current.model) syncUrl(current);
     // Diagnóstico de la integración sin exponer acciones privilegiadas al modelo.
     window.warehouseViewer = { get state() { return current; }, get scene() { return scene; }, get running() { return running; } };
   } catch (error) {
@@ -250,4 +270,8 @@ async function start() {
   }
 }
 setupCatalog();
+setupModelCatalog({
+  load: (id, blocked) => { $('#policy').value = `model:${id}`;$('#blocked').checked = blocked;reset(); },
+  initial: params.get('catalogo'),
+});
 start();

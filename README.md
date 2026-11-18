@@ -64,6 +64,13 @@ conservan sus productos y cantidades; una sesión nueva/privada utiliza TRD. Gen
 otro pedido no repone stock ni convierte productos antiguos automáticamente.
 
 
+## Revisar modelos desde la web
+«Modelos y experimentos ↗» abre el catálogo de los 82 modelos, generado con `python -m pipelines.catalogo` a partir de los manifiestos y de MLflow.
+Cada ficha muestra hipótesis, cambios frente a la base, run, semilla, presupuesto, estado y enlace a MLflow, evaluación con causas de fin, test final y curva de entrenamiento.
+Los dos modelos recomendados se pueden **cargar en la bodega** y **evaluar** (10 episodios en el servidor, con latencia de inferencia y hash servido), y hasta 3 modelos se pueden **comparar**.
+La barra muestra el modo activo: control manual, aleatorio, referencia, evaluación o entrenamiento.
+Enlaces directos: `?modelo=m1b-i1-seed1-best&cerrado=1&semilla=10000` carga el modelo y `?catalogo=m1-c3-seed0` abre su ficha.
+
 ### Catálogo en el ambiente y en la web
 El catálogo es un parámetro del escenario (`envs.inventory.CATALOGS`): `warehouse-v10` se entrenó y evaluó con
 `legacy-18` (18 productos TMP), y `make_env` lo mantiene para que las suites y los tests finales sigan siendo reproducibles.

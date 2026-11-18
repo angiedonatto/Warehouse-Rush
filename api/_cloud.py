@@ -25,7 +25,7 @@ from envs.layout import DEFAULT_LAYOUT, WIDE_LAYOUT, PACKING_LAYOUT
 from envs.missions import MakeupMissionEnv
 from envs.inventory import ALL_CATALOG, Inventory
 from pipelines.baselines import make_policy
-from api._viewer import ViewerSession, WEB_ROOT
+from api._viewer import ViewerSession, WEB_ROOT, evaluate_served
 
 COOKIE_NAME = "warehouse_session"
 MAX_AGE = 7200
@@ -167,6 +167,11 @@ class CloudAPI:
                 session.reset(body or {})
             else:
                 session = ViewerSession(policy_factory=cloud_policy, settings=body or {})
+        elif method == "POST" and endpoint == "evaluate":
+            # Sin estado: no toca la sesión del visitante.
+            body = body or {}
+            return evaluate_served(body.get("model"), body.get("blocked", False), body.get("episodes", 10),
+                                   body.get("seed", 10000)), None
         elif method == "POST" and endpoint == "step":
             session = self.sessions.load(token)
             session.step((body or {}).get("action"))
@@ -192,7 +197,7 @@ class CloudHandler(BaseHTTPRequestHandler):
     def _dispatch(self):
         parsed = urlsplit(self.path)
         endpoint = parse_qs(parsed.query).get("route", [parsed.path.removeprefix("/api/")])[0]
-        if endpoint not in ("health", "layout", "state", "reset", "step"):
+        if endpoint not in ("health", "layout", "state", "reset", "step", "evaluate"):
             return self._respond({"error": "Ruta desconocida"}, 404)
         try:
             body = None

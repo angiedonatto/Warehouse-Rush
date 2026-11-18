@@ -46,3 +46,22 @@ h1,.masthead h1{color:#6c294b;letter-spacing:-1.5px}.version{color:#ba5281;borde
 /* Fondos claros y contraste del tema rosa sobre todos los paneles heredados. */
 body,.masthead{background:#fff5f9}.toolbar,.panel,.mission-bar,.workspace-footer{background:#fff8fb;color:#553748;border-color:#e5bdce}.toolbar button,.toolbar select,.toolbar input{color:#553748;background:#fff8fb;border:1px solid #dfafc4}.toolbar .button.primary{background:#a72c66;color:#fff;border-color:#a72c66}.panel-title h2,.minimap-panel .panel-title h2{color:#8d4f70}.telemetry dt,.legend li,.robot-status,.camera-heading,.camera-caption,.eyebrow,.masthead p{color:#75536a}.robot-counters strong,.robot-counters small{color:#603c52}.cyan-text{color:#a0326b}.robot-identity .activity,.battery-heading,.battery-heading strong,.connection{color:#765467}.toolbar select option{background:#fff8fb;color:#553748}
 .makeup-control,.switch-label{color:#80546f}
+/* Catálogo de modelos (R4) sobre el diálogo de Naomi */
+/* mismas reglas que .catalog-dialog (Naomi), sin compartir la clase */
+.models-dialog{width:min(1160px,94vw);max-height:90vh;border:1px solid #e8bcd1;border-radius:24px;padding:26px;background:#fff8fc;color:#553748;box-shadow:0 24px 100px #6b214d40}
+.models-dialog::backdrop{background:#47223e80;backdrop-filter:blur(5px)}
+.models-dialog header{display:flex;justify-content:space-between;gap:20px;align-items:center}
+.models-dialog h2{font-size:30px;letter-spacing:-1px;margin:8px 0 20px}
+.models-dialog .button{background:#ad366f;border:0;border-radius:18px;color:white;padding:10px 16px;height:auto}
+.models-dialog #models-grid{scrollbar-color:#d196b6 #fff4fa}
+@media(max-width:760px){.models-dialog{padding:16px}.models-dialog h2{font-size:23px}.models-dialog .eyebrow{font-size:8px}}
+
+.models-dialog .catalog-body{grid-template-columns:1fr 460px}.model-detail{text-align:left;max-height:62vh;overflow:auto}.model-detail h3{margin:8px 0 4px}.model-detail h4{margin:16px 0 6px;font-size:13px}
+.model-card{min-height:118px}.model-card strong{word-break:break-all}.model-check{display:flex;align-items:center;gap:6px;font-size:12px}
+.state-badge{font-size:10px;letter-spacing:.6px;text-transform:uppercase;padding:3px 8px;border-radius:10px;background:#f1dbe7;color:#6f405a}.state-badge.recomendado{background:#cdeedd;color:#1f5c3c}.state-badge.rechazado{background:#f6d4d4;color:#7a2a2a}
+.model-facts{display:grid;grid-template-columns:120px 1fr;gap:6px 10px;font-size:12px;margin:10px 0}.model-facts dt{font-weight:600;color:#8a5a73}.model-facts dd{margin:0}
+.model-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}.model-kpis{font-size:12px;font-weight:600}.model-error{color:#a0283d;font-size:12px}
+.model-table{width:100%;border-collapse:collapse;font-size:11px}.model-table th,.model-table td{border-bottom:1px solid #ecd0df;padding:4px 6px;text-align:left;vertical-align:top}
+.model-curve{margin:14px 0 0}.model-curve img{width:100%;border-radius:10px;border:1px solid #ecd0df;margin-top:6px}
+.mode-badge{font-size:10px;font-weight:700;letter-spacing:.8px;padding:5px 10px;border-radius:12px;background:#f1dbe7;color:#6f405a;white-space:nowrap}.mode-badge.evaluation{background:#d9e8ff;color:#1d3f7a}.mode-badge.training{background:#fff0c9;color:#6a4a00}.mode-badge.reference{background:#dff3e8;color:#1f5c3c}.mode-badge.manual{background:#ffe1d1;color:#7a3a14}
+@media (max-width:900px){.models-dialog .catalog-body{grid-template-columns:1fr}.model-detail{max-height:none}.models-dialog .catalog-filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}.models-dialog .catalog-filters label{display:flex;flex-direction:column;gap:4px;min-width:0}.models-dialog .catalog-filters label:first-child{grid-column:1/-1}.models-dialog .catalog-filters input,.models-dialog .catalog-filters select{width:100%;min-width:0;box-sizing:border-box}.models-dialog .model-facts{grid-template-columns:1fr}.model-table{display:block;overflow-x:auto}}

@@ -20,7 +20,7 @@
   "budget_steps": 3604480,
   "budget_minutes": 77.94,
   "mlflow_run_id": "a11572bb004048509b756fb304ca5658",
-  "mlflow_experiment": "Default",
+  "mlflow_experiment": "warehouse-m1b",
   "config_uri": "configs/experiments/m1b_i1_incidente_seed0.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v10 (Box(27), todo en [0,1], sin VecNormalize)",
   "action_spec": "envs/CONTRATO.md@env/warehouse-v10 (Discrete(8): AVANZAR, GIRAR_I, GIRAR_D, FRENAR, CARGAR, DESCARGAR, SUBIR, BAJAR)",
@@ -270,7 +270,7 @@
     }
   },
   "budget_note": "budget_steps acumula el padre m1-c3-seed0 (1 802 240) y el ajuste fino (1 802 240)",
-  "mlflow_note": "el run quedó en el experimento «Default» de MLflow por una carrera al crear warehouse-m1b con 3 runs en paralelo; corregido en pipelines/tracking.py::experiment_id",
+  "mlflow_note": "el run quedó en el experimento «Default» de MLflow por una carrera al crear warehouse-m1b con 3 runs en paralelo; corregido en pipelines/tracking.py::experiment_id; al migrar a DagsHub (2026-11-18) el run se copió a warehouse-m1b (pipelines/migrar_mlflow.py::REUBICAR)",
   "weights_dvc": "models/m1b-i1-seed0.dvc",
   "mlflow_run_id_local": "fb0d522a5c254596a08a1fb75eb4248f",
   "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"

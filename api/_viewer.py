@@ -75,6 +75,58 @@ def model_summary(model_id):
     return {key: spec[key] for key in keys}
 
 
+def evaluate_served(model_id, blocked=False, episodes=10, seed=10000):
+    """Modo evaluación: el modelo congelado, determinista, en `episodes` semillas consecutivas desde
+    `seed` (10000 = inicio de suite-m1-v1 / suite-m1b-v1), en el ambiente de la web. Devuelve resultados
+    por episodio, resumen y monitoreo (latencia de inferencia por paso, errores, versión servida)."""
+    import time
+
+    if type(blocked) is not bool or type(episodes) is not int or not 1 <= episodes <= 20:
+        raise ValueError("blocked debe ser booleano y episodes un entero de 1 a 20")
+    if type(seed) is not int or not 0 <= seed <= 2**32 - 1 - episodes:
+        raise ValueError("seed debe ser un entero no negativo de 32 bits")
+    path = _verified_model_path(model_id)
+    spec = served_models()[model_id]
+    policy = make_policy("ppo", model_path=path)
+    layout = WEB_ROOT.parent / spec["layout_path"]
+    rows, latencies, errors = [], [], 0
+    for episode_seed in range(seed, seed + episodes):
+        env = make_env(blocked, layout, spec["orders"], spec["reward_overrides"] or None, catalog=spec["catalogo_web"])
+        observation, _ = env.reset(seed=episode_seed)
+        done, total = False, 0.0
+        try:
+            while not done:
+                start = time.perf_counter()
+                action = policy.action(observation, env)
+                latencies.append((time.perf_counter() - start) * 1000)
+                observation, reward, terminated, truncated, info = env.step(action)
+                total += reward
+                done = terminated or truncated
+            rows.append({"seed": episode_seed, "success": bool(info["success"]), "steps": env.state.tiempo,
+                         "collisions": env.state.colisiones, "deliveries": env.state.entregas,
+                         "reward": round(total, 3), "end_reason": info["end_reason"]})
+        except Exception as exc:   # se cuenta como error de inferencia, no se oculta
+            errors += 1
+            rows.append({"seed": episode_seed, "success": False, "error": f"{type(exc).__name__}: {exc}"[:200]})
+        finally:
+            env.close()
+    ok = [r for r in rows if r["success"]]
+    reasons = {}
+    for r in rows:
+        reasons[r.get("end_reason", "error")] = reasons.get(r.get("end_reason", "error"), 0) + 1
+    latencies.sort()
+    return {"mode": "evaluation", "model": model_summary(model_id), "environment_version": ENV_VERSION,
+            "catalog": spec["catalogo_web"], "scenario": "cerrado" if blocked else "abierto",
+            "seeds": [seed, seed + episodes - 1], "episodes": rows,
+            "summary": {"success_rate": len(ok) / episodes,
+                        "mean_steps_success": round(sum(r["steps"] for r in ok) / len(ok), 1) if ok else None,
+                        "mean_collisions": round(sum(r.get("collisions", 0) for r in rows) / episodes, 2),
+                        "end_reasons": reasons},
+            "monitoring": {"inference_ms_mean": round(sum(latencies) / len(latencies), 3) if latencies else None,
+                           "inference_ms_p95": round(latencies[int(0.95 * (len(latencies) - 1))], 3) if latencies else None,
+                           "steps": len(latencies), "errors": errors, "served_sha256": spec["model_sha256"]}}
+
+
 def ppo_compatible(orders, layout_path=None) -> bool:
     """El PPO guardado sólo se ofrece si sus observaciones coinciden con las del ambiente vigente
     (p. ej. experiment-001 tiene 22 y warehouse-v10 27): un modelo de otra familia no se sirve."""
@@ -286,6 +338,9 @@ class ViewerHandler(SimpleHTTPRequestHandler):
                 result = self.session.reset(body)
             elif path == "/api/step":
                 result = self.session.step(body.get("action"))
+            elif path == "/api/evaluate":
+                result = evaluate_served(body.get("model"), body.get("blocked", False),
+                                         body.get("episodes", 10), body.get("seed", 10000))
             else:
                 return self.json_response({"error": "Ruta desconocida"}, 404)
             self.json_response(result)

@@ -81,3 +81,25 @@ def test_unknown_model_and_return_to_viewer_mission():
     assert session.payload()["model"]["id"] == "m1-c3-seed0"
     payload = session.reset({"policy": "heuristic", "makeup": True, "orders": 1, "blocked": False, "seed": 2})
     assert payload["model"] is None and payload["makeup"]
+
+
+def test_evaluate_route_over_real_http(monkeypatch):
+    """La ruta pasa por la lista blanca del handler desplegado (no solo por CloudAPI)."""
+    import threading
+    import urllib.request
+    from http.server import ThreadingHTTPServer
+    from api._cloud import CloudHandler
+
+    monkeypatch.setenv("WAREHOUSE_SESSION_SECRET", secrets.token_urlsafe(48))
+    server = ThreadingHTTPServer(("127.0.0.1", 0), CloudHandler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        request = urllib.request.Request(f"http://127.0.0.1:{server.server_port}/api/evaluate",
+                                         data=json.dumps({"model": "m1b-i1-seed1-best", "blocked": True, "episodes": 2}).encode(),
+                                         headers={"Content-Type": "application/json"}, method="POST")
+        result = json.loads(urllib.request.urlopen(request, timeout=120).read())
+    finally:
+        server.shutdown()
+    assert result["mode"] == "evaluation" and len(result["episodes"]) == 2
+    assert result["summary"]["success_rate"] == 1.0 and result["monitoring"]["errors"] == 0
+    assert result["monitoring"]["served_sha256"] == result["model"]["model_sha256"]

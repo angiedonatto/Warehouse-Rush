@@ -80,3 +80,8 @@ Referencias: [Python en Vercel](https://vercel.com/docs/functions/runtimes/pytho
 La API ejecuta los modelos `recomendado` de `configs/modelos_servidos.json`; sus pesos están en `models/servidos/` (en Git: Vercel no accede a DVC).
 Al promover un modelo nuevo: `dvc pull models/<run>.dvc`, actualizar su manifiesto a `recomendado` y correr `python -m pipelines.servir`.
 El script comprueba el SHA-256 contra el manifiesto y nunca sobrescribe un peso servido con otro contenido. Prueba: `python -m pytest tests/test_served_models.py`.
+
+## Catálogo de modelos de la web (desde 2026-11-18)
+`python -m pipelines.catalogo` regenera `web/public/modelos/catalogo.json` y las curvas a partir de los manifiestos y de MLflow (lectura pública de DagsHub).
+Hay que correrlo cada vez que cambie un manifiesto, y antes de `npm run build`. Rutas de la API: `GET health|layout|state`, `POST reset|step|evaluate`.
+Pruebas de navegador: con el visor local (`python -m pipelines.cli view --no-open`) correr `npx playwright test` en `web/`. Para el modo nube, levantar `python -c "from api._cloud import preview; preview(8090)"` y correr con `WAREHOUSE_TEST_URL=http://127.0.0.1:8090`.

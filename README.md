@@ -6,7 +6,7 @@ Proyecto final de MLOps (Universidad Externado de Colombia). Un robot de bodega 
 estantería (3 niveles de altura) con un elevador telescópico y los entrega en una cinta de despacho (ambiente vigente `warehouse-v10`,
 mapa con muro; `warehouse-v1` a `v9` se conservan como historia con sus etiquetas `env/warehouse-vN`). Niveles: N1 mapa abierto, N2 mapa con muro, N3 paso (6,14) cerrado ([docs/niveles.md](docs/niveles.md)).
 Modelos recomendados: `m1b-i1-seed1-best` (producción, N3) y `m1-c3-seed0` (N2, rollback). PPO (Stable-Baselines3) sobre un ambiente Gymnasium; visor Three.js desplegado en Vercel
-(https://warehouse-rush-experiment-001.vercel.app); experimentos en MLflow ([DagsHub](https://dagshub.com/mamezquita/Warehouse-Rush.mlflow)); versionado con Git + DVC.
+(https://warehouse-rush-psi.vercel.app); experimentos en MLflow ([DagsHub](https://dagshub.com/mamezquita/Warehouse-Rush.mlflow)); versionado con Git + DVC.
 
 ## Estructura
 `envs/` ambiente · `configs/` niveles, experimentos, suites, criterios · `pipelines/` entrenamiento, evaluación, tracking ·

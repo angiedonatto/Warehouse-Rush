@@ -19,7 +19,7 @@ Snapshot written 2026-11-18 after PR #2 was merged into `main` (merge commit `da
 | Asset licenses | done | `docs/licencias.md` |
 | **Orchestrated pipeline (Prefect/Airflow)** | **missing (R3)** | `pipelines/flow.py` does not exist; `dvc.yaml` only has the old stage `train_c0` |
 | **Rollback documented and tested** | **missing (R3)** | no `docs/rollback.md`, no rollback test |
-| **Deployed URL serving the current version** | **missing (R3/R4)** | live site still serves the old build (`experiment-001`, env 0.1.0); Vercel deploys are manual |
+| Deployed URL serving the current version | done 2026-11-18 (Lis) | https://warehouse-rush-psi.vercel.app, Vercel project `warehouse-rush` in Lis's team `lis-team2`, commit `1af8cf6`; see `docs/despliegue.md` |
 | Release tag `v1.0`, short report, final presentation | missing (whole team, after R3) | — |
 
 ## What R3 still has to do (concrete, reuse what exists)
@@ -35,7 +35,7 @@ Snapshot written 2026-11-18 after PR #2 was merged into `main` (merge commit `da
    - `verify_served`: `GET /api/health` and `GET /api/layout` (`models[].model_sha256`) must match the manifest.
    Prefect 3.8.8 is already pinned in `requirements.txt`. Record the decision "Prefect" in `docs/decisiones.md` (Prefect vs Airflow was still open).
 2. **Rollback**: `docs/rollback.md` + a test. Production = `m1b-i1-seed1-best` (N3); rollback = `m1-c3-seed0` (N2), both served. A faithful test: mark the production model as not recommended in a temp copy of the manifests, run `servir`/`catalogo`, check the API serves only the rollback model with its sha256, then restore and check again. Also say how to roll back the web: redeploy the previous Vercel deployment/tag.
-3. **Deploy**: `vercel` preview first (not `--prod`). Risks: `requirements.txt` is now the full frozen env (mlflow, dvc, prefect, torch...), and the Python function may exceed Vercel's size limit. If so, add a minimal API requirements file (numpy, gymnasium, torch CPU, stable-baselines3; `pyyaml` is not needed at import time because `pipelines/train.py` imports it inside functions) and point the function to it. Also time `POST /api/evaluate` there (about 10 s for 20 episodes locally, limit 60 s; the web asks for 10). Then record the deploy commit, and check `/api/health` returns `warehouse-v10` and the Vercel commit.
+3. **Deploy**: DONE 2026-11-18 by Lis (new project, `api/requirements.txt`, deploy from a clean clone; see docs/despliegue.md). Original notes: `vercel` preview first (not `--prod`). Risks: `requirements.txt` is now the full frozen env (mlflow, dvc, prefect, torch...), and the Python function may exceed Vercel's size limit. If so, add a minimal API requirements file (numpy, gymnasium, torch CPU, stable-baselines3; `pyyaml` is not needed at import time because `pipelines/train.py` imports it inside functions) and point the function to it. Also time `POST /api/evaluate` there (about 10 s for 20 episodes locally, limit 60 s; the web asks for 10). Then record the deploy commit, and check `/api/health` returns `warehouse-v10` and the Vercel commit.
 4. Then the team: tag `v1.0` on `main`, report, presentation.
 
 ## Facts R3 needs that are easy to get wrong

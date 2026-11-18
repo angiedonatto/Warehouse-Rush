@@ -1,6 +1,7 @@
 # Despliegue del experimento 001
 
-Demo pública: https://warehouse-rush-experiment-001.vercel.app
+Demo pública actual (warehouse-v10): https://warehouse-rush-psi.vercel.app — ver «Despliegue de warehouse-v10» al final.
+Demo histórica del experimento 001: https://warehouse-rush-experiment-001.vercel.app
 
 Proyecto: `warehouse-rush-experiment-001`, cuenta de Angie, entorno Production.
 Rama versionada: `dev/angie`. La publicación inicial se realiza con Vercel CLI;
@@ -85,3 +86,19 @@ El script comprueba el SHA-256 contra el manifiesto y nunca sobrescribe un peso 
 `python -m pipelines.catalogo` regenera `web/public/modelos/catalogo.json` y las curvas a partir de los manifiestos y de MLflow (lectura pública de DagsHub).
 Hay que correrlo cada vez que cambie un manifiesto, y antes de `npm run build`. Rutas de la API: `GET health|layout|state`, `POST reset|step|evaluate`.
 Pruebas de navegador: con el visor local (`python -m pipelines.cli view --no-open`) correr `npx playwright test` en `web/`. Para el modo nube, levantar `python -c "from api._cloud import preview; preview(8090)"` y correr con `WAREHOUSE_TEST_URL=http://127.0.0.1:8090`.
+
+## Despliegue de warehouse-v10 (2026-11-18)
+URL pública: **https://warehouse-rush-psi.vercel.app** (proyecto `warehouse-rush`, equipo Vercel de Lis `lis-team2`).
+El sitio anterior (`warehouse-rush-experiment-001.vercel.app`, cuenta de Angie) queda como historia del experimento 001.
+
+- Commit desplegado: `1af8cf6` (rama `dev/lis`). Deployment `dpl_AUWE3KkZg24X6m6u3CiaCaiP6Bw7`.
+- Se despliega desde un clon limpio del commit (`git clone --branch dev/lis . <tmp>` y `vercel deploy` dentro), no desde la carpeta de trabajo:
+  con `.vercelignore` la CLI ignora `.gitignore` y subiría checkpoints locales y la suite reservada `configs/suites/test-final*`.
+- La función usa `api/requirements.txt` (solo inferencia, torch CPU); el `requirements.txt` de la raíz es el entorno de desarrollo completo.
+- Variables (Production y Preview): `WAREHOUSE_SESSION_SECRET` (aleatorio, 64 caracteres, sensible) y `VERCEL_SUPPORT_LARGE_FUNCTIONS=1`.
+- Verificación tras el deploy: `/api/health` → `warehouse-v10`; `/api/layout` sirve `m1b-i1-seed1-best` y `m1-c3-seed0` con el `model_sha256`
+  de sus manifiestos; `POST /api/evaluate` 20 episodios N3 cerrado en 4,1 s (100 %, 0 choques, inferencia 0,55 ms/paso, 0 errores);
+  sesión interactiva `reset`/`step` con cookie firmada OK.
+- Limitación: `/api/health` devuelve `commit` vacío porque el deploy por CLI desde un clon local no lleva metadatos de GitHub;
+  el commit desplegado queda registrado aquí.
+- Rollback de la web: `vercel rollback <deployment anterior>` o `vercel promote <url>` en el proyecto `warehouse-rush`.

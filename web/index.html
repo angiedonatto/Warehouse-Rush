@@ -9,7 +9,6 @@
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b1b28'/%3E%3Cpath d='M5 10l11-6 11 6v13l-11 6-11-6zM5 10l11 6 11-6M16 16v13' fill='none' stroke='%2342ddf5' stroke-width='2'/%3E%3C/svg%3E" />
   </head>
   <body>
-    <canvas id="world" aria-label="Escena tridimensional de la bodega"></canvas>
     <main class="dashboard">
       <section class="workspace" aria-label="Visualización y controles">
         <header class="masthead">
@@ -28,6 +27,7 @@
         </div>
 
         <div class="stage" id="stage" tabindex="0" aria-label="Vista 3D. Arrastra para orbitar y usa la rueda para acercar.">
+          <canvas id="world" aria-label="Escena tridimensional de la bodega"></canvas>
           <div class="scene-top"><div class="view-chip"><span class="crosshair">⌖</span><span id="camera-label">VISTA ISOMÉTRICA</span><span class="chip-dot"></span><span class="muted">EN VIVO</span></div><div class="scene-toggles"><button id="toggle-route" class="toggle active" aria-pressed="true">Ruta BFS</button><button id="toggle-sensors" class="toggle" aria-pressed="false">Sensores</button><button id="home-camera" class="small-icon" aria-label="Restaurar cámara" title="Restaurar cámara">⌂</button></div></div>
           <div id="station-labels" aria-hidden="true"></div>
           <div class="scene-bottom"><span class="mouse-hint"><svg viewBox="0 0 16 20"><rect x="2" y="1" width="12" height="18" rx="6"/><path d="M8 1v7"/></svg> Arrastra para orbitar <b>·</b> Scroll para zoom</span><span class="scale-hint"><i></i>1 celda = 1 m</span></div>

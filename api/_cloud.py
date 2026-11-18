@@ -19,6 +19,7 @@ import time
 import zlib
 from urllib.parse import parse_qs, urlsplit
 
+from envs import ENV_VERSION
 from envs.env import WorldState
 from envs.layout import DEFAULT_LAYOUT, WIDE_LAYOUT, PACKING_LAYOUT
 from envs.missions import MakeupMissionEnv
@@ -135,7 +136,7 @@ class CloudAPI:
 
     def handle(self, method, endpoint, body=None, token=None):
         if method == "GET" and endpoint == "health":
-            return {"status": "ok", "experiment": "001", "environment_version": "0.1.0",
+            return {"status": "ok", "experiment": "001", "environment_version": ENV_VERSION,
                     "session_mode": "signed-per-visitor",
                     "commit": os.getenv("VERCEL_GIT_COMMIT_SHA", "local")}, None
         if method == "GET" and endpoint == "layout":

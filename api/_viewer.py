@@ -5,7 +5,7 @@ de simulación. Las animaciones del navegador interpolan los estados discretos.
 """
 
 from collections import deque
-from functools import partial
+from functools import lru_cache, partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
@@ -32,6 +32,26 @@ def viewer_model(orders):
     return EXPERIMENT_MODEL
 
 
+@lru_cache(maxsize=8)
+def _model_obs_shape(path: str):
+    from stable_baselines3 import PPO
+
+    return tuple(PPO.load(path, device="cpu").observation_space.shape)
+
+
+def ppo_compatible(orders, layout_path=None) -> bool:
+    """El PPO guardado sólo se ofrece si sus observaciones coinciden con las del ambiente vigente
+    (p. ej. experiment-001 tiene 22 y warehouse-v10 27): un modelo de otra familia no se sirve."""
+    path = viewer_model(orders)
+    if not path.is_file():
+        return False
+    env = WarehouseRushEnv(orders, True, layout_path)
+    try:
+        return _model_obs_shape(str(path)) == tuple(env.observation_space.shape)
+    finally:
+        env.close()
+
+
 class ViewerSession:
     def __init__(self, layout_path=None, policy_factory=make_policy, settings=None):
         self.lock = RLock()
@@ -53,6 +73,8 @@ class ViewerSession:
                 raise ValueError("blocked debe ser booleano y seed un entero no negativo de 32 bits")
             if name not in ("heuristic", "random", "ppo", "manual"):
                 raise ValueError("Política desconocida")
+            if name == "ppo" and viewer_model(orders).is_file() and not ppo_compatible(orders, self.layout_path):
+                raise ValueError("No hay modelo PPO compatible con el ambiente vigente para esta misión")
             # Construir primero: un error de modelo no destruye la sesión vigente.
             policy = None if name == "manual" else self.policy_factory(name, seed, viewer_model(orders))
             makeup = settings.get("makeup", False)
@@ -138,7 +160,7 @@ class ViewerSession:
 
     def layout_payload(self):
         return {"layout": self.env.layout.data, "catalog": list(CATALOG.values()), "layout_sha256": self.env.layout.digest,
-                "available_ppo": {str(order): viewer_model(order).is_file() for order in (1, 2)},
+                "available_ppo": {str(order): ppo_compatible(order, self.layout_path) for order in (1, 2)},
                 "environment_version": self.env.layout.data["version"]}
 
 

@@ -51,7 +51,7 @@ function controls() {
   document.querySelectorAll('[data-action]').forEach(button => { button.disabled = !current || current.done || busy || changing; });
   const ppoOption = $('#policy option[value="ppo"]');
   ppoOption.disabled = !layoutInfo?.available_ppo?.[$('#orders').value];
-  ppoOption.textContent = ppoOption.disabled ? 'PPO · sin modelo para esta misión' : 'PPO entrenado';
+  ppoOption.textContent = ppoOption.disabled ? 'PPO · sin modelo compatible con esta versión' : 'PPO entrenado';
 }
 
 function mountScene() {
@@ -155,7 +155,7 @@ async function reset() {
   try {
     while (busy) await new Promise(resolve => setTimeout(resolve, 20));
     const ppoUnavailable = $('#policy').value === 'ppo' && !layoutInfo.available_ppo[$('#orders').value];
-    if (ppoUnavailable) { $('#policy').value = 'heuristic';toast('Esta misión no tiene modelo PPO guardado. Se seleccionó el heurístico.'); }
+    if (ppoUnavailable) { $('#policy').value = 'heuristic';toast('No hay modelo PPO compatible con la versión vigente del ambiente. Se seleccionó el heurístico.'); }
     const result = await api('reset', { orders: Number($('#orders').value), policy: $('#policy').value, blocked: $('#blocked').checked, seed: Number(seedInput.value), makeup: $('#makeup').checked });
     if (layoutInfo.layout_sha256 !== result.info.layout_sha256) {
       layoutInfo = await api('layout');

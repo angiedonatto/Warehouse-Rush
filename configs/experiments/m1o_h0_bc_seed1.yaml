@@ -1,0 +1,38 @@
+id: h0
+hipotesis: >
+  Clonacion de comportamiento: la red de PPO (mismo [64,64] separado actor/critico) imita a la heuristica con 1000 episodios de demostracion
+  (la mitad con ruido de 25% de acciones al azar, etiquetadas con la accion de la heuristica en ese estado) y el critico se ajusta a los retornos descontados.
+  Es solo la fase de imitacion (0 pasos de PPO) y la referencia del ajuste fino h1. Los parametros de BC se eligen solo con la precision de validacion de las demostraciones, nunca con la suite.
+nivel: m1o
+environment_version: warehouse-v7
+parent_run_id: null
+seed: 1
+presupuesto_pasos: 0   # sin pasos de PPO; el 'presupuesto' son las demostraciones (bc.episodes)
+layout: configs/layout_v0.5.json   # mapa abierto
+recompensa:
+  invalid_interaction: -0.2
+  collision: -1.0
+  manhattan_progress: 0.3
+  height_mismatch: -0.02
+bc:
+  episodes: 1000
+  val_episodes: 100
+  noise: [0.0, 0.25]
+  epochs: 30
+  lr: 1.0e-3
+  batch_size: 256
+ppo:
+  learning_rate: 3.0e-4
+  n_steps: 2048
+  n_envs: 4
+  batch_size: 64
+  n_epochs: 10
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_range: 0.2
+  ent_coef: 0.0
+  net_arch: [64, 64]
+evaluacion:
+  intermedia: dev-m1o-v1
+  cada_pasos: 20000
+  final: suite-m1o-v1

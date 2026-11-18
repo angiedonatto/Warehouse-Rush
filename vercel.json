@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm ci --prefix web",
+  "buildCommand": "npm run build --prefix web",
+  "outputDirectory": "web/dist",
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 60,
+      "excludeFiles": "{.venv*/**,web/**,tests/**,docs/**,mlruns/**,mlflow.db,configs/experiments/**,configs/suites/**,pipelines/__pycache__/**,.superdesign/**,build/**,.git/**}"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api?route=:path*" }
+  ]
+}

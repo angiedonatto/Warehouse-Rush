@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "run_id": "m1-c4-seed4",
+  "level_id": "m1",
+  "environment_version": "warehouse-v10",
+  "git_commit": "b5c6261ecbf00c2e1b47ba887b7c75b87138bdfc",
+  "config_sha256": "474defb060c631707e7053fc7dfb18d6af57e0a15cb87e2c29036ef77b0acc15",
+  "model_uri": "models/m1-c4-seed4/model.zip",
+  "model_sha256": "0b332634d6a5b0ba9a85b3bece8cb8fbcc0efb96774f267fcd1e892f4667311d",
+  "normalization_uri": null,
+  "runtime_ref": "env/warehouse-v10",
+  "evaluation_suite_id": "suite-m1-v1",
+  "seed": 4,
+  "parent_run_id": null,
+  "estado": "rechazado",
+  "created_at": "2026-11-15T20:30:12.836844+00:00",
+  "author": "lis",
+  "algorithm": "PPO",
+  "policy": "MlpPolicy",
+  "budget_steps": 1802240,
+  "budget_minutes": 88.39,
+  "mlflow_run_id": "692089536da94128a6ce71d929535228",
+  "mlflow_experiment": "warehouse-m1",
+  "config_uri": "configs/experiments/m1_c4_entropia_seed4.yaml",
+  "obs_spec": "envs/CONTRATO.md@env/warehouse-v10 (Box(27), todo en [0,1], sin VecNormalize)",
+  "action_spec": "envs/CONTRATO.md@env/warehouse-v10 (Discrete(8): AVANZAR, GIRAR_I, GIRAR_D, FRENAR, CARGAR, DESCARGAR, SUBIR, BAJAR)",
+  "rules_ref": "docs/ambiente-v0.10.md",
+  "reward": {
+    "pickup": 10.0,
+    "delivery": 30.0,
+    "completion": 50.0,
+    "progress": 0.3,
+    "time": -0.1,
+    "battery": -0.02,
+    "collision": -1.0,
+    "invalid_interaction": -0.2,
+    "distance": 0.0,
+    "manhattan_progress": 0.0,
+    "height_mismatch": 0.0,
+    "potential": 0.0,
+    "potential_nav": 0.4,
+    "face_bonus": 0.0,
+    "carry_milestone": 0.0
+  },
+  "reward_overrides": {
+    "invalid_interaction": -0.2,
+    "collision": -1.0
+  },
+  "layout_path": "configs/layout_v0.4.json",
+  "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
+  "results_uri": "docs/resultados/eval/m1-c4-seed4/evaluation.json",
+  "training_metadata_uri": "docs/resultados/training/m1-c4-seed4/metadata.json",
+  "weights_storage": "DVC: models/m1-c4-seed4.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1-c4-seed4.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
+  "git_dirty_note": "git_dirty figura false; commit b5c6261",
+  "evaluation": {
+    "suite": "suite-m1-v1",
+    "episodes": 50,
+    "seeds": "10000-10049",
+    "scenario": "mapa con muro layout_v0.4",
+    "deterministic": true,
+    "policies": {
+      "heuristic": {
+        "success_rate": 1.0,
+        "mean_total_reward": 115.85822079999998,
+        "mean_steps": 79.92,
+        "mean_battery_used": 49.68896000000024,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 3.0,
+        "mean_pickups": 3.0,
+        "end_reasons": {
+          "success": 50
+        },
+        "action_counts": {
+          "0": 2474,
+          "1": 308,
+          "2": 278,
+          "3": 186,
+          "4": 150,
+          "5": 50,
+          "6": 275,
+          "7": 275
+        }
+      },
+      "ppo": {
+        "success_rate": 0.0,
+        "mean_total_reward": -28.408659199999924,
+        "mean_steps": 400.0,
+        "mean_battery_used": 65.23295999999779,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.6,
+        "mean_deliveries": 0.0,
+        "mean_pickups": 0.86,
+        "end_reasons": {
+          "time_limit": 50
+        },
+        "action_counts": {
+          "0": 798,
+          "1": 2049,
+          "2": 4384,
+          "3": 12587,
+          "4": 45,
+          "5": 0,
+          "6": 73,
+          "7": 64
+        }
+      }
+    }
+  },
+  "decision": "rechazado",
+  "decision_reason": "Receta base + ent_coef 0.01 (único cambio frente a m1-c3), 1 802 240 pasos, parada 100, mapa con muro. Rechazado por el criterio fijado antes (0 de 4 semillas ≥ 50%). 0% de éxito; 23/50 llegan, miran, suben y cargan (0.86 recogidas/ep), 0 entregas; 23 acaban con carga y la bandeja arriba; 0.6 inválidas, 0 choques. Par c3-seed4: llegaba y miraba 22/50 sin subir: avanzó una etapa. 12 882 episodios de entrenamiento, 0 con éxito.",
+  "stagnation_window": 100,
+  "weights_dvc": "models/m1-c4-seed4.dvc"
+}

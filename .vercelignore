@@ -1,0 +1,17 @@
+.git
+.venv*
+.pytest_cache
+**/__pycache__
+**/*.egg-info
+web/node_modules
+web/test-results
+web/playwright-report
+mlruns
+mlflow.db
+.dvc
+models/ppo_*
+docs
+build
+dist
+.env*
+.superdesign

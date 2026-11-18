@@ -1,0 +1,331 @@
+{
+  "status": "completed",
+  "algorithm": "PPO",
+  "policy": "MlpPolicy",
+  "environment_version": "warehouse-v10",
+  "environment_sheet_version": "0.10.0",
+  "seed": 4,
+  "orders": 3,
+  "blocked": false,
+  "requested_timesteps": 1800000,
+  "hyperparameters": {
+    "learning_rate": 0.0003,
+    "n_steps": 2048,
+    "batch_size": 64,
+    "n_epochs": 10,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "clip_range": 0.2,
+    "ent_coef": 0.0,
+    "vf_coef": 0.5,
+    "max_grad_norm": 0.5,
+    "policy_kwargs": {
+      "net_arch": {
+        "pi": [
+          64,
+          64
+        ],
+        "vf": [
+          64,
+          64
+        ]
+      }
+    }
+  },
+  "n_envs": 4,
+  "parent_model": null,
+  "device": "cpu",
+  "torch_threads": 1,
+  "scenario": {
+    "version": "0.4.0",
+    "width": 25,
+    "height": 19,
+    "cell_meters": 1.0,
+    "base": [
+      3,
+      16
+    ],
+    "initial_orientation": 0,
+    "stations": {
+      "P1": [
+        2,
+        2
+      ],
+      "P2": [
+        22,
+        9
+      ],
+      "DELIVERY": [
+        22,
+        16
+      ],
+      "E01": [
+        4,
+        4
+      ],
+      "E02": [
+        11,
+        4
+      ],
+      "E03": [
+        18,
+        4
+      ],
+      "E04": [
+        4,
+        10
+      ],
+      "E05": [
+        11,
+        10
+      ],
+      "E06": [
+        18,
+        10
+      ]
+    },
+    "racks": [
+      {
+        "name": "R1",
+        "bounds": [
+          4,
+          4,
+          5,
+          5
+        ]
+      },
+      {
+        "name": "R2",
+        "bounds": [
+          11,
+          4,
+          12,
+          5
+        ]
+      },
+      {
+        "name": "R3",
+        "bounds": [
+          18,
+          4,
+          19,
+          5
+        ]
+      },
+      {
+        "name": "R4",
+        "bounds": [
+          4,
+          10,
+          5,
+          11
+        ]
+      },
+      {
+        "name": "R5",
+        "bounds": [
+          11,
+          10,
+          12,
+          11
+        ]
+      },
+      {
+        "name": "R6",
+        "bounds": [
+          18,
+          10,
+          19,
+          11
+        ]
+      }
+    ],
+    "internal_walls": [
+      [
+        1,
+        14
+      ],
+      [
+        2,
+        14
+      ],
+      [
+        3,
+        14
+      ],
+      [
+        4,
+        14
+      ],
+      [
+        5,
+        14
+      ],
+      [
+        7,
+        14
+      ],
+      [
+        8,
+        14
+      ],
+      [
+        9,
+        14
+      ],
+      [
+        10,
+        14
+      ],
+      [
+        11,
+        14
+      ],
+      [
+        12,
+        14
+      ],
+      [
+        13,
+        14
+      ],
+      [
+        14,
+        14
+      ],
+      [
+        15,
+        14
+      ],
+      [
+        16,
+        14
+      ],
+      [
+        17,
+        14
+      ],
+      [
+        18,
+        14
+      ],
+      [
+        19,
+        14
+      ],
+      [
+        21,
+        14
+      ],
+      [
+        22,
+        14
+      ],
+      [
+        23,
+        14
+      ]
+    ],
+    "blockable_cells": [
+      [
+        6,
+        14
+      ]
+    ],
+    "simulation": {
+      "battery_capacity": 180.0,
+      "max_steps": 400,
+      "forward_cost": 0.8,
+      "turn_cost": 0.2,
+      "brake_cost": 0.1,
+      "interact_cost": 0.2,
+      "step_seconds": 1.0,
+      "interaction_radius": 1,
+      "sensor_range": 8
+    },
+    "rewards": {
+      "pickup": 10.0,
+      "delivery": 30.0,
+      "completion": 50.0,
+      "progress": 0.3,
+      "time": -0.1,
+      "battery": -0.02,
+      "collision": -5.0,
+      "invalid_interaction": -2.0
+    },
+    "dispatch_area": {
+      "bounds": [
+        22,
+        16,
+        23,
+        16
+      ],
+      "approach": [
+        21,
+        16
+      ],
+      "belt_height_m": 0.62,
+      "box": [
+        23,
+        16
+      ]
+    }
+  },
+  "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
+  "simulation": {
+    "battery_capacity": 180.0,
+    "max_steps": 400,
+    "forward_cost": 0.8,
+    "turn_cost": 0.2,
+    "brake_cost": 0.1,
+    "interact_cost": 0.2,
+    "step_seconds": 1.0,
+    "interaction_radius": 1,
+    "sensor_range": 8
+  },
+  "rewards": {
+    "pickup": 10.0,
+    "delivery": 30.0,
+    "completion": 50.0,
+    "progress": 0.3,
+    "time": -0.1,
+    "battery": -0.02,
+    "collision": -1.0,
+    "invalid_interaction": -0.2,
+    "distance": 0.0,
+    "manhattan_progress": 0.3,
+    "height_mismatch": -0.02,
+    "potential": 0.0,
+    "potential_nav": 0.4,
+    "face_bonus": 0.0,
+    "carry_milestone": 0.0
+  },
+  "reward_overrides": {
+    "invalid_interaction": -0.2,
+    "collision": -1.0,
+    "manhattan_progress": 0.3,
+    "height_mismatch": -0.02
+  },
+  "layout_path": "configs/layout_v0.4.json",
+  "python": "3.12.16",
+  "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.43",
+  "versions": {
+    "numpy": "1.26.4",
+    "gymnasium": "1.0.0",
+    "torch": "2.2.2+cpu",
+    "stable-baselines3": "2.4.1",
+    "matplotlib": "3.9.4"
+  },
+  "git_revision": "750e99fd375b9eb28d3795e6373d9a62de6393f9",
+  "git_dirty": true,
+  "started_at_utc": "2026-11-15T00:34:04.815502+00:00",
+  "stagnation_window": 100,
+  "periodic_eval_seed": 20000,
+  "periodic_eval_episodes": 5,
+  "periodic_eval_every": 20000,
+  "effective_timesteps": 1802240,
+  "duration_seconds": 5647.945078573997,
+  "model_path": "models/m1-e4y-seed4/model.zip",
+  "model_alias": "models/ppo_orders3_seed4.zip",
+  "completed_at_utc": "2026-11-15T02:08:22.313682+00:00"
+}

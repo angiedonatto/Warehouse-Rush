@@ -1,0 +1,107 @@
+{
+  "status": "completed",
+  "algorithm": "PPO (clonación de comportamiento)",
+  "policy": "MlpPolicy",
+  "environment_version": "warehouse-v7",
+  "seed": 2,
+  "orders": 3,
+  "blocked": false,
+  "requested_timesteps": 0,
+  "effective_timesteps": 0,
+  "layout_path": "configs/layout_v0.5.json",
+  "reward_overrides": {
+    "invalid_interaction": -0.2,
+    "collision": -1.0,
+    "manhattan_progress": 0.3,
+    "height_mismatch": -0.02
+  },
+  "hyperparameters": {
+    "learning_rate": 0.0003,
+    "n_steps": 2048,
+    "batch_size": 64,
+    "n_epochs": 10,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "clip_range": 0.2,
+    "ent_coef": 0.0,
+    "policy_kwargs": {
+      "net_arch": {
+        "pi": [
+          64,
+          64
+        ],
+        "vf": [
+          64,
+          64
+        ]
+      }
+    }
+  },
+  "n_envs": 4,
+  "parent_model": null,
+  "model_path": "models/m1o-h0-seed2/model.zip",
+  "bc": {
+    "episodes": 1000,
+    "val_episodes": 100,
+    "noise": [
+      0.0,
+      0.25
+    ],
+    "epochs": 30,
+    "lr": 0.001,
+    "batch_size": 256,
+    "demo_seed_start": 40000,
+    "val_seed_start": 50000,
+    "demo_steps": 84356,
+    "validation_steps": 8415,
+    "demos_sha256": "6f25042cd9f0460f097d6d3411a6684721c58c02889e8965c964d054c53f1d9d",
+    "expert_clean_success": 1.0,
+    "cut_episodes": 0,
+    "fit": {
+      "train": {
+        "accuracy": 0.9989686566456446,
+        "accuracy_clean_states": 0.999944176179976,
+        "accuracy_noisy_states": 0.9982484699870181,
+        "value_explained_variance": 0.42391938106219784
+      },
+      "validation": {
+        "accuracy": 0.9988116458704694,
+        "accuracy_clean_states": 1.0,
+        "accuracy_noisy_states": 0.9979423868312757,
+        "value_explained_variance": 0.3841187687675942
+      }
+    },
+    "expert": "pipelines.baselines.HeuristicPolicy"
+  },
+  "git_revision": "d1d91c9a8df86e4ab3d100257a8f34af72f67a0b",
+  "git_dirty": true,
+  "duration_seconds": 593.2803573220008,
+  "completed_at_utc": "2026-11-14T04:26:01.552742+00:00",
+  "layout_sha256": "0bd1788a5daf4cd0857d62ef86ed48a4b2145ea6f2e050aa37eb901845e4bbca",
+  "simulation": {
+    "battery_capacity": 180.0,
+    "max_steps": 400,
+    "forward_cost": 0.8,
+    "turn_cost": 0.2,
+    "brake_cost": 0.1,
+    "interact_cost": 0.2,
+    "step_seconds": 1.0,
+    "interaction_radius": 1,
+    "sensor_range": 8
+  },
+  "rewards": {
+    "pickup": 10.0,
+    "delivery": 30.0,
+    "completion": 50.0,
+    "progress": 0.3,
+    "time": -0.1,
+    "battery": -0.02,
+    "collision": -1.0,
+    "invalid_interaction": -0.2,
+    "distance": 0.0,
+    "manhattan_progress": 0.3,
+    "height_mismatch": -0.02,
+    "carry_milestone": 0.0
+  },
+  "patched_fields": "layout_sha256, simulation, rewards añadidos después de entrenar con el mismo código de ambiente (el evaluador los exige); no cambian el modelo"
+}

@@ -1,0 +1,401 @@
+{
+ "run": "m1o-e4l-seed0",
+ "suite": "suite-m1o-v1",
+ "episodes": 50,
+ "seeds": "10000-10049",
+ "deterministic": true,
+ "note": "Checkpoints guardados cada 20 000 pasos durante el entrenamiento de 606 208 pasos; se evalúan después de entrenar. Es una descripción, no una selección de checkpoint.",
+ "curve": [
+  {
+   "steps": 20000,
+   "success_rate": 0.0,
+   "mean_deliveries": 0.0,
+   "mean_pickups": 0.0,
+   "mean_steps": 400.0,
+   "mean_invalid_interactions": 0.0,
+   "mean_total_reward": -40.38859999999998,
+   "end_reasons": {
+    "time_limit": 50
+   }
+  },
+  {
+   "steps": 40000,
+   "success_rate": 0.0,
+   "mean_deliveries": 0.0,
+   "mean_pickups": 0.0,
+   "mean_steps": 400.0,
+   "mean_invalid_interactions": 0.0,
+   "mean_total_reward": -37.38163999999991,
+   "end_reasons": {
+    "time_limit": 50
+   }
+  },
+  {
+   "steps": 60000,
+   "success_rate": 0.0,
+   "mean_deliveries": 0.0,
+   "mean_pickups": 0.0,
+   "mean_steps": 400.0,
+   "mean_invalid_interactions": 0.0,
+   "mean_total_reward": -43.80879999999999,
+   "end_reasons": {
+    "time_limit": 50
+   }
+  },
+  {
+   "steps": 80000,
+   "success_rate": 0.0,
+   "mean_deliveries": 0.0,
+   "mean_pickups": 0.0,
+   "mean_steps": 400.0,
+   "mean_invalid_interactions": 0.0,
+   "mean_total_reward": -37.60079999999991,
+   "end_reasons": {
+    "time_limit": 50
+   }
+  },
+  {
+   "steps": 100000,
+   "success_rate": 0.0,
+   "mean_deliveries": 0.0,
+   "mean_pickups": 0.0,
+   "mean_steps": 400.0,
+   "mean_invalid_interactions": 0.0,
+   "mean_total_reward": -37.5429599999999,
+   "end_reasons": {
+    "time_limit": 50
+   }
+  },
+  {
+   "steps": 120000,
+   "success_rate": 0.0,
+   "mean_deliveries": 0.0,
+   "mean_pickups": 0.0,
+   "mean_steps": 400.0,
+   "mean_invalid_interactions": 0.0,
+   "mean_total_reward": -37.665439999999904,
+   "end_reasons": {
+    "time_limit": 50
+   }
+  },
+  {
+   "steps": 140000,
+   "success_rate": 0.0,
+   "mean_deliveries": 0.0,
+   "mean_pickups": 0.0,
+   "mean_steps": 381.16,
+   "mean_invalid_interactions": 16.8,
+   "mean_total_reward": -43.25583999999994,
+   "end_reasons": {
+    "battery_depleted": 6,
+    "time_limit": 44
+   }
+  },
+  {
+   "steps": 160000,
+   "success_rate": 0.0,
+   "mean_deliveries": 0.0,
+   "mean_pickups": 0.0,
+   "mean_steps": 400.0,
+   "mean_invalid_interactions": 13.38,
+   "mean_total_reward": -40.891891199999954,
+   "end_reasons": {
+    "time_limit": 50
+   }
+  },
+  {
+   "steps": 180000,
+   "success_rate": 0.0,
+   "mean_deliveries": 0.0,
+   "mean_pickups": 0.0,
+   "mean_steps": 400.0,
+   "mean_invalid_interactions": 13.98,
+   "mean_total_reward": -40.983451199999955,
+   "end_reasons": {
+    "time_limit": 50
+   }
+  },
+  {
+   "steps": 200000,
+   "success_rate": 0.0,
+   "mean_deliveries": 0.0,
+   "mean_pickups": 0.06,
+   "mean_steps": 400.0,
+   "mean_invalid_interactions": 155.94,
+   "mean_total_reward": -75.35349759999981,
+   "end_reasons": {
+    "time_limit": 50
+   }
+  },
+  {
+   "steps": 220000,
+   "success_rate": 0.0,
+   "mean_deliveries": 0.0,
+   "mean_pickups": 0.5,
+   "mean_steps": 383.48,
+   "mean_invalid_interactions": 148.38,
+   "mean_total_reward": -68.44366560000014,
+   "end_reasons": {
+    "battery_depleted": 7,
+    "time_limit": 43
+   }
+  },
+  {
+   "steps": 240000,
+   "success_rate": 0.0,
+   "mean_deliveries": 0.0,
+   "mean_pickups": 0.7,
+   "mean_steps": 393.84,
+   "mean_invalid_interactions": 144.56,
+   "mean_total_reward": -59.56733760000001,
+   "end_reasons": {
+    "battery_depleted": 2,
+    "time_limit": 48
+   }
+  },
+  {
+   "steps": 260000,
+   "success_rate": 0.0,
+   "mean_deliveries": 0.0,
+   "mean_pickups": 0.72,
+   "mean_steps": 387.3,
+   "mean_invalid_interactions": 103.58,
+   "mean_total_reward": -55.27791679999989,
+   "end_reasons": {
+    "battery_depleted": 4,
+    "time_limit": 46
+   }
+  },
+  {
+   "steps": 280000,
+   "success_rate": 0.0,
+   "mean_deliveries": 0.0,
+   "mean_pickups": 0.92,
+   "mean_steps": 384.8,
+   "mean_invalid_interactions": 53.14,
+   "mean_total_reward": -36.73100159999998,
+   "end_reasons": {
+    "battery_depleted": 6,
+    "time_limit": 44
+   }
+  },
+  {
+   "steps": 300000,
+   "success_rate": 0.0,
+   "mean_deliveries": 0.0,
+   "mean_pickups": 1.04,
+   "mean_steps": 367.56,
+   "mean_invalid_interactions": 132.34,
+   "mean_total_reward": -52.44411520000005,
+   "end_reasons": {
+    "battery_depleted": 15,
+    "time_limit": 35
+   }
+  },
+  {
+   "steps": 320000,
+   "success_rate": 0.0,
+   "mean_deliveries": 0.0,
+   "mean_pickups": 1.08,
+   "mean_steps": 378.58,
+   "mean_invalid_interactions": 148.9,
+   "mean_total_reward": -54.008707199999925,
+   "end_reasons": {
+    "battery_depleted": 7,
+    "time_limit": 43
+   }
+  },
+  {
+   "steps": 340000,
+   "success_rate": 0.1,
+   "mean_deliveries": 0.3,
+   "mean_pickups": 1.14,
+   "mean_steps": 387.7,
+   "mean_invalid_interactions": 134.68,
+   "mean_total_reward": -41.77951679999985,
+   "end_reasons": {
+    "battery_depleted": 1,
+    "success": 5,
+    "time_limit": 44
+   }
+  },
+  {
+   "steps": 360000,
+   "success_rate": 0.0,
+   "mean_deliveries": 0.0,
+   "mean_pickups": 1.04,
+   "mean_steps": 400.0,
+   "mean_invalid_interactions": 209.5,
+   "mean_total_reward": -67.89357919999996,
+   "end_reasons": {
+    "time_limit": 50
+   }
+  },
+  {
+   "steps": 380000,
+   "success_rate": 0.26,
+   "mean_deliveries": 0.78,
+   "mean_pickups": 1.6,
+   "mean_steps": 336.74,
+   "mean_invalid_interactions": 133.28,
+   "mean_total_reward": -14.62856319999998,
+   "end_reasons": {
+    "battery_depleted": 1,
+    "success": 13,
+    "time_limit": 36
+   }
+  },
+  {
+   "steps": 400000,
+   "success_rate": 0.2,
+   "mean_deliveries": 0.6,
+   "mean_pickups": 1.32,
+   "mean_steps": 338.9,
+   "mean_invalid_interactions": 172.66,
+   "mean_total_reward": -32.72627359999991,
+   "end_reasons": {
+    "battery_depleted": 2,
+    "success": 10,
+    "time_limit": 38
+   }
+  },
+  {
+   "steps": 420000,
+   "success_rate": 0.32,
+   "mean_deliveries": 0.96,
+   "mean_pickups": 1.9,
+   "mean_steps": 292.16,
+   "mean_invalid_interactions": 51.1,
+   "mean_total_reward": 16.559142400000038,
+   "end_reasons": {
+    "battery_depleted": 1,
+    "success": 16,
+    "time_limit": 33
+   }
+  },
+  {
+   "steps": 440000,
+   "success_rate": 0.48,
+   "mean_deliveries": 1.44,
+   "mean_pickups": 2.18,
+   "mean_steps": 249.48,
+   "mean_invalid_interactions": 50.22,
+   "mean_total_reward": 39.58196800000001,
+   "end_reasons": {
+    "battery_depleted": 2,
+    "success": 24,
+    "time_limit": 24
+   }
+  },
+  {
+   "steps": 460000,
+   "success_rate": 0.48,
+   "mean_deliveries": 1.44,
+   "mean_pickups": 2.2,
+   "mean_steps": 249.18,
+   "mean_invalid_interactions": 10.36,
+   "mean_total_reward": 47.63823840000011,
+   "end_reasons": {
+    "battery_depleted": 1,
+    "success": 24,
+    "time_limit": 25
+   }
+  },
+  {
+   "steps": 480000,
+   "success_rate": 0.76,
+   "mean_deliveries": 2.28,
+   "mean_pickups": 2.68,
+   "mean_steps": 151.48,
+   "mean_invalid_interactions": 44.24,
+   "mean_total_reward": 83.97088960000006,
+   "end_reasons": {
+    "battery_depleted": 1,
+    "success": 38,
+    "time_limit": 11
+   }
+  },
+  {
+   "steps": 500000,
+   "success_rate": 0.88,
+   "mean_deliveries": 2.64,
+   "mean_pickups": 2.86,
+   "mean_steps": 116.6,
+   "mean_invalid_interactions": 25.26,
+   "mean_total_reward": 104.47483200000006,
+   "end_reasons": {
+    "success": 44,
+    "time_limit": 6
+   }
+  },
+  {
+   "steps": 520000,
+   "success_rate": 0.9,
+   "mean_deliveries": 2.7,
+   "mean_pickups": 2.9,
+   "mean_steps": 109.26,
+   "mean_invalid_interactions": 12.84,
+   "mean_total_reward": 110.03293760000005,
+   "end_reasons": {
+    "success": 45,
+    "time_limit": 5
+   }
+  },
+  {
+   "steps": 540000,
+   "success_rate": 0.78,
+   "mean_deliveries": 2.34,
+   "mean_pickups": 2.68,
+   "mean_steps": 140.46,
+   "mean_invalid_interactions": 48.34,
+   "mean_total_reward": 85.9687712,
+   "end_reasons": {
+    "battery_depleted": 1,
+    "success": 39,
+    "time_limit": 10
+   }
+  },
+  {
+   "steps": 560000,
+   "success_rate": 0.92,
+   "mean_deliveries": 2.76,
+   "mean_pickups": 2.92,
+   "mean_steps": 95.5,
+   "mean_invalid_interactions": 3.22,
+   "mean_total_reward": 115.39437600000007,
+   "end_reasons": {
+    "battery_depleted": 1,
+    "success": 46,
+    "time_limit": 3
+   }
+  },
+  {
+   "steps": 580000,
+   "success_rate": 0.94,
+   "mean_deliveries": 2.82,
+   "mean_pickups": 2.94,
+   "mean_steps": 90.78,
+   "mean_invalid_interactions": 8.82,
+   "mean_total_reward": 116.8236032000001,
+   "end_reasons": {
+    "battery_depleted": 1,
+    "success": 47,
+    "time_limit": 2
+   }
+  },
+  {
+   "steps": 600000,
+   "success_rate": 0.9,
+   "mean_deliveries": 2.7,
+   "mean_pickups": 2.88,
+   "mean_steps": 102.04,
+   "mean_invalid_interactions": 13.44,
+   "mean_total_reward": 110.37746400000007,
+   "end_reasons": {
+    "battery_depleted": 1,
+    "success": 45,
+    "time_limit": 4
+   }
+  }
+ ]
+}

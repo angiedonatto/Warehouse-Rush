@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Manifiesto de modelo recuperable",
+  "type": "object",
+  "required": ["run_id","level_id","environment_version","git_commit","config_sha256","model_uri","model_sha256","normalization_uri","runtime_ref","evaluation_suite_id","seed","parent_run_id"],
+  "properties": {
+    "run_id": {"type":"string"},
+    "level_id": {"type":"string","enum":["n1","n2","n3","m1","m1o","m1b"]},
+    "environment_version": {"type":"string","pattern":"^warehouse-v[0-9]+$"},
+    "git_commit": {"type":"string","pattern":"^[0-9a-f]{40}$"},
+    "config_sha256": {"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "model_uri": {"type":"string"},
+    "model_sha256": {"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "normalization_uri": {"type":["string","null"]},
+    "runtime_ref": {"type":"string"},
+    "evaluation_suite_id": {"type":"string"},
+    "seed": {"type":"integer"},
+    "parent_run_id": {"type":["string","null"]},
+    "estado": {"enum":["candidato","recomendado","rechazado","fallido","interrumpido"]},
+    "created_at": {"type":"string"},
+    "budget_steps": {"type":"integer"},
+    "budget_minutes": {"type":"number"},
+    "schema_version": {"type":"integer"}
+  },
+  "additionalProperties": true
+}

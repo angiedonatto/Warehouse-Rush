@@ -1,0 +1,30 @@
+id: d3
+hipotesis: >
+  Con invalid_interaction -0.2 y collision -1 fijos, penalizar la distancia Manhattan al objetivo (-0.02 por celda y por paso) en el mapa abierto aumenta el éxito frente al control del mismo mapa. El término hace que quedarse quieto lejos del objetivo cuente más que acercarse.
+  Único cambio frente al control m1o-c0: distance = -0.02. Modelo, hiperparámetros, presupuesto y 3 productos aleatorios iguales.
+  Se refuta si el éxito en suite-m1o-v1 no supera al de m1o-c0 en >= 5 pp.
+nivel: m1o
+environment_version: warehouse-v4
+parent_run_id: null
+seed: 0
+presupuesto_pasos: 200000
+layout: configs/layout_v0.5.json   # mapa abierto: sin muro interior ni paso cerrable
+recompensa:
+  invalid_interaction: -0.2   # fijo (igual que m1-r2/r4-r7)
+  collision: -1.0             # fijo en -1 por instrucción del equipo
+  distance: -0.02           # única dimensión que cambia; por celda de distancia Manhattan, por paso
+ppo:
+  learning_rate: 3.0e-4
+  n_steps: 2048
+  n_envs: 4
+  batch_size: 64
+  n_epochs: 10
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_range: 0.2
+  ent_coef: 0.0
+  net_arch: [64, 64]
+evaluacion:
+  intermedia: dev-m1o-v1
+  cada_pasos: 20000
+  final: suite-m1o-v1

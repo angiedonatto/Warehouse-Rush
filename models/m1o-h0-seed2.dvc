@@ -1,0 +1,6 @@
+outs:
+- md5: 42de7548cea77c7f3a0d7803247ae247.dir
+  size: 69688
+  nfiles: 1
+  hash: md5
+  path: m1o-h0-seed2

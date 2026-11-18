@@ -1,0 +1,7 @@
+# Criterios de selección. Fijados ANTES de ver resultados; no cambiar después.
+version: 1
+adoptar_si:
+  mejora_exito_pp_min: 5          # puntos porcentuales sobre el baseline vigente, en la suite del nivel
+  aumento_choques_max_pct: 10     # choques por episodio no deben subir más de esto
+desempate: menor_tiempo_por_pedido
+si_no_cumple: rechazado           # el run y su evidencia se conservan

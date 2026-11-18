@@ -1,0 +1,34 @@
+id: i1
+hipotesis: >
+  Intervencion del incidente N3: ajuste fino de m1-c3-seed0 (modelo recomendado, receta base, warehouse-v10) con la
+  mitad de los ambientes de entrenamiento con el paso cerrable (6,14) cerrado (nivel m1b, 'mixto'). Solo cambia el
+  escenario de entrenamiento y el punto de partida; recompensa, PPO, parada y presupuesto iguales a m1-c3.
+  Degradacion medida antes (suite-m1b-v1): m1-c3-seed0 0% con el paso cerrado (98% abierto), 21.6 choques/ep, 0 recogidas.
+  Hipotesis: entrenar con el paso a veces cerrado ensena la ruta por x=20 sin olvidar la ruta normal.
+  Criterio (fijado antes): se acepta si la media de las 3 semillas da >= 50% de exito en suite-m1b-v1 y >= 93% en
+  suite-m1-v1 (98% - 5 pp), con <= 0.1 choques/ep en ambas. Si no, se rechaza y el recomendado sigue siendo m1-c3-seed0.
+nivel: m1b
+environment_version: warehouse-v10
+parent_run_id: m1-c3-seed0
+seed: 2
+presupuesto_pasos: 1800000
+parada_estancamiento: 100   # solo entrenamiento (v9)
+layout: configs/layout_v0.4.json   # mapa con muro interior (paso permanente x=20, paso cerrable x=6)
+recompensa:
+  invalid_interaction: -0.2
+  collision: -1.0
+ppo:
+  learning_rate: 3.0e-4
+  n_steps: 2048
+  n_envs: 4
+  batch_size: 64
+  n_epochs: 10
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_range: 0.2
+  ent_coef: 0.0
+  net_arch: [64, 64]
+evaluacion:
+  intermedia: dev-m1-v1
+  cada_pasos: 20000
+  final: suite-m1b-v1

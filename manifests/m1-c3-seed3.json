@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "run_id": "m1-c3-seed3",
+  "level_id": "m1",
+  "environment_version": "warehouse-v10",
+  "git_commit": "49ca3b665e2712414560266c26edb96cea6a4362",
+  "config_sha256": "cf8ff3f2b4a6da4576a50fde992654f0b5ef0688574722c4274bb50c96b8144e",
+  "model_uri": "models/m1-c3-seed3/model.zip",
+  "model_sha256": "33bae5af67bf61d802f7539f501ff43d0511b0f80406d273e5af5ea3be88d76d",
+  "normalization_uri": null,
+  "runtime_ref": "env/warehouse-v10",
+  "evaluation_suite_id": "suite-m1-v1",
+  "seed": 3,
+  "parent_run_id": null,
+  "estado": "candidato",
+  "created_at": "2026-11-15T04:23:22.492697+00:00",
+  "author": "lis",
+  "algorithm": "PPO",
+  "policy": "MlpPolicy",
+  "budget_steps": 1802240,
+  "budget_minutes": 110.31,
+  "mlflow_run_id": "3868f06a4ae748f493095975d24910f4",
+  "mlflow_experiment": "warehouse-m1",
+  "config_uri": "configs/experiments/m1_c3_largo_seed3.yaml",
+  "obs_spec": "envs/CONTRATO.md@env/warehouse-v10 (Box(27), todo en [0,1], sin VecNormalize)",
+  "action_spec": "envs/CONTRATO.md@env/warehouse-v10 (Discrete(8): AVANZAR, GIRAR_I, GIRAR_D, FRENAR, CARGAR, DESCARGAR, SUBIR, BAJAR)",
+  "rules_ref": "docs/ambiente-v0.10.md",
+  "reward": {
+    "pickup": 10.0,
+    "delivery": 30.0,
+    "completion": 50.0,
+    "progress": 0.3,
+    "time": -0.1,
+    "battery": -0.02,
+    "collision": -1.0,
+    "invalid_interaction": -0.2,
+    "distance": 0.0,
+    "manhattan_progress": 0.0,
+    "height_mismatch": 0.0,
+    "potential": 0.0,
+    "potential_nav": 0.4,
+    "face_bonus": 0.0,
+    "carry_milestone": 0.0
+  },
+  "reward_overrides": {
+    "invalid_interaction": -0.2,
+    "collision": -1.0
+  },
+  "layout_path": "configs/layout_v0.4.json",
+  "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
+  "results_uri": "docs/resultados/eval/m1-c3-seed3/evaluation.json",
+  "training_metadata_uri": "docs/resultados/training/m1-c3-seed3/metadata.json",
+  "weights_storage": "DVC: models/m1-c3-seed3.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1-c3-seed3.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
+  "git_dirty_note": "git_dirty figura false; commit 49ca3b6",
+  "evaluation": {
+    "suite": "suite-m1-v1",
+    "episodes": 50,
+    "seeds": "10000-10049",
+    "scenario": "mapa con muro layout_v0.4",
+    "deterministic": true,
+    "policies": {
+      "heuristic": {
+        "success_rate": 1.0,
+        "mean_total_reward": 115.85822079999998,
+        "mean_steps": 79.92,
+        "mean_battery_used": 49.68896000000024,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 3.0,
+        "mean_pickups": 3.0,
+        "end_reasons": {
+          "success": 50
+        },
+        "action_counts": {
+          "0": 2474,
+          "1": 308,
+          "2": 278,
+          "3": 186,
+          "4": 150,
+          "5": 50,
+          "6": 275,
+          "7": 275
+        }
+      },
+      "ppo": {
+        "success_rate": 0.0,
+        "mean_total_reward": -4.730739200000025,
+        "mean_steps": 400.0,
+        "mean_battery_used": 76.23695999999829,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 0.0,
+        "mean_pickups": 2.66,
+        "end_reasons": {
+          "time_limit": 50
+        },
+        "action_counts": {
+          "0": 1851,
+          "1": 2381,
+          "2": 275,
+          "3": 14886,
+          "4": 133,
+          "5": 0,
+          "6": 243,
+          "7": 231
+        }
+      }
+    }
+  },
+  "decision": "candidato",
+  "decision_reason": "Receta base (invalid -0.2, collision -1, progress 0.3 por defecto) con 1 802 240 pasos y parada 100, mapa con muro. 0% de éxito pero la más avanzada de las 4 semillas nuevas: 50/50 llegan, miran, suben la bandeja y cargan (2.66 recogidas/ep, 0 inválidas, 0 choques) y ninguna entrega: 42 episodios acaban con carga y la bandeja abajo, 8 con la bandeja arriba (atasco tras cargar). Primer retorno positivo de la evaluación intermedia a 1 400 000 pasos; 9 454 episodios de entrenamiento, 0 con éxito.",
+  "stagnation_window": 100,
+  "weights_dvc": "models/m1-c3-seed3.dvc"
+}

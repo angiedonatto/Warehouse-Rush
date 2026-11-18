@@ -1,0 +1,447 @@
+{
+  "id": "finalistas-m1-v1",
+  "suite": "suite-m1-v1",
+  "scenario": "normal",
+  "rule": {
+    "umbral_exito_semilla": 0.5,
+    "margen_semillas": 1,
+    "desempate": "menos términos de recompensa fuera del valor por defecto"
+  },
+  "recipes": [
+    {
+      "recipe": "c3",
+      "n_seeds": 5,
+      "runs": [
+        {
+          "run": "m1-c3-seed0",
+          "seed": 0,
+          "episodes": 50,
+          "success_rate": 0.98,
+          "mean_collisions": 0.0,
+          "mean_invalid": 7.1,
+          "mean_deliveries": 2.94,
+          "mean_pickups": 2.98,
+          "mean_steps_successes": 86.77551020408163,
+          "end_reasons": {
+            "success": 49,
+            "time_limit": 1
+          },
+          "budget_steps": 1802240,
+          "train_minutes": 99.7,
+          "stagnation_window": 100,
+          "reward_overrides": {
+            "invalid_interaction": -0.2,
+            "collision": -1.0
+          }
+        },
+        {
+          "run": "m1-c3-seed1",
+          "seed": 1,
+          "episodes": 50,
+          "success_rate": 0.0,
+          "mean_collisions": 0.0,
+          "mean_invalid": 0.0,
+          "mean_deliveries": 0.0,
+          "mean_pickups": 0.0,
+          "mean_steps_successes": null,
+          "end_reasons": {
+            "time_limit": 50
+          },
+          "budget_steps": 1802240,
+          "train_minutes": 104.3,
+          "stagnation_window": 100,
+          "reward_overrides": {
+            "invalid_interaction": -0.2,
+            "collision": -1.0
+          }
+        },
+        {
+          "run": "m1-c3-seed2",
+          "seed": 2,
+          "episodes": 50,
+          "success_rate": 0.0,
+          "mean_collisions": 4.48,
+          "mean_invalid": 55.72,
+          "mean_deliveries": 0.0,
+          "mean_pickups": 0.0,
+          "mean_steps_successes": null,
+          "end_reasons": {
+            "battery_depleted": 1,
+            "time_limit": 49
+          },
+          "budget_steps": 1802240,
+          "train_minutes": 104.2,
+          "stagnation_window": 100,
+          "reward_overrides": {
+            "invalid_interaction": -0.2,
+            "collision": -1.0
+          }
+        },
+        {
+          "run": "m1-c3-seed3",
+          "seed": 3,
+          "episodes": 50,
+          "success_rate": 0.0,
+          "mean_collisions": 0.0,
+          "mean_invalid": 0.0,
+          "mean_deliveries": 0.0,
+          "mean_pickups": 2.66,
+          "mean_steps_successes": null,
+          "end_reasons": {
+            "time_limit": 50
+          },
+          "budget_steps": 1802240,
+          "train_minutes": 110.3,
+          "stagnation_window": 100,
+          "reward_overrides": {
+            "invalid_interaction": -0.2,
+            "collision": -1.0
+          }
+        },
+        {
+          "run": "m1-c3-seed4",
+          "seed": 4,
+          "episodes": 50,
+          "success_rate": 0.0,
+          "mean_collisions": 0.0,
+          "mean_invalid": 0.0,
+          "mean_deliveries": 0.0,
+          "mean_pickups": 0.0,
+          "mean_steps_successes": null,
+          "end_reasons": {
+            "time_limit": 50
+          },
+          "budget_steps": 1802240,
+          "train_minutes": 104.8,
+          "stagnation_window": 100,
+          "reward_overrides": {
+            "invalid_interaction": -0.2,
+            "collision": -1.0
+          }
+        }
+      ],
+      "mean_success": 0.196,
+      "std_success": 0.4382693235899588,
+      "ci95_mean_success": [
+        0.0,
+        0.588
+      ],
+      "seeds_at_threshold": 1,
+      "mean_collisions": 0.8960000000000001,
+      "mean_invalid": 12.564,
+      "train_minutes_total": 523.3,
+      "budget_steps_each": [
+        1802240
+      ]
+    },
+    {
+      "recipe": "e4",
+      "n_seeds": 6,
+      "runs": [
+        {
+          "run": "m1-e4x-seed0",
+          "seed": 0,
+          "episodes": 50,
+          "success_rate": 0.0,
+          "mean_collisions": 0.0,
+          "mean_invalid": 117.86,
+          "mean_deliveries": 0.0,
+          "mean_pickups": 0.0,
+          "mean_steps_successes": null,
+          "end_reasons": {
+            "time_limit": 50
+          },
+          "budget_steps": 1802240,
+          "train_minutes": 74.9,
+          "stagnation_window": null,
+          "reward_overrides": {
+            "invalid_interaction": -0.2,
+            "collision": -1.0,
+            "manhattan_progress": 0.3,
+            "height_mismatch": -0.02
+          }
+        },
+        {
+          "run": "m1-e4x-seed1",
+          "seed": 1,
+          "episodes": 50,
+          "success_rate": 0.0,
+          "mean_collisions": 0.0,
+          "mean_invalid": 0.0,
+          "mean_deliveries": 0.0,
+          "mean_pickups": 0.0,
+          "mean_steps_successes": null,
+          "end_reasons": {
+            "time_limit": 50
+          },
+          "budget_steps": 1802240,
+          "train_minutes": 74.8,
+          "stagnation_window": null,
+          "reward_overrides": {
+            "invalid_interaction": -0.2,
+            "collision": -1.0,
+            "manhattan_progress": 0.3,
+            "height_mismatch": -0.02
+          }
+        },
+        {
+          "run": "m1-e4x-seed2",
+          "seed": 2,
+          "episodes": 50,
+          "success_rate": 0.8,
+          "mean_collisions": 0.0,
+          "mean_invalid": 63.8,
+          "mean_deliveries": 2.4,
+          "mean_pickups": 2.68,
+          "mean_steps_successes": 91.825,
+          "end_reasons": {
+            "battery_depleted": 2,
+            "success": 40,
+            "time_limit": 8
+          },
+          "budget_steps": 1802240,
+          "train_minutes": 80.1,
+          "stagnation_window": null,
+          "reward_overrides": {
+            "invalid_interaction": -0.2,
+            "collision": -1.0,
+            "manhattan_progress": 0.3,
+            "height_mismatch": -0.02
+          }
+        },
+        {
+          "run": "m1-e4y-seed3",
+          "seed": 3,
+          "episodes": 50,
+          "success_rate": 1.0,
+          "mean_collisions": 0.0,
+          "mean_invalid": 6.62,
+          "mean_deliveries": 3.0,
+          "mean_pickups": 3.0,
+          "mean_steps_successes": 94.22,
+          "end_reasons": {
+            "success": 50
+          },
+          "budget_steps": 1802240,
+          "train_minutes": 103.0,
+          "stagnation_window": 100,
+          "reward_overrides": {
+            "invalid_interaction": -0.2,
+            "collision": -1.0,
+            "manhattan_progress": 0.3,
+            "height_mismatch": -0.02
+          }
+        },
+        {
+          "run": "m1-e4y-seed4",
+          "seed": 4,
+          "episodes": 50,
+          "success_rate": 0.0,
+          "mean_collisions": 0.0,
+          "mean_invalid": 0.0,
+          "mean_deliveries": 0.0,
+          "mean_pickups": 0.0,
+          "mean_steps_successes": null,
+          "end_reasons": {
+            "time_limit": 50
+          },
+          "budget_steps": 1802240,
+          "train_minutes": 94.1,
+          "stagnation_window": 100,
+          "reward_overrides": {
+            "invalid_interaction": -0.2,
+            "collision": -1.0,
+            "manhattan_progress": 0.3,
+            "height_mismatch": -0.02
+          }
+        },
+        {
+          "run": "m1-e4y-seed5",
+          "seed": 5,
+          "episodes": 50,
+          "success_rate": 0.0,
+          "mean_collisions": 0.0,
+          "mean_invalid": 0.0,
+          "mean_deliveries": 0.0,
+          "mean_pickups": 0.0,
+          "mean_steps_successes": null,
+          "end_reasons": {
+            "time_limit": 50
+          },
+          "budget_steps": 1802240,
+          "train_minutes": 92.7,
+          "stagnation_window": 100,
+          "reward_overrides": {
+            "invalid_interaction": -0.2,
+            "collision": -1.0,
+            "manhattan_progress": 0.3,
+            "height_mismatch": -0.02
+          }
+        }
+      ],
+      "mean_success": 0.3,
+      "std_success": 0.469041575982343,
+      "ci95_mean_success": [
+        0.0,
+        0.6666666666666666
+      ],
+      "seeds_at_threshold": 2,
+      "mean_collisions": 0.0,
+      "mean_invalid": 31.38,
+      "train_minutes_total": 519.6,
+      "budget_steps_each": [
+        1802240
+      ]
+    }
+  ],
+  "references": {
+    "c4": {
+      "recipe": "c4",
+      "n_seeds": 4,
+      "runs": [
+        {
+          "run": "m1-c4-seed1",
+          "seed": 1,
+          "episodes": 50,
+          "success_rate": 0.0,
+          "mean_collisions": 0.0,
+          "mean_invalid": 7.02,
+          "mean_deliveries": 0.0,
+          "mean_pickups": 0.44,
+          "mean_steps_successes": null,
+          "end_reasons": {
+            "battery_depleted": 3,
+            "time_limit": 47
+          },
+          "budget_steps": 1802240,
+          "train_minutes": 87.5,
+          "stagnation_window": 100,
+          "reward_overrides": {
+            "invalid_interaction": -0.2,
+            "collision": -1.0
+          }
+        },
+        {
+          "run": "m1-c4-seed2",
+          "seed": 2,
+          "episodes": 50,
+          "success_rate": 0.0,
+          "mean_collisions": 0.0,
+          "mean_invalid": 0.0,
+          "mean_deliveries": 0.0,
+          "mean_pickups": 3.0,
+          "mean_steps_successes": null,
+          "end_reasons": {
+            "time_limit": 50
+          },
+          "budget_steps": 1802240,
+          "train_minutes": 92.4,
+          "stagnation_window": 100,
+          "reward_overrides": {
+            "invalid_interaction": -0.2,
+            "collision": -1.0
+          }
+        },
+        {
+          "run": "m1-c4-seed3",
+          "seed": 3,
+          "episodes": 50,
+          "success_rate": 0.0,
+          "mean_collisions": 0.0,
+          "mean_invalid": 0.0,
+          "mean_deliveries": 0.0,
+          "mean_pickups": 0.0,
+          "mean_steps_successes": null,
+          "end_reasons": {
+            "time_limit": 50
+          },
+          "budget_steps": 1802240,
+          "train_minutes": 87.1,
+          "stagnation_window": 100,
+          "reward_overrides": {
+            "invalid_interaction": -0.2,
+            "collision": -1.0
+          }
+        },
+        {
+          "run": "m1-c4-seed4",
+          "seed": 4,
+          "episodes": 50,
+          "success_rate": 0.0,
+          "mean_collisions": 0.0,
+          "mean_invalid": 0.6,
+          "mean_deliveries": 0.0,
+          "mean_pickups": 0.86,
+          "mean_steps_successes": null,
+          "end_reasons": {
+            "time_limit": 50
+          },
+          "budget_steps": 1802240,
+          "train_minutes": 88.4,
+          "stagnation_window": 100,
+          "reward_overrides": {
+            "invalid_interaction": -0.2,
+            "collision": -1.0
+          }
+        }
+      ],
+      "mean_success": 0.0,
+      "std_success": 0.0,
+      "ci95_mean_success": [
+        0.0,
+        0.0
+      ],
+      "seeds_at_threshold": 0,
+      "mean_collisions": 0.0,
+      "mean_invalid": 1.9049999999999998,
+      "train_minutes_total": 355.4,
+      "budget_steps_each": [
+        1802240
+      ]
+    }
+  },
+  "baselines": {
+    "random": {
+      "run": "lineas-base-suite-m1-v1",
+      "seed": null,
+      "episodes": 50,
+      "success_rate": 0.0,
+      "mean_collisions": 15.34,
+      "mean_invalid": 199.6,
+      "mean_deliveries": 0.0,
+      "mean_pickups": 0.0,
+      "mean_steps_successes": null,
+      "end_reasons": {
+        "time_limit": 50
+      },
+      "budget_steps": null,
+      "train_minutes": null,
+      "stagnation_window": null,
+      "reward_overrides": {}
+    },
+    "heuristic": {
+      "run": "lineas-base-suite-m1-v1",
+      "seed": null,
+      "episodes": 50,
+      "success_rate": 1.0,
+      "mean_collisions": 0.0,
+      "mean_invalid": 0.0,
+      "mean_deliveries": 3.0,
+      "mean_pickups": 3.0,
+      "mean_steps_successes": 79.92,
+      "end_reasons": {
+        "success": 50
+      },
+      "budget_steps": null,
+      "train_minutes": null,
+      "stagnation_window": null,
+      "reward_overrides": {}
+    }
+  },
+  "decision": {
+    "selected": "c3",
+    "reason": "diferencia de 1 semilla(s) que alcanzan el umbral (<= 1): no distinguible; desempate por menos términos de recompensa ({'c3': 2, 'e4': 4})",
+    "distinguishable": false
+  },
+  "per_seed_unit": "cada semilla de entrenamiento pesa lo mismo; IC bootstrap de la media entre semillas"
+}

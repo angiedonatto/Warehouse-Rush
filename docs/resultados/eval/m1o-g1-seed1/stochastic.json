@@ -1,0 +1,40 @@
+{
+  "run": "m1o-g1-seed1",
+  "suite_seeds": "10000-10049",
+  "deterministic": false,
+  "repeats": [
+    {
+      "sampling_seed": 1000,
+      "success_rate": 0.0,
+      "mean_steps_of_successes": null,
+      "mean_deliveries": 0.0,
+      "mean_invalid": 18.18,
+      "mean_collisions": 0.1,
+      "end_reasons": {
+        "time_limit": 50
+      }
+    },
+    {
+      "sampling_seed": 1001,
+      "success_rate": 0.0,
+      "mean_steps_of_successes": null,
+      "mean_deliveries": 0.0,
+      "mean_invalid": 17.78,
+      "mean_collisions": 0.14,
+      "end_reasons": {
+        "time_limit": 50
+      }
+    },
+    {
+      "sampling_seed": 1002,
+      "success_rate": 0.0,
+      "mean_steps_of_successes": null,
+      "mean_deliveries": 0.0,
+      "mean_invalid": 17.68,
+      "mean_collisions": 0.08,
+      "end_reasons": {
+        "time_limit": 50
+      }
+    }
+  ]
+}

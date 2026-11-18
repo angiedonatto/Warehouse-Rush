@@ -1,0 +1,274 @@
+{
+  "schema_version": 1,
+  "run_id": "m1b-i1-seed1",
+  "level_id": "m1b",
+  "environment_version": "warehouse-v10",
+  "git_commit": "37fe4c7a8569e7762f2795bdd3ae6271d1bc7a93",
+  "config_sha256": "fa1abfaa1b0c2a12b0b08854bfcac639b76f710730d6f275883aeaa959f4d261",
+  "model_uri": "models/m1b-i1-seed1/model.zip",
+  "model_sha256": "569b0fdd1539c8c2b0ff61766346da3287750288c02eaed66df52bb79e9b480a",
+  "normalization_uri": null,
+  "runtime_ref": "env/warehouse-v10",
+  "evaluation_suite_id": "suite-m1b-v1",
+  "seed": 1,
+  "parent_run_id": "m1-c3-seed0",
+  "estado": "rechazado",
+  "created_at": "2026-11-16T02:14:32.348920+00:00",
+  "author": "lis",
+  "algorithm": "PPO",
+  "policy": "MlpPolicy",
+  "budget_steps": 3604480,
+  "budget_minutes": 77.09,
+  "mlflow_run_id": "7e9c353e34ca4350b695ab56b5a8ba92",
+  "mlflow_experiment": "Default",
+  "config_uri": "configs/experiments/m1b_i1_incidente_seed1.yaml",
+  "obs_spec": "envs/CONTRATO.md@env/warehouse-v10 (Box(27), todo en [0,1], sin VecNormalize)",
+  "action_spec": "envs/CONTRATO.md@env/warehouse-v10 (Discrete(8): AVANZAR, GIRAR_I, GIRAR_D, FRENAR, CARGAR, DESCARGAR, SUBIR, BAJAR)",
+  "rules_ref": "docs/ambiente-v0.10.md",
+  "reward": {
+    "pickup": 10.0,
+    "delivery": 30.0,
+    "completion": 50.0,
+    "progress": 0.3,
+    "time": -0.1,
+    "battery": -0.02,
+    "collision": -1.0,
+    "invalid_interaction": -0.2,
+    "distance": 0.0,
+    "manhattan_progress": 0.0,
+    "height_mismatch": 0.0,
+    "potential": 0.0,
+    "potential_nav": 0.4,
+    "face_bonus": 0.0,
+    "carry_milestone": 0.0
+  },
+  "reward_overrides": {
+    "invalid_interaction": -0.2,
+    "collision": -1.0
+  },
+  "layout_path": "configs/layout_v0.4.json",
+  "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
+  "results_uri": "docs/resultados/eval/m1b-i1-seed1/evaluation.json",
+  "training_metadata_uri": "docs/resultados/training/m1b-i1-seed1/metadata.json",
+  "weights_storage": "DVC: models/m1b-i1-seed1.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1b-i1-seed1.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
+  "git_dirty_note": "git_dirty figura true solo por carpetas de salida sin versionar de runs hermanos lanzados en paralelo; ningún archivo versionado cambió (commit 37fe4c7)",
+  "evaluation": {
+    "suite": "suite-m1b-v1",
+    "episodes": 50,
+    "seeds": "10000-10049",
+    "scenario": "mapa con muro layout_v0.4; ambos escenarios con las semillas 10000-10049",
+    "deterministic": true,
+    "policies": {
+      "heuristic": {
+        "success_rate": 1.0,
+        "mean_total_reward": 119.98142079999997,
+        "mean_steps": 103.08,
+        "mean_battery_used": 67.9289600000003,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 3.0,
+        "mean_pickups": 3.0,
+        "end_reasons": {
+          "success": 50
+        },
+        "action_counts": {
+          "0": 3608,
+          "1": 334,
+          "2": 276,
+          "3": 186,
+          "4": 150,
+          "5": 50,
+          "6": 275,
+          "7": 275
+        }
+      },
+      "ppo": {
+        "success_rate": 0.9,
+        "mean_total_reward": 105.58395999999995,
+        "mean_steps": 136.72,
+        "mean_battery_used": 70.40200000000009,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 2.7,
+        "mean_pickups": 2.8,
+        "end_reasons": {
+          "success": 45,
+          "time_limit": 5
+        },
+        "action_counts": {
+          "0": 3564,
+          "1": 449,
+          "2": 179,
+          "3": 1939,
+          "4": 140,
+          "5": 45,
+          "6": 260,
+          "7": 260
+        }
+      }
+    },
+    "by_scenario": {
+      "suite-m1-v1 (paso abierto)": {
+        "heuristic": {
+          "success_rate": 1.0,
+          "mean_total_reward": 115.85822079999998,
+          "mean_steps": 79.92,
+          "mean_battery_used": 49.68896000000024,
+          "mean_collisions": 0.0,
+          "mean_invalid_interactions": 0.0,
+          "mean_deliveries": 3.0,
+          "mean_pickups": 3.0,
+          "end_reasons": {
+            "success": 50
+          },
+          "action_counts": {
+            "0": 2474,
+            "1": 308,
+            "2": 278,
+            "3": 186,
+            "4": 150,
+            "5": 50,
+            "6": 275,
+            "7": 275
+          }
+        },
+        "ppo": {
+          "success_rate": 0.98,
+          "mean_total_reward": 112.28185439999999,
+          "mean_steps": 95.52,
+          "mean_battery_used": 52.307280000000155,
+          "mean_collisions": 0.0,
+          "mean_invalid_interactions": 0.0,
+          "mean_deliveries": 2.94,
+          "mean_pickups": 2.96,
+          "end_reasons": {
+            "success": 49,
+            "time_limit": 1
+          },
+          "action_counts": {
+            "0": 2548,
+            "1": 363,
+            "2": 257,
+            "3": 865,
+            "4": 148,
+            "5": 49,
+            "6": 273,
+            "7": 273
+          }
+        }
+      },
+      "suite-m1b-v1 (paso (6,14) cerrado)": {
+        "heuristic": {
+          "success_rate": 1.0,
+          "mean_total_reward": 119.98142079999997,
+          "mean_steps": 103.08,
+          "mean_battery_used": 67.9289600000003,
+          "mean_collisions": 0.0,
+          "mean_invalid_interactions": 0.0,
+          "mean_deliveries": 3.0,
+          "mean_pickups": 3.0,
+          "end_reasons": {
+            "success": 50
+          },
+          "action_counts": {
+            "0": 3608,
+            "1": 334,
+            "2": 276,
+            "3": 186,
+            "4": 150,
+            "5": 50,
+            "6": 275,
+            "7": 275
+          }
+        },
+        "ppo": {
+          "success_rate": 0.9,
+          "mean_total_reward": 105.58395999999995,
+          "mean_steps": 136.72,
+          "mean_battery_used": 70.40200000000009,
+          "mean_collisions": 0.0,
+          "mean_invalid_interactions": 0.0,
+          "mean_deliveries": 2.7,
+          "mean_pickups": 2.8,
+          "end_reasons": {
+            "success": 45,
+            "time_limit": 5
+          },
+          "action_counts": {
+            "0": 3564,
+            "1": 449,
+            "2": 179,
+            "3": 1939,
+            "4": 140,
+            "5": 45,
+            "6": 260,
+            "7": 260
+          }
+        }
+      }
+    }
+  },
+  "decision": "rechazado",
+  "decision_reason": "Intervención m1b-i1 rechazada por el criterio pre-registrado (media de 3 semillas): éxito 92% en suite-m1b-v1 y 97.3% en suite-m1-v1 cumplen, pero choques 2.43/ep con el paso cerrado (> 0.1), todos de la semilla 2. Esta semilla sola cumpliría (98% abierto, 90% cerrado, 0 choques); promoverla exige pre-registro aparte. El recomendado sigue siendo m1-c3-seed0.",
+  "stagnation_window": 100,
+  "best_checkpoint_diagnostic": {
+    "model_uri": "models/m1b-i1-seed1/best/best_model.zip",
+    "results_uri": "docs/resultados/eval/m1b-i1-seed1-best/evaluation.json",
+    "note": "solo diagnóstico (la regla «mejor checkpoint» no se adoptó); elegido por la evaluación periódica con el paso cerrado, 5 episodios desde la semilla 20000",
+    "by_scenario": {
+      "suite-m1-v1 (paso abierto)": {
+        "ppo": {
+          "success_rate": 1.0,
+          "mean_total_reward": 115.74494079999998,
+          "mean_steps": 82.32,
+          "mean_battery_used": 51.15296000000024,
+          "mean_collisions": 0.0,
+          "mean_invalid_interactions": 0.0,
+          "mean_deliveries": 3.0,
+          "mean_pickups": 3.0,
+          "end_reasons": {
+            "success": 50
+          },
+          "action_counts": {
+            "0": 2556,
+            "1": 365,
+            "2": 259,
+            "3": 186,
+            "4": 150,
+            "5": 50,
+            "6": 275,
+            "7": 275
+          }
+        }
+      },
+      "suite-m1b-v1 (paso (6,14) cerrado)": {
+        "ppo": {
+          "success_rate": 1.0,
+          "mean_total_reward": 119.59646079999995,
+          "mean_steps": 106.92,
+          "mean_battery_used": 70.3769600000003,
+          "mean_collisions": 0.0,
+          "mean_invalid_interactions": 0.0,
+          "mean_deliveries": 3.0,
+          "mean_pickups": 3.0,
+          "end_reasons": {
+            "success": 50
+          },
+          "action_counts": {
+            "0": 3748,
+            "1": 474,
+            "2": 188,
+            "3": 186,
+            "4": 150,
+            "5": 50,
+            "6": 275,
+            "7": 275
+          }
+        }
+      }
+    }
+  },
+  "budget_note": "budget_steps acumula el padre m1-c3-seed0 (1 802 240) y el ajuste fino (1 802 240)",
+  "mlflow_note": "el run quedó en el experimento «Default» de MLflow por una carrera al crear warehouse-m1b con 3 runs en paralelo; corregido en pipelines/tracking.py::experiment_id",
+  "weights_dvc": "models/m1b-i1-seed1.dvc"
+}

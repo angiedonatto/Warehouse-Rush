@@ -1,0 +1,6 @@
+[core]
+    remote = r2
+['remote "r2"']
+    url = s3://mlops-final-project
+    endpointurl = https://40a7a6b0319ad6887e3098c98b0e311c.r2.cloudflarestorage.com
+    region = auto

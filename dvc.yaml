@@ -1,0 +1,13 @@
+# Pipeline reproducible con DVC (Git + DVC guardan identidad de artefactos grandes).
+# Cada stage entrena un config de configs/experiments/ y registra el run en MLflow.
+# Reproducir: dvc repro train_c0     (los pesos quedan en models/<nivel>-<id>-seed<semilla>/)
+stages:
+  train_c0:
+    cmd: python -m pipelines.train --config configs/experiments/c0_baseline_n1.yaml --tipo candidato
+    deps:
+      - configs/experiments/c0_baseline_n1.yaml
+      - configs/niveles.yaml
+      - envs
+      - pipelines/train.py
+    outs:
+      - models/n1-c0-seed0

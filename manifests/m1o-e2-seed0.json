@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "run_id": "m1o-e2-seed0",
+  "level_id": "m1o",
+  "environment_version": "warehouse-v5",
+  "git_commit": "2b8003191ed25e2d4ed1176ba19604141404d7de",
+  "config_sha256": "bff810793910898a2ddcd9047f32db621bc78cbfb9cb5447f4523f327f81b745",
+  "model_uri": "models/m1o-e2-seed0/model.zip",
+  "model_sha256": "2fee99361335dfce2c24321eaf630d13a13b8faab3e6eec7f9034f85cfbdd580",
+  "normalization_uri": null,
+  "runtime_ref": "env/warehouse-v5",
+  "evaluation_suite_id": "suite-m1o-v1",
+  "seed": 0,
+  "parent_run_id": null,
+  "estado": "rechazado",
+  "created_at": "2026-11-13T23:30:44.150899+00:00",
+  "author": "lis",
+  "algorithm": "PPO",
+  "policy": "MlpPolicy",
+  "budget_steps": 204800,
+  "budget_minutes": 10.2,
+  "mlflow_run_id": "ec06df6b914e492f8e8ff758c42aa246",
+  "mlflow_experiment": "warehouse-m1o",
+  "config_uri": "configs/experiments/m1o_e2_altura_01.yaml",
+  "obs_spec": "envs/CONTRATO.md@env/warehouse-v5 (Box(27), todo en [0,1], sin VecNormalize)",
+  "action_spec": "envs/CONTRATO.md@env/warehouse-v5 (Discrete(8): AVANZAR, GIRAR_I, GIRAR_D, FRENAR, CARGAR, DESCARGAR, SUBIR, BAJAR)",
+  "rules_ref": "docs/ambiente-v0.5.md",
+  "reward": {
+    "pickup": 10.0,
+    "delivery": 30.0,
+    "completion": 50.0,
+    "progress": 0.3,
+    "time": -0.1,
+    "battery": -0.02,
+    "collision": -1.0,
+    "invalid_interaction": -0.2,
+    "distance": 0.0,
+    "manhattan_progress": 0.0,
+    "height_mismatch": -0.1
+  },
+  "reward_overrides": {
+    "invalid_interaction": -0.2,
+    "collision": -1.0,
+    "manhattan_progress": 0.0,
+    "height_mismatch": -0.1
+  },
+  "layout_path": "configs/layout_v0.5.json",
+  "layout_sha256": "0bd1788a5daf4cd0857d62ef86ed48a4b2145ea6f2e050aa37eb901845e4bbca",
+  "results_uri": "docs/resultados/eval/m1o-e2-seed0/evaluation.json",
+  "training_metadata_uri": "docs/resultados/training/m1o-e2-seed0/metadata.json",
+  "weights_storage": "DVC: models/m1o-e2-seed0.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1o-e2-seed0.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
+  "git_dirty_note": "git_dirty figura true solo por carpetas de salida sin versionar de runs hermanos lanzados en paralelo; ningún archivo versionado cambió (commit 2b80031)",
+  "evaluation": {
+    "suite": "suite-m1o-v1",
+    "episodes": 50,
+    "seeds": "10000-10049",
+    "scenario": "mapa abierto layout_v0.5",
+    "deterministic": true,
+    "policies": {
+      "heuristic": {
+        "success_rate": 1.0,
+        "mean_total_reward": 113.19870080000003,
+        "mean_steps": 71.32,
+        "mean_battery_used": 44.464960000000225,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 3.0,
+        "mean_pickups": 3.0,
+        "end_reasons": {
+          "success": 50
+        },
+        "action_counts": {
+          "0": 2182,
+          "1": 191,
+          "2": 257,
+          "3": 186,
+          "4": 150,
+          "5": 50,
+          "6": 275,
+          "7": 275
+        }
+      },
+      "ppo": {
+        "success_rate": 0.0,
+        "mean_total_reward": -40.108159999999764,
+        "mean_steps": 400.0,
+        "mean_battery_used": 83.10799999999777,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 0.0,
+        "mean_pickups": 0.0,
+        "end_reasons": {
+          "time_limit": 50
+        },
+        "action_counts": {
+          "0": 259,
+          "1": 192,
+          "2": 19549,
+          "3": 0,
+          "4": 0,
+          "5": 0,
+          "6": 0,
+          "7": 0
+        }
+      }
+    }
+  },
+  "decision": "rechazado",
+  "decision_reason": "No supera al control (0 pp), 0 recogidas. Ningún episodio llega a una celda de interacción: gira cerca de la base (GIRAR_DERECHA 97.7%).",
+  "weights_dvc": "models/m1o-e2-seed0.dvc"
+}

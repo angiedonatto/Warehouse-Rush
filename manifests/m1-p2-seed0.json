@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "run_id": "m1-p2-seed0",
+  "level_id": "m1",
+  "environment_version": "warehouse-v9",
+  "git_commit": "870cf3884501789251ea79f8e4f58228f4d4c621",
+  "config_sha256": "bd5404ca77475a2f378db979f847d632e16214dadb2eb7887ef6588dbb78baa0",
+  "model_uri": "models/m1-p2-seed0/model.zip",
+  "model_sha256": "a25c432b7e4df3bb11ec7698400a4b50afc9a2c4452906fe43e92acbc0bac891",
+  "normalization_uri": null,
+  "runtime_ref": "env/warehouse-v9",
+  "evaluation_suite_id": "suite-m1-v1",
+  "seed": 0,
+  "parent_run_id": null,
+  "estado": "rechazado",
+  "created_at": "2026-11-14T20:56:27.327364+00:00",
+  "author": "lis",
+  "algorithm": "PPO",
+  "policy": "MlpPolicy",
+  "budget_steps": 606208,
+  "budget_minutes": 27.53,
+  "mlflow_run_id": "57491211aa82484ea420134720de080d",
+  "mlflow_experiment": "warehouse-m1",
+  "config_uri": "configs/experiments/m1_p2_potencial_sinparada_seed0.yaml",
+  "obs_spec": "envs/CONTRATO.md@env/warehouse-v9 (Box(27), todo en [0,1], sin VecNormalize)",
+  "action_spec": "envs/CONTRATO.md@env/warehouse-v9 (Discrete(8): AVANZAR, GIRAR_I, GIRAR_D, FRENAR, CARGAR, DESCARGAR, SUBIR, BAJAR)",
+  "rules_ref": "docs/ambiente-v0.9.md",
+  "reward": {
+    "pickup": 10.0,
+    "delivery": 30.0,
+    "completion": 50.0,
+    "progress": 0.0,
+    "time": -0.1,
+    "battery": -0.02,
+    "collision": -1.0,
+    "invalid_interaction": -0.2,
+    "distance": 0.0,
+    "manhattan_progress": 0.0,
+    "height_mismatch": 0.0,
+    "potential": 30.0,
+    "face_bonus": 0.0,
+    "carry_milestone": 0.0
+  },
+  "reward_overrides": {
+    "invalid_interaction": -0.2,
+    "collision": -1.0,
+    "progress": 0.0,
+    "potential": 30.0
+  },
+  "layout_path": "configs/layout_v0.4.json",
+  "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
+  "results_uri": "docs/resultados/eval/m1-p2-seed0/evaluation.json",
+  "training_metadata_uri": "docs/resultados/training/m1-p2-seed0/metadata.json",
+  "weights_storage": "DVC: models/m1-p2-seed0.dvc -> remoto r2 (Cloudflare R2, bucket mlops-final-project); recuperar con `dvc pull models/m1-p2-seed0.dvc` (credenciales en .dvc/config.local). Se guardan model.zip y best/; los checkpoints intermedios quedan solo en local (.dvcignore).",
+  "git_dirty_note": "git_dirty figura true solo por carpetas de salida sin versionar de runs hermanos lanzados en paralelo; ningún archivo versionado cambió (commit 870cf38)",
+  "evaluation": {
+    "suite": "suite-m1-v1",
+    "episodes": 50,
+    "seeds": "10000-10049",
+    "scenario": "mapa con muro layout_v0.4",
+    "deterministic": true,
+    "policies": {
+      "heuristic": {
+        "success_rate": 1.0,
+        "mean_total_reward": 121.05007739119934,
+        "mean_steps": 79.92,
+        "mean_battery_used": 49.68896000000024,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 0.0,
+        "mean_deliveries": 3.0,
+        "mean_pickups": 3.0,
+        "end_reasons": {
+          "success": 50
+        },
+        "action_counts": {
+          "0": 2474,
+          "1": 308,
+          "2": 278,
+          "3": 186,
+          "4": 150,
+          "5": 50,
+          "6": 275,
+          "7": 275
+        }
+      },
+      "ppo": {
+        "success_rate": 0.0,
+        "mean_total_reward": -57.56234858682078,
+        "mean_steps": 400.0,
+        "mean_battery_used": 42.817999999997774,
+        "mean_collisions": 0.0,
+        "mean_invalid_interactions": 53.2,
+        "mean_deliveries": 0.0,
+        "mean_pickups": 0.0,
+        "end_reasons": {
+          "time_limit": 50
+        },
+        "action_counts": {
+          "0": 187,
+          "1": 50,
+          "2": 50,
+          "3": 17053,
+          "4": 0,
+          "5": 0,
+          "6": 0,
+          "7": 2660
+        }
+      }
+    }
+  },
+  "decision": "rechazado",
+  "decision_reason": "Rechazado por el criterio fijado antes (éxito < 5% frente a m1-e4l 0%). Ablación: solo potencial (30.0) sin parada: 0% de éxito; 0/50 llegan a una celda; 85% FRENAR y 14% BAJAR (inválidas, 53.2/ep); se acerca en promedio a 11.1 desde 13.4. 1 512 episodios de entrenamiento, 0 con éxito. Misma conducta que p1: el fallo es del potencial, no de la parada.",
+  "stagnation_window": null,
+  "weights_dvc": "models/m1-p2-seed0.dvc"
+}

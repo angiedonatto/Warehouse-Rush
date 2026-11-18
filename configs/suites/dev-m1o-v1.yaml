@@ -1,0 +1,5 @@
+id: dev-m1o-v1
+uso: evaluacion intermedia durante el entrenamiento (warehouse-v3, nivel m1o, mapa configs/layout_v0.5.json)
+nivel: m1o
+episodios: 10
+semillas: [1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009]   # cada semilla fija el pedido de 3 SKU

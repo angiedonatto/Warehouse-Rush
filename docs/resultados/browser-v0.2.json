@@ -1,0 +1,323 @@
+{
+  "config": {
+    "argv": [
+      "/Users/AngieDonato/.nvm/versions/node/v24.17.0/bin/node",
+      "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/node_modules/.bin/playwright",
+      "test",
+      "--reporter=list,json"
+    ],
+    "configFile": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/playwright.config.js",
+    "rootDir": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/tests",
+        "snapshotDir": "/Users/AngieDonato/Documents/Proyectos/Academico/MLOPS/code/Warehouse-Rush/web/tests",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 45000,
+        "use": {
+          "baseURL": "http://127.0.0.1:8080",
+          "viewport": {
+            "width": 1440,
+            "height": 1040
+          },
+          "screenshot": "only-on-failure",
+          "launchOptions": {
+            "executablePath": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+            "args": [
+              "--enable-webgl",
+              "--enable-unsafe-swiftshader",
+              "--use-angle=swiftshader"
+            ]
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "viewer.spec.js",
+      "file": "viewer.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "real WebGL scene, six racks, same layout and no horizontal overflow",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 14887,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T01:56:59.584Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "695fe90a60bc17262776-c625bb2341c6e4225c29",
+          "file": "viewer.spec.js",
+          "line": 17,
+          "column": 1
+        },
+        {
+          "title": "step, play, pause and reset change the real Python episode",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 18533,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T01:57:15.072Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "695fe90a60bc17262776-95f3a9676dc2b72230e8",
+          "file": "viewer.spec.js",
+          "line": 28,
+          "column": 1
+        },
+        {
+          "title": "all four cameras, route, sensors and block switch work",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 21082,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T01:57:33.635Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "695fe90a60bc17262776-f593d75526f48bd87a7b",
+          "file": "viewer.spec.js",
+          "line": 43,
+          "column": 1
+        },
+        {
+          "title": "manual actions and completed deliveries stay synchronized",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 22140,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T01:57:54.745Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "695fe90a60bc17262776-ca66edec857821cf1917",
+          "file": "viewer.spec.js",
+          "line": 58,
+          "column": 1
+        },
+        {
+          "title": "mobile layout remains usable without horizontal scrolling",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10441,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T01:58:16.902Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "695fe90a60bc17262776-bb3c00079836b4692440",
+          "file": "viewer.spec.js",
+          "line": 80,
+          "column": 1
+        },
+        {
+          "title": "PPO and random selections execute their actual Python policies",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 23736,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T01:58:27.372Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "695fe90a60bc17262776-c2aa413b33696ee6efff",
+          "file": "viewer.spec.js",
+          "line": 90,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-24T01:56:58.923Z",
+    "duration": 112482.809,
+    "expected": 6,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

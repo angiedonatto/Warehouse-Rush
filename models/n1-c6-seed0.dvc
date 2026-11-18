@@ -1,0 +1,6 @@
+outs:
+- md5: 53d975537c0df41bb77182c4fac20fbc.dir
+  size: 255874
+  nfiles: 2
+  hash: md5
+  path: n1-c6-seed0

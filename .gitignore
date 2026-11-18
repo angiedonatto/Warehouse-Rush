@@ -1,0 +1,38 @@
+MLOps-Fichas-ambientes-2026-10-23.pdf
+qtable.npy
+mlflow.db
+mlruns/
+.venv/
+__pycache__/
+/models/*
+!/models/experiment-001/
+!/models/*.dvc
+
+# --- Warehouse Rush (Enunciado sec. 09 / guía de arranque) ---
+node_modules/
+dist/
+.env
+*.log
+tmp/
+# pesos grandes: van por DVC o almacenamiento de MLflow
+*.zip
+*.pt
+*.pth
+# test final reservado: fuera del repo público
+configs/suites/test-final*
+.pytest_cache/
+
+.venv-*/
+.env.*
+!.env.example
+*.egg-info/
+build/
+.DS_Store
+web/dist/
+web/test-results/
+web/playwright-report/
+.superdesign/tmp/
+.superdesign/project.json
+.vercel/
+.vercel
+.env*

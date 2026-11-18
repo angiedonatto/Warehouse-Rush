@@ -1,0 +1,121 @@
+{
+  "environment_version": "warehouse-v10",
+  "modelos": [
+    {
+      "id": "m1b-i1-seed1-best",
+      "run_id": "m1b-i1-seed1-best",
+      "level_id": "m1b",
+      "nivel": "N3 · paso (6,14) cerrado",
+      "estado": "recomendado",
+      "environment_version": "warehouse-v10",
+      "algorithm": "PPO",
+      "model_sha256": "46984e97b032920cd8e041e44b4f5d27751235cb7f4e04c634f523c2c41fdbb7",
+      "archivo": "models/servidos/m1b-i1-seed1-best.zip",
+      "manifiesto": "manifests/m1b-i1-seed1-best.json",
+      "git_commit": "37fe4c7a8569e7762f2795bdd3ae6271d1bc7a93",
+      "layout_path": "configs/layout_v0.4.json",
+      "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
+      "orders": 3,
+      "reward_overrides": {
+        "invalid_interaction": -0.2,
+        "collision": -1.0
+      },
+      "evaluation_suite_id": "suite-m1b-v1",
+      "evaluacion": {
+        "suite": "suite-m1b-v1",
+        "episodes": 50,
+        "met": null,
+        "criterion": null,
+        "ppo": {
+          "suite-m1-v1 (paso abierto)": {
+            "success_rate": 1.0,
+            "mean_steps": 82.32,
+            "mean_collisions": 0.0
+          },
+          "suite-m1b-v1 (paso (6,14) cerrado)": {
+            "success_rate": 1.0,
+            "mean_steps": 106.92,
+            "mean_collisions": 0.0
+          }
+        }
+      },
+      "test_final": {
+        "suite": "test-final-m1b-v1",
+        "episodes": 100,
+        "met": true,
+        "criterion": "exito >= 90% y choques <= 0.1/ep en cada escenario",
+        "ppo": {
+          "abierto": {
+            "success_rate": 1.0,
+            "mean_steps": 81.51,
+            "mean_collisions": 0.0
+          },
+          "cerrado (6,14)": {
+            "success_rate": 1.0,
+            "mean_steps": 106.05,
+            "mean_collisions": 0.0
+          }
+        }
+      },
+      "mlflow": {
+        "tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow",
+        "run_id": "fe27cee6f22c4fb2ad37c105f1d1ec20",
+        "experiment": "Default",
+        "registry": "warehouse-m1b v1"
+      }
+    },
+    {
+      "id": "m1-c3-seed0",
+      "run_id": "m1-c3-seed0",
+      "level_id": "m1",
+      "nivel": "N2 · mapa con muro",
+      "estado": "recomendado",
+      "environment_version": "warehouse-v10",
+      "algorithm": "PPO",
+      "model_sha256": "b6034b3396a676d8d9edd27c4229be239f8d0cf9b3ccd712bb0437c67d76b9a7",
+      "archivo": "models/servidos/m1-c3-seed0.zip",
+      "manifiesto": "manifests/m1-c3-seed0.json",
+      "git_commit": "750e99fd375b9eb28d3795e6373d9a62de6393f9",
+      "layout_path": "configs/layout_v0.4.json",
+      "layout_sha256": "a007d66b70d5f6b96d2203cca90f65b9d70c4a82b424922c49486494bbbc29cb",
+      "orders": 3,
+      "reward_overrides": {
+        "invalid_interaction": -0.2,
+        "collision": -1.0
+      },
+      "evaluation_suite_id": "suite-m1-v1",
+      "evaluacion": {
+        "suite": "suite-m1-v1",
+        "episodes": 50,
+        "met": null,
+        "criterion": null,
+        "ppo": {
+          "mapa con muro layout_v0.4": {
+            "success_rate": 0.98,
+            "mean_steps": 93.04,
+            "mean_collisions": 0.0
+          }
+        }
+      },
+      "test_final": {
+        "suite": "test-final-m1-v1",
+        "episodes": 100,
+        "met": true,
+        "criterion": "exito >= 90% y choques <= 0.1/ep",
+        "ppo": {
+          "abierto": {
+            "success_rate": 1.0,
+            "mean_steps": 90.55,
+            "mean_collisions": 0.0
+          }
+        }
+      },
+      "mlflow": {
+        "tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow",
+        "run_id": "e8fd6c8d7dfb420dbb997a7c80e3028f",
+        "experiment": "warehouse-m1",
+        "registry": "warehouse-m1 v1"
+      }
+    }
+  ]
+}

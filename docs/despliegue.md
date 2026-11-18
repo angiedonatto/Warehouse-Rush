@@ -75,3 +75,8 @@ recarga y controles de la interfaz.
 
 Referencias: [Python en Vercel](https://vercel.com/docs/functions/runtimes/python),
 [funciones de gran tamaño](https://vercel.com/changelog/vercel-functions-can-now-be-up-to-5-gb-in-package-size).
+
+## Modelos servidos (desde 2026-11-18)
+La API ejecuta los modelos `recomendado` de `configs/modelos_servidos.json`; sus pesos están en `models/servidos/` (en Git: Vercel no accede a DVC).
+Al promover un modelo nuevo: `dvc pull models/<run>.dvc`, actualizar su manifiesto a `recomendado` y correr `python -m pipelines.servir`.
+El script comprueba el SHA-256 contra el manifiesto y nunca sobrescribe un peso servido con otro contenido. Prueba: `python -m pytest tests/test_served_models.py`.

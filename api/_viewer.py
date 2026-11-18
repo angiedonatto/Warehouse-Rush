@@ -14,6 +14,7 @@ from threading import RLock, Timer
 from urllib.parse import urlsplit
 import webbrowser
 
+from envs import ENV_VERSION, make_env
 from envs.env import Action, WarehouseRushEnv
 from pipelines.baselines import make_policy
 from envs.missions import MakeupMissionEnv
@@ -22,6 +23,7 @@ from pipelines.train import default_model
 
 WEB_ROOT = Path(__file__).resolve().parents[1] / "web"
 EXPERIMENT_MODEL = WEB_ROOT.parent / "models/experiment-001/ppo-orders1-seed42.zip"
+SERVED_MODELS = WEB_ROOT.parent / "configs/modelos_servidos.json"   # lo escribe pipelines/servir.py
 
 
 def viewer_model(orders):
@@ -37,6 +39,39 @@ def _model_obs_shape(path: str):
     from stable_baselines3 import PPO
 
     return tuple(PPO.load(path, device="cpu").observation_space.shape)
+
+
+@lru_cache(maxsize=1)
+def served_models() -> dict:
+    """Modelos recomendados que la API puede ejecutar, por id (ver pipelines/servir.py)."""
+    if not SERVED_MODELS.is_file():
+        return {}
+    data = json.loads(SERVED_MODELS.read_text())
+    return {spec["id"]: spec for spec in data["modelos"] if spec["environment_version"] == ENV_VERSION}
+
+
+@lru_cache(maxsize=8)
+def _verified_model_path(model_id: str) -> Path:
+    """Ruta del peso servido tras comprobar su SHA-256 contra el manifiesto (una vez por proceso)."""
+    from pipelines.tracking import sha256_file
+
+    spec = served_models().get(model_id)
+    if spec is None:
+        raise ValueError(f"Modelo desconocido o incompatible con {ENV_VERSION}: {model_id}")
+    path = WEB_ROOT.parent / spec["archivo"]
+    if not path.is_file() or sha256_file(path) != spec["model_sha256"]:
+        raise ValueError(f"El peso servido de {model_id} no coincide con su manifiesto")
+    return path
+
+
+def model_summary(model_id):
+    """Identidad que muestra la web: modelo, nivel, estado, ambiente, hash y referencias."""
+    if model_id is None:
+        return None
+    spec = served_models()[model_id]
+    keys = ("id", "run_id", "level_id", "nivel", "estado", "environment_version", "algorithm", "model_sha256",
+            "manifiesto", "evaluation_suite_id", "evaluacion", "test_final", "mlflow", "orders")
+    return {key: spec[key] for key in keys}
 
 
 def ppo_compatible(orders, layout_path=None) -> bool:
@@ -59,6 +94,7 @@ class ViewerSession:
         self.policy_factory = policy_factory
         self.env = None
         self.inventory = Inventory()
+        self.model_id = None
         self.reset(settings or {"orders": 2, "blocked": True, "policy": "heuristic", "seed": 10000})
 
     def reset(self, settings):
@@ -67,6 +103,9 @@ class ViewerSession:
             blocked = settings.get("blocked", True)
             name = settings.get("policy", "heuristic")
             seed = settings.get("seed", 10000)
+            model_id = settings.get("model")
+            if model_id is not None:
+                return self._reset_served_model(model_id, name, blocked, seed)
             if type(orders) is not int or orders not in (1, 2):
                 raise ValueError("orders debe ser 1 o 2")
             if type(blocked) is not bool or type(seed) is not int or not 0 <= seed <= 2**32 - 1:
@@ -81,21 +120,55 @@ class ViewerSession:
             if type(makeup) is not bool:
                 raise ValueError("makeup debe ser booleano")
             env_type = MakeupMissionEnv if makeup else WarehouseRushEnv
-            environment = env_type(orders, blocked, self.layout_path, **({"inventory": self.inventory} if makeup else {}))
+            # Un modelo servido trae su propio inventario (stock repuesto por episodio): al volver a la
+            # misión del visor se empieza con el inventario compartido nuevo.
+            inventory = Inventory() if self.model_id is not None else self.inventory
+            environment = env_type(orders, blocked, self.layout_path, **({"inventory": inventory} if makeup else {}))
             observation, info = environment.reset(seed=seed)
             if self.env is not None:
                 if isinstance(self.env, MakeupMissionEnv):
-                    self.inventory.close(self.env.order_id, time=self.env.state.tiempo)
+                    self.env.inventory.close(self.env.order_id, time=self.env.state.tiempo)
                 self.env.close()
+            self.inventory = inventory
             info = environment._info()  # Refleja también reservas liberadas del pedido anterior.
             self.env, self.observation, self.info = environment, observation, info
             self.policy, self.policy_name = policy, name
+            self.model_id = None
             self.seed, self.done = seed, False
             self.terminated = self.truncated = False
             self.last_action, self.last_reward = None, 0.0
             self.trail = [list(environment.position)]
             self.events = [{"step": 0, "kind": "reset", "text": "Misión preparada. Robot en BASE."}]
             return self.payload()
+
+    def _reset_served_model(self, model_id, name, blocked, seed):
+        """Modelo recomendado en el MISMO ambiente con que se evaluó: mapa, pedidos (N productos de
+        1 unidad, stock repuesto) y recompensa de su manifiesto. Si algo no cuadra, la sesión vigente sigue."""
+        if name != "ppo":
+            raise ValueError("Un modelo servido se ejecuta con la política ppo")
+        if type(blocked) is not bool or type(seed) is not int or not 0 <= seed <= 2**32 - 1:
+            raise ValueError("blocked debe ser booleano y seed un entero no negativo de 32 bits")
+        path = _verified_model_path(model_id)
+        spec = served_models()[model_id]
+        policy = self.policy_factory("ppo", seed, path)
+        environment = make_env(blocked, WEB_ROOT.parent / spec["layout_path"], spec["orders"],
+                               spec["reward_overrides"] or None)
+        if environment.layout.digest != spec["layout_sha256"]:
+            raise ValueError(f"El mapa de {model_id} no coincide con el de su evaluación")
+        observation, info = environment.reset(seed=seed)
+        if self.env is not None:
+            if isinstance(self.env, MakeupMissionEnv):
+                self.env.inventory.close(self.env.order_id, time=self.env.state.tiempo)
+            self.env.close()
+        self.inventory = environment.inventory
+        self.env, self.observation, self.info = environment, observation, environment._info()
+        self.policy, self.policy_name, self.model_id = policy, "ppo", model_id
+        self.seed, self.done = seed, False
+        self.terminated = self.truncated = False
+        self.last_action, self.last_reward = None, 0.0
+        self.trail = [list(environment.position)]
+        self.events = [{"step": 0, "kind": "reset", "text": f"Modelo {model_id} cargado. Robot en BASE."}]
+        return self.payload()
 
     def reference_route(self):
         """BFS sólo para la capa visual: no se proporciona al agente PPO."""
@@ -128,7 +201,8 @@ class ViewerSession:
                     "terminated": self.terminated, "truncated": self.truncated,
                     "last_action": self.last_action, "last_reward": self.last_reward,
                     "route": self.reference_route(), "route_kind": "bfs_reference",
-                    "trail": self.trail.copy(), "events": self.events[-8:]}
+                    "trail": self.trail.copy(), "events": self.events[-8:],
+                    "model": model_summary(self.model_id), "environment_version": ENV_VERSION}
 
     def step(self, action=None):
         with self.lock:
@@ -161,6 +235,7 @@ class ViewerSession:
     def layout_payload(self):
         return {"layout": self.env.layout.data, "catalog": list(CATALOG.values()), "layout_sha256": self.env.layout.digest,
                 "available_ppo": {str(order): ppo_compatible(order, self.layout_path) for order in (1, 2)},
+                "models": [model_summary(model_id) for model_id in served_models()],
                 "environment_version": self.env.layout.data["version"]}
 
 

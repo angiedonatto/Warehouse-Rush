@@ -64,6 +64,8 @@ class SignedSessions:
             record['order_id'] = session.env.order_id
             record['mechanism'] = session.env.mechanism_snapshot()
             record['orders'] = 1  # Parámetro legacy constructor; líneas se restauran aparte.
+        if session.model_id is not None:
+            record['model'] = session.model_id  # se reconstruye con su mapa, pedidos y recompensa
         raw = json.dumps(record, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode()
         encoded = urlsafe_b64encode(zlib.compress(raw) if record.get("makeup") else raw).decode().rstrip("=")
         signature = hmac.new(self.key, encoded.encode(), sha256).hexdigest()
@@ -95,7 +97,8 @@ class SignedSessions:
             session = ViewerSession(layout_path=layouts[version],
                                     policy_factory=cloud_policy,
                                     settings={"orders": record["orders"], "blocked": record["state"]["pasillo_bloqueado"],
-                                              "policy": record["policy"], "seed": record["seed"], "makeup": record.get("makeup", False)})
+                                              "policy": record["policy"], "seed": record["seed"], "makeup": record.get("makeup", False),
+                                              **({"model": record["model"]} if record.get("model") else {})})
             if record.get('makeup'):
                 saved = record['inventory']
                 inventory = Inventory(saved['initial'])

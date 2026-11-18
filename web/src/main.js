@@ -38,9 +38,30 @@ async function api(path, body) {
   return result;
 }
 
+// Modelos recomendados que sirve la API (configs/modelos_servidos.json): cada uno corre en el ambiente
+// exacto de su evaluación (mapa, pedidos y recompensa), con identidad verificable.
+const policyValue = payload => payload.model ? `model:${payload.model.id}` : payload.policy;
+const shortSha = sha => sha ? sha.slice(0, 12) : '';
+function populateModels() {
+  const select = $('#policy');
+  select.querySelectorAll('option[data-served]').forEach(option => option.remove());
+  const anchor = select.querySelector('option[value="ppo"]');
+  for (const model of [...(layoutInfo?.models || [])].reverse()) {
+    const option = document.createElement('option');
+    option.value = `model:${model.id}`;option.dataset.served = '1';
+    option.textContent = `PPO · ${model.id} · ${model.nivel.split(' · ')[0]} (${model.estado})`;
+    anchor.after(option);
+  }
+}
+function modelDetail(model) {
+  const final = model.test_final?.ppo || {};
+  const tests = Object.entries(final).map(([scenario, r]) => `${scenario} ${Math.round(r.success_rate * 100)}%`).join(' · ');
+  return `${model.id} · ${model.environment_version} · sha256 ${shortSha(model.model_sha256)}${tests ? ` · test final: ${tests}` : ''}`;
+}
+
 function controls() {
   const manual = current?.policy === 'manual';
-  $('#orders').closest('label').hidden = Boolean(current?.makeup);
+  $('#orders').closest('label').hidden = Boolean(current?.makeup || current?.model);
   $('#play').disabled = !current || current.done || manual || changing;
   $('#step').disabled = !current || current.done || running || manual || changing;
   $('#reset').disabled = changing;
@@ -97,7 +118,7 @@ function renderState(payload, instant = false) {
   const last = payload.events.at(-1);
   $('#last-event').textContent = last?.text || 'Simulador listo';
   $('#event-step').textContent = `${String(Math.floor(s.tiempo / 60)).padStart(2, '0')}:${String(s.tiempo % 60).padStart(2, '0')}`;
-  $('#footer-detail').textContent = `1 paso = 1 s · Semilla ${payload.seed} · ${payload.policy === 'ppo' ? 'PPO real, sin acciones BFS' : payload.policy === 'manual' ? 'Acciones manuales' : payload.policy === 'heuristic' ? 'Baseline heurístico BFS' : 'Baseline aleatorio'}`;
+  $('#footer-detail').textContent = `1 paso = 1 s · Semilla ${payload.seed} · ${payload.model ? `PPO ${modelDetail(payload.model)}` : payload.policy === 'ppo' ? 'PPO real, sin acciones BFS' : payload.policy === 'manual' ? 'Acciones manuales' : payload.policy === 'heuristic' ? 'Baseline heurístico BFS' : 'Baseline aleatorio'}`;
   const banner = $('#mission-banner');banner.hidden = !payload.done;
   if (payload.done) {
     banner.classList.toggle('warning', !payload.info.success);
@@ -156,16 +177,22 @@ async function reset() {
     while (busy) await new Promise(resolve => setTimeout(resolve, 20));
     const ppoUnavailable = $('#policy').value === 'ppo' && !layoutInfo.available_ppo[$('#orders').value];
     if (ppoUnavailable) { $('#policy').value = 'heuristic';toast('No hay modelo PPO compatible con la versión vigente del ambiente. Se seleccionó el heurístico.'); }
-    const result = await api('reset', { orders: Number($('#orders').value), policy: $('#policy').value, blocked: $('#blocked').checked, seed: Number(seedInput.value), makeup: $('#makeup').checked });
+    const choice = $('#policy').value;
+    const result = await api('reset', choice.startsWith('model:')
+      ? { policy: 'ppo', model: choice.slice(6), blocked: $('#blocked').checked, seed: Number(seedInput.value) }
+      : { orders: Number($('#orders').value), policy: choice, blocked: $('#blocked').checked, seed: Number(seedInput.value), makeup: $('#makeup').checked });
     if (layoutInfo.layout_sha256 !== result.info.layout_sha256) {
       layoutInfo = await api('layout');
+      populateModels();
       mountScene();
     }
     renderState(result, true);
-    if (result.policy === 'ppo') toast('El PPO de 20 000 pasos obtuvo 0% de éxito. Se muestra su comportamiento real.');
+    $('#makeup').checked = result.makeup;
+    if (result.model) toast(`Modelo ${modelDetail(result.model)}`);
+    else if (result.policy === 'ppo') toast('El PPO de 20 000 pasos obtuvo 0% de éxito. Se muestra su comportamiento real.');
   } catch (error) {
     toast(error.message);
-    if (current) { $('#orders').value = Math.min(2, current.orders);$('#policy').value = current.policy;$('#blocked').checked = current.state.pasillo_bloqueado; }
+    if (current) { $('#orders').value = Math.min(2, current.orders);$('#policy').value = policyValue(current);$('#blocked').checked = current.state.pasillo_bloqueado; }
   } finally { changing = false;controls(); }
 }
 
@@ -209,7 +236,8 @@ window.addEventListener('pagehide', () => { pause();scene?.dispose(); });
 async function start() {
   try {
     [layoutInfo, current] = await Promise.all([api('layout'), api('state')]);
-    $('#policy').value = current.policy;$('#orders').value = Math.min(2, current.orders);$('#blocked').checked = current.state.pasillo_bloqueado;$('#makeup').checked = current.makeup;seedInput.value = current.seed;
+    populateModels();
+    $('#policy').value = policyValue(current);$('#orders').value = Math.min(2, current.orders);$('#blocked').checked = current.state.pasillo_bloqueado;$('#makeup').checked = current.makeup;seedInput.value = current.seed;
     mountScene();
     renderState(current, true);
     $('#scene-loading').hidden = true;

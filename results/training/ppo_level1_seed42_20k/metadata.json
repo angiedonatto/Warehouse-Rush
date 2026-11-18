@@ -1,0 +1,239 @@
+{
+  "status": "completed",
+  "algorithm": "PPO",
+  "policy": "MlpPolicy",
+  "environment_version": "0.1.0",
+  "seed": 42,
+  "orders": 1,
+  "blocked": false,
+  "requested_timesteps": 20000,
+  "hyperparameters": {
+    "learning_rate": 0.0003,
+    "n_steps": 500,
+    "batch_size": 100,
+    "n_epochs": 10,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "clip_range": 0.2,
+    "ent_coef": 0.01,
+    "vf_coef": 0.5,
+    "max_grad_norm": 0.5,
+    "policy_kwargs": {
+      "net_arch": {
+        "pi": [
+          64,
+          64
+        ],
+        "vf": [
+          64,
+          64
+        ]
+      }
+    }
+  },
+  "device": "cpu",
+  "torch_threads": 1,
+  "scenario": {
+    "version": "0.1.0",
+    "width": 17,
+    "height": 13,
+    "cell_meters": 1.0,
+    "base": [
+      2,
+      11
+    ],
+    "initial_orientation": 0,
+    "stations": {
+      "P1": [
+        2,
+        1
+      ],
+      "P2": [
+        14,
+        7
+      ],
+      "DELIVERY": [
+        15,
+        11
+      ]
+    },
+    "racks": [
+      {
+        "name": "R1",
+        "bounds": [
+          3,
+          3,
+          4,
+          4
+        ]
+      },
+      {
+        "name": "R2",
+        "bounds": [
+          7,
+          3,
+          8,
+          4
+        ]
+      },
+      {
+        "name": "R3",
+        "bounds": [
+          11,
+          3,
+          12,
+          4
+        ]
+      },
+      {
+        "name": "R4",
+        "bounds": [
+          3,
+          7,
+          4,
+          8
+        ]
+      },
+      {
+        "name": "R5",
+        "bounds": [
+          7,
+          7,
+          8,
+          8
+        ]
+      },
+      {
+        "name": "R6",
+        "bounds": [
+          11,
+          7,
+          12,
+          8
+        ]
+      }
+    ],
+    "internal_walls": [
+      [
+        1,
+        10
+      ],
+      [
+        2,
+        10
+      ],
+      [
+        3,
+        10
+      ],
+      [
+        5,
+        10
+      ],
+      [
+        6,
+        10
+      ],
+      [
+        7,
+        10
+      ],
+      [
+        8,
+        10
+      ],
+      [
+        9,
+        10
+      ],
+      [
+        10,
+        10
+      ],
+      [
+        11,
+        10
+      ],
+      [
+        13,
+        10
+      ],
+      [
+        14,
+        10
+      ],
+      [
+        15,
+        10
+      ]
+    ],
+    "blockable_cells": [
+      [
+        4,
+        10
+      ]
+    ],
+    "simulation": {
+      "battery_capacity": 100.0,
+      "max_steps": 250,
+      "forward_cost": 0.8,
+      "turn_cost": 0.2,
+      "brake_cost": 0.1,
+      "interact_cost": 0.2,
+      "step_seconds": 1.0,
+      "interaction_radius": 1,
+      "sensor_range": 8
+    },
+    "rewards": {
+      "pickup": 10.0,
+      "delivery": 30.0,
+      "completion": 50.0,
+      "progress": 0.3,
+      "time": -0.1,
+      "battery": -0.02,
+      "collision": -5.0,
+      "invalid_interaction": -2.0
+    }
+  },
+  "layout_sha256": "5aefdbc89459bd5f72833e2cb37e64c17670e5db89e6b881d1756baeb18102a6",
+  "simulation": {
+    "battery_capacity": 100.0,
+    "max_steps": 250,
+    "forward_cost": 0.8,
+    "turn_cost": 0.2,
+    "brake_cost": 0.1,
+    "interact_cost": 0.2,
+    "step_seconds": 1.0,
+    "interaction_radius": 1,
+    "sensor_range": 8
+  },
+  "rewards": {
+    "pickup": 10.0,
+    "delivery": 30.0,
+    "completion": 50.0,
+    "progress": 0.3,
+    "time": -0.1,
+    "battery": -0.02,
+    "collision": -5.0,
+    "invalid_interaction": -2.0
+  },
+  "python": "3.12.12",
+  "platform": "macOS-13.7.8-x86_64-i386-64bit",
+  "versions": {
+    "numpy": "1.26.4",
+    "gymnasium": "1.0.0",
+    "torch": "2.2.2",
+    "stable-baselines3": "2.4.1",
+    "matplotlib": "3.9.4"
+  },
+  "git_revision": "0b8793d9e2eb486e85606c410d4a1fec533b0ce5",
+  "git_dirty": true,
+  "started_at_utc": "2026-10-23T22:43:48.354705+00:00",
+  "periodic_eval_seed": 20000,
+  "periodic_eval_episodes": 5,
+  "effective_timesteps": 20000,
+  "duration_seconds": 118.1039764829984,
+  "model_path": "artifacts/models/ppo_level1_seed42_20k/model.zip",
+  "model_alias": "artifacts/models/ppo_orders1_seed42.zip",
+  "completed_at_utc": "2026-10-23T22:45:46.495004+00:00"
+}

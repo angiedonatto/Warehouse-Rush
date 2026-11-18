@@ -1,0 +1,8 @@
+{
+  "completed_training_episodes": 0,
+  "training_successes": 0,
+  "first_10_episode_mean_reward": null,
+  "last_10_episode_mean_reward": null,
+  "mean_episode_length": null,
+  "periodic_evaluations": {}
+}

@@ -1,0 +1,40 @@
+{
+  "version": "0.1.0",
+  "width": 17,
+  "height": 13,
+  "cell_meters": 1.0,
+  "base": [2, 11],
+  "initial_orientation": 0,
+  "stations": {"P1": [2, 1], "P2": [14, 7], "DELIVERY": [15, 11]},
+  "racks": [
+    {"name": "R1", "bounds": [3, 3, 4, 4]},
+    {"name": "R2", "bounds": [7, 3, 8, 4]},
+    {"name": "R3", "bounds": [11, 3, 12, 4]},
+    {"name": "R4", "bounds": [3, 7, 4, 8]},
+    {"name": "R5", "bounds": [7, 7, 8, 8]},
+    {"name": "R6", "bounds": [11, 7, 12, 8]}
+  ],
+  "internal_walls": [[1, 10], [2, 10], [3, 10], [5, 10], [6, 10], [7, 10], [8, 10], [9, 10], [10, 10], [11, 10], [13, 10], [14, 10], [15, 10]],
+  "blockable_cells": [[4, 10]],
+  "simulation": {
+    "battery_capacity": 100.0,
+    "max_steps": 250,
+    "forward_cost": 0.8,
+    "turn_cost": 0.2,
+    "brake_cost": 0.1,
+    "interact_cost": 0.2,
+    "step_seconds": 1.0,
+    "interaction_radius": 1,
+    "sensor_range": 8
+  },
+  "rewards": {
+    "pickup": 10.0,
+    "delivery": 30.0,
+    "completion": 50.0,
+    "progress": 0.3,
+    "time": -0.1,
+    "battery": -0.02,
+    "collision": -5.0,
+    "invalid_interaction": -2.0
+  }
+}

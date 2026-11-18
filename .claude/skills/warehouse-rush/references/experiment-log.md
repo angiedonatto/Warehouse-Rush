@@ -1,6 +1,6 @@
 # Experiment log (R2) and what we learned
 
-Status: 2026-11-15. Full evidence, per-episode CSV/JSON and manifests are in the repo: `docs/experimentos.md` (Spanish, hypotheses written **before** training), `docs/resultados/eval/<run>/`, `docs/resultados/training/<run>/`, `manifests/<run>.json`, MLflow (`warehouse-n1`, `warehouse-m1`, `warehouse-m1o`; local `mlflow.db`, not committed). Run names: `<nivel>-<id>-seed<seed>`.
+Status: 2026-11-15. Full evidence, per-episode CSV/JSON and manifests are in the repo: `docs/experimentos.md` (Spanish, hypotheses written **before** training), `docs/resultados/eval/<run>/`, `docs/resultados/training/<run>/`, `manifests/<run>.json`, MLflow (`warehouse-n1`, `warehouse-m1`, `warehouse-m1o`; DagsHub since 2026-11-18, ids changed: see `docs/resultados/mlflow-migracion.json`). Run names: `<nivel>-<id>-seed<seed>`.
 
 Everything uses PPO `MlpPolicy` [64,64], lr 3e-4, `n_steps` 2048 x `n_envs` 4, batch 64, 10 epochs, gamma 0.99, gae_lambda 0.95, clip 0.2, `ent_coef` 0.0 (the C0 config) unless stated. Budget 200 000 requested (204 800 effective = 25 x 8 192) unless stated; 600 000 requested = 606 208 effective. Evaluation: frozen model, deterministic actions, 50 episodes, seeds 10000-10049 (`suite-n1-v1`, `suite-m1-v1`, `suite-m1o-v1`), 1 training seed unless stated.
 

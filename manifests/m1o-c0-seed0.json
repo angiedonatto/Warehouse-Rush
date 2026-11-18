@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 204800,
   "budget_minutes": 10.66,
-  "mlflow_run_id": "6580fd5f5920440b9d7fa3478f0b91b3",
+  "mlflow_run_id": "0bc6e9fbc1a64a799b075db461091b58",
   "mlflow_experiment": "warehouse-m1o",
   "config_uri": "configs/experiments/m1o_c0_control.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v4 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -104,5 +104,7 @@
   },
   "decision": "candidato",
   "decision_reason": "Control del mapa abierto (invalid -0.2, collision -1, sin término de distancia). 0% de éxito, pero es la política más avanzada hasta ahora: llega a 48/50 episodios a <=2 celdas del primer objetivo y completa el primer CARGAR en 7/50 episodios; nunca baja la bandeja (BAJAR 0.0%) y queda detenida con la carga.",
-  "weights_dvc": "models/m1o-c0-seed0.dvc"
+  "weights_dvc": "models/m1o-c0-seed0.dvc",
+  "mlflow_run_id_local": "6580fd5f5920440b9d7fa3478f0b91b3",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

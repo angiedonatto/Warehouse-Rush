@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 204800,
   "budget_minutes": 10.55,
-  "mlflow_run_id": "6fcca7f1e91f49719d3f8deaa1a76ac9",
+  "mlflow_run_id": "5bf8970c04f64441861224d081236fe4",
   "mlflow_experiment": "warehouse-m1o",
   "config_uri": "configs/experiments/m1o_e1_manhattan_dif.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v5 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -107,5 +107,7 @@
   },
   "decision": "rechazado",
   "decision_reason": "No supera al control m1o-c0 en >=5 pp de éxito (0 pp) y no logra ninguna recogida. Llega al estante y sube la bandeja (41/50 episodios) pero no carga: con la bandeja por debajo de la altura exigida elige CARGAR (inválida, 26.6 por episodio) y FRENAR.",
-  "weights_dvc": "models/m1o-e1-seed0.dvc"
+  "weights_dvc": "models/m1o-e1-seed0.dvc",
+  "mlflow_run_id_local": "6fcca7f1e91f49719d3f8deaa1a76ac9",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

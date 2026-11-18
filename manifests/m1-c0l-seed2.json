@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 606208,
   "budget_minutes": 31.61,
-  "mlflow_run_id": "384c572eb68e4190b163682bb1105e2a",
+  "mlflow_run_id": "2c93d8a55db24ac688b0b63e8bc9be02",
   "mlflow_experiment": "warehouse-m1",
   "config_uri": "configs/experiments/m1_c0l_seed2.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v7 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -107,5 +107,7 @@
   },
   "decision": "candidato",
   "decision_reason": "Control sin términos e4 (600 000 pasos). 0% de éxito; en 49/50 episodios llega al estante, sube la bandeja y carga (1.0 recogidas/ep), 46 acaban con la bandeja arriba y carga sin entregar; 11.9 inválidas, 0 choques.",
-  "weights_dvc": "models/m1-c0l-seed2.dvc"
+  "weights_dvc": "models/m1-c0l-seed2.dvc",
+  "mlflow_run_id_local": "384c572eb68e4190b163682bb1105e2a",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

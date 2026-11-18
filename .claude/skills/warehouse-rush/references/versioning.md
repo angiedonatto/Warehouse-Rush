@@ -53,7 +53,7 @@ YAML per planned run in `configs/experiments/`; code never holds hyperparameters
 - Workflow: `dvc add models/<x>` -> commit the `.dvc` file -> `dvc push`. To restore: `git checkout <tag> && dvc pull`.
 
 ## 6. MLflow
-- Persistent tracking server/DB (DECIDE: where; local `mlflow.db`/`mlruns/` are never committed and are lost with the laptop). Tracking URI from env var `MLFLOW_TRACKING_URI`.
+- Persistent tracking server: **DagsHub** `https://dagshub.com/mamezquita/Warehouse-Rush.mlflow` (decided 2026-11-18; public read, write needs each member's DagsHub token in `.env`: `MLFLOW_TRACKING_URI`, `MLFLOW_TRACKING_USERNAME`, `MLFLOW_TRACKING_PASSWORD`; load with `set -a; source .env; set +a`). `pipelines/tracking.py::tracking_uri` refuses to train without the URI (`MLFLOW_PERMITIR_LOCAL=1` = deliberate local sqlite). The 96 runs of the old local `mlflow.db` were copied by `pipelines/migrar_mlflow.py` (new run ids; tag `origen_run_id` = old id; map `docs/resultados/mlflow-migracion.json`; manifests carry `mlflow_run_id` = server id and `mlflow_run_id_local`); the old sqlite + `mlruns/` are a DVC snapshot (`mlflow.db.dvc`, `mlruns.dvc`), never committed raw. Model Registry: `pipelines/registrar_modelos.py` registers every `recomendado` manifest as a version of `warehouse-<level_id>` (tags `estado`, `model_sha256`, `manifiesto`, test final; alias `recomendado`). Previously: local `mlflow.db`/`mlruns/` (lost with the laptop). Tracking URI from env var `MLFLOW_TRACKING_URI`.
 - One experiment per level: `warehouse-n1`, `warehouse-n2`, `warehouse-n3` (prototype uses a single `warehouse-rush`).
 - Run name `<nivel>-<hipótesis>-seed<semilla>` e.g. `n2-c3-seed1`.
 - Required **params**: resolved PPO params, level, seed, budget (steps), hypothesis, config_sha256.

@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 606208,
   "budget_minutes": 26.72,
-  "mlflow_run_id": "7714e6e71f0b45ffb1b938dce95ad123",
+  "mlflow_run_id": "292d1c67c92b4bc3a9728b02d4f60e81",
   "mlflow_experiment": "warehouse-m1",
   "config_uri": "configs/experiments/m1_q1_escala5_seed1.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v9 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -114,5 +114,7 @@
   "decision": "rechazado",
   "decision_reason": "Rechazado por el criterio fijado antes (éxito < 5% frente a m1-e4l 0%; además los choques suben). Potencial 150 y tarea x5 + parada 100: 0% de éxito; 39.9 choques por episodio. Mismo patrón: 12% AVANZAR contra obstáculos, 88% FRENAR, sin giros; 0/50 llegan a una celda (mejor distancia BFS 10.8). 5 797 episodios de entrenamiento, 0 con éxito.",
   "stagnation_window": 100,
-  "weights_dvc": "models/m1-q1-seed1.dvc"
+  "weights_dvc": "models/m1-q1-seed1.dvc",
+  "mlflow_run_id_local": "7714e6e71f0b45ffb1b938dce95ad123",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

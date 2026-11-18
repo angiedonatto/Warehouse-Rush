@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 606208,
   "budget_minutes": 34.95,
-  "mlflow_run_id": "559a574a5c044102acfb6d655970f770",
+  "mlflow_run_id": "69e9194508f84756a835b73696e93716",
   "mlflow_experiment": "warehouse-m1o",
   "config_uri": "configs/experiments/m1o_h1_bcppo_seed2.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v7 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -108,5 +108,7 @@
   },
   "decision": "rechazado",
   "decision_reason": "100% de éxito (e4l-seed2: 0%), 0 choques, 79.8 pasos de media en los éxitos. Rechazado solo por el criterio del grupo (choques medios 2.25/ep por la semilla 0); por sí mismo es un buen modelo, pero igual que h0-seed2 (100%, 71 pasos), así que el ajuste fino no mejoró al imitador.",
-  "weights_dvc": "models/m1o-h1-seed2.dvc"
+  "weights_dvc": "models/m1o-h1-seed2.dvc",
+  "mlflow_run_id_local": "559a574a5c044102acfb6d655970f770",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

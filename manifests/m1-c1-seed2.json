@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 606208,
   "budget_minutes": 25.73,
-  "mlflow_run_id": "82c677f9ef9646959fcc484737e2de29",
+  "mlflow_run_id": "f3cd4d2f9ee64f169383980771692b84",
   "mlflow_experiment": "warehouse-m1",
   "config_uri": "configs/experiments/m1_c1_control_v9_seed2.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v9 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -109,5 +109,7 @@
   "decision": "candidato",
   "decision_reason": "Control de regresión v9 (receta m1-c0l, código v9, parada 100): 0% de éxito; 21/50 llegan a la celda, 0 miran al estante ni cargan; sin inválidas ni choques. m1-c0l-seed2 llegó 50/50 y cargó: misma receta, otro camino por la parada.",
   "stagnation_window": 100,
-  "weights_dvc": "models/m1-c1-seed2.dvc"
+  "weights_dvc": "models/m1-c1-seed2.dvc",
+  "mlflow_run_id_local": "82c677f9ef9646959fcc484737e2de29",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

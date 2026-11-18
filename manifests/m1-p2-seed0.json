@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 606208,
   "budget_minutes": 27.53,
-  "mlflow_run_id": "57491211aa82484ea420134720de080d",
+  "mlflow_run_id": "1999db9c0c4a4d439e6dbe4269cf3da3",
   "mlflow_experiment": "warehouse-m1",
   "config_uri": "configs/experiments/m1_p2_potencial_sinparada_seed0.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v9 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -111,5 +111,7 @@
   "decision": "rechazado",
   "decision_reason": "Rechazado por el criterio fijado antes (éxito < 5% frente a m1-e4l 0%). Ablación: solo potencial (30.0) sin parada: 0% de éxito; 0/50 llegan a una celda; 85% FRENAR y 14% BAJAR (inválidas, 53.2/ep); se acerca en promedio a 11.1 desde 13.4. 1 512 episodios de entrenamiento, 0 con éxito. Misma conducta que p1: el fallo es del potencial, no de la parada.",
   "stagnation_window": null,
-  "weights_dvc": "models/m1-p2-seed0.dvc"
+  "weights_dvc": "models/m1-p2-seed0.dvc",
+  "mlflow_run_id_local": "57491211aa82484ea420134720de080d",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

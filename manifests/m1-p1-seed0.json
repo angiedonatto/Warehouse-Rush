@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 606208,
   "budget_minutes": 27.8,
-  "mlflow_run_id": "0efeea9aa8a8403f80b3edda99721bdc",
+  "mlflow_run_id": "0059a4bd31d4420d8ba6d6bd1486b170",
   "mlflow_experiment": "warehouse-m1",
   "config_uri": "configs/experiments/m1_p1_potencial_seed0.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v9 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -111,5 +111,7 @@
   "decision": "rechazado",
   "decision_reason": "Rechazado por el criterio fijado antes (éxito < 5% frente a m1-e4l 0%). Solo potencial (30.0) + parada de estancamiento (100): 0% de éxito; 0/50 episodios llegan a una celda de interacción (m1-e4l-seed0: 21/50). La política colapsa a FRENAR (95% de las acciones) y no avanza hacia el objetivo (distancia BFS final 15.3, inicial 13.3). 5 455 episodios de entrenamiento, 0 con éxito.",
   "stagnation_window": 100,
-  "weights_dvc": "models/m1-p1-seed0.dvc"
+  "weights_dvc": "models/m1-p1-seed0.dvc",
+  "mlflow_run_id_local": "0efeea9aa8a8403f80b3edda99721bdc",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

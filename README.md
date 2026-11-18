@@ -5,7 +5,7 @@
 Proyecto final de MLOps (Universidad Externado de Colombia). Un robot de bodega atiende pedidos de productos de
 estantería (3 niveles de altura) con un elevador telescópico y los entrega en una cinta de despacho (ambiente `warehouse-v2`;
 la familia `warehouse-v1`, dos estaciones de recogida, se conserva como historia). PPO (Stable-Baselines3) sobre un ambiente Gymnasium; visor Three.js desplegado en Vercel
-(https://warehouse-rush-experiment-001.vercel.app); experimentos en MLflow; versionado con Git + DVC.
+(https://warehouse-rush-experiment-001.vercel.app); experimentos en MLflow ([DagsHub](https://dagshub.com/mamezquita/Warehouse-Rush.mlflow)); versionado con Git + DVC.
 
 ## Estructura
 `envs/` ambiente · `configs/` niveles, experimentos, suites, criterios · `pipelines/` entrenamiento, evaluación, tracking ·
@@ -20,6 +20,7 @@ la familia `warehouse-v1`, dos estaciones de recogida, se conserva como historia
 5. Visor: `npm ci --prefix web && python -m pipelines.cli view` (Node LTS, ver `.nvmrc`)
 6. Entrenar (v2): `python -m pipelines.train --config configs/experiments/m1_c0_makeup3.yaml` (los configs `c0`–`c6` son de `warehouse-v1` y ya no entrenan)
 7. Pesos grandes: `pip install dvc-s3` (ya en requirements) y `dvc pull` desde el remoto `r2` (Cloudflare R2, bucket `mlops-final-project`). Las credenciales van solo en `.dvc/config.local` (ignorado por Git): `dvc remote modify --local r2 access_key_id ...` y `... secret_access_key ...`; pídelas al equipo. Un modelo concreto: `dvc pull models/<run>.dvc`.
+8. MLflow (historial de experimentos, persistente y compartido): [DagsHub](https://dagshub.com/mamezquita/Warehouse-Rush.mlflow), lectura pública sin instalar nada. Para registrar runs: copia `.env.example` a `.env`, pon tu usuario y token de DagsHub (Settings → Tokens) y carga las variables antes de entrenar: `set -a; source .env; set +a`. Sin `MLFLOW_TRACKING_URI` el entrenamiento se detiene (no queda en un sqlite local); `MLFLOW_PERMITIR_LOCAL=1` solo para pruebas deliberadas. El historial anterior (96 runs del `mlflow.db` local) se copió con `python -m pipelines.migrar_mlflow`; mapa de ids en `docs/resultados/mlflow-migracion.json`; copia del sqlite original en DVC (`dvc pull mlflow.db.dvc mlruns.dvc`).
 
 Modelo actual, hiperparámetros y reentrenamiento: [docs/modelo-actual.md](docs/modelo-actual.md).
 Ambiente: contrato [envs/CONTRATO.md](envs/CONTRATO.md), ficha vigente [docs/ambiente-v0.2.md](docs/ambiente-v0.2.md) (v1: [ambiente-v0.1.md](docs/ambiente-v0.1.md)). Despliegue: [docs/despliegue.md](docs/despliegue.md).

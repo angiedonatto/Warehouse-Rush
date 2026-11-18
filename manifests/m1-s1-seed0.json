@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 606208,
   "budget_minutes": 23.7,
-  "mlflow_run_id": "1352d1e31ac64e76b65665dedfe82edc",
+  "mlflow_run_id": "0d527a11dddf49e1bd19b8a9453b0b2a",
   "mlflow_experiment": "warehouse-m1",
   "config_uri": "configs/experiments/m1_s1_etapas_seed0.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v10 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -112,5 +112,7 @@
   "decision": "rechazado",
   "decision_reason": "Rechazado por el criterio fijado antes (éxito < 5% y se pierde la llegada al estante frente a m1-c1). progress 0.3 + etapas del potencial (potential 30, potential_nav 0), parada 100: 0% de éxito; 0/50 episodios llegan a la celda de interacción (m1-c1-seed0: 49/50), 0 inválidas, 0 choques: idle. 6 024 episodios de entrenamiento, 0 con éxito.",
   "stagnation_window": 100,
-  "weights_dvc": "models/m1-s1-seed0.dvc"
+  "weights_dvc": "models/m1-s1-seed0.dvc",
+  "mlflow_run_id_local": "1352d1e31ac64e76b65665dedfe82edc",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

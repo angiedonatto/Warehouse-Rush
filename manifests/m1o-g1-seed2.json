@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 606208,
   "budget_minutes": 30.41,
-  "mlflow_run_id": "ff94fe235bb04acfb3cf878cd198be0e",
+  "mlflow_run_id": "9abe23541859435684b91a4bf2d437a1",
   "mlflow_experiment": "warehouse-m1o",
   "config_uri": "configs/experiments/m1o_g1_hito_seed2.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v7 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -110,5 +110,7 @@
   },
   "decision": "rechazado",
   "decision_reason": "0% de éxito. Carga en 50/50 y baja la bandeja pero gira en el sitio con la carga (GIRAR_IZQUIERDA 1 819, GIRAR_DERECHA 1 197 pasos); 0 entregas en evaluación determinista aunque 268/1 673 episodios de entrenamiento (política estocástica) sí tuvieron éxito (e4l-seed2: 2). Rechazado por el criterio (media de 3 semillas +0.7 pp).",
-  "weights_dvc": "models/m1o-g1-seed2.dvc"
+  "weights_dvc": "models/m1o-g1-seed2.dvc",
+  "mlflow_run_id_local": "ff94fe235bb04acfb3cf878cd198be0e",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

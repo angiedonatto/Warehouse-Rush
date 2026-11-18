@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 606208,
   "budget_minutes": 36.97,
-  "mlflow_run_id": "3b999988439b4a87ae8b780909fb70ce",
+  "mlflow_run_id": "172bd72f27274ab18e9b2043fcd7aeaf",
   "mlflow_experiment": "warehouse-m1",
   "config_uri": "configs/experiments/m1_e4l_seed2.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v7 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -107,5 +107,7 @@
   },
   "decision": "rechazado",
   "decision_reason": "0% de éxito. Los 50 episodios llegan al estante, suben la bandeja y cargan (1.94 recogidas por episodio, 113.7 inválidas), pero ninguno entrega: todos terminan por límite de tiempo con carga (31 con la bandeja arriba, 19 abajo) girando a la derecha en el estado con carga (prob. media GIRAR_DERECHA 0.46 frente a AVANZAR 0.01). Rechazado por el criterio de la familia: media de 3 semillas 0% < m1-r5 (0%) + 5 pp.",
-  "weights_dvc": "models/m1-e4l-seed2.dvc"
+  "weights_dvc": "models/m1-e4l-seed2.dvc",
+  "mlflow_run_id_local": "3b999988439b4a87ae8b780909fb70ce",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

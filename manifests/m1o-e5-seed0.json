@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 204800,
   "budget_minutes": 8.01,
-  "mlflow_run_id": "8af23b15eba04b4190cdcaa142844d21",
+  "mlflow_run_id": "b84edd3a06bd4358864087cae5b347de",
   "mlflow_experiment": "warehouse-m1o",
   "config_uri": "configs/experiments/m1o_e5_altura_005.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v5 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -107,5 +107,7 @@
   },
   "decision": "rechazado",
   "decision_reason": "No supera al control m1o-c0 en >=5 pp de éxito (0 pp), 0 recogidas. Avanza ~5.6 celdas desde la base (mitad del camino al primer estante) y se queda frenando (FRENAR 98.6%); 0/50 episodios llegan a una celda de interacción: con altura -0.05 la zona de interacción sigue siendo penalizada y la política la evita.",
-  "weights_dvc": "models/m1o-e5-seed0.dvc"
+  "weights_dvc": "models/m1o-e5-seed0.dvc",
+  "mlflow_run_id_local": "8af23b15eba04b4190cdcaa142844d21",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

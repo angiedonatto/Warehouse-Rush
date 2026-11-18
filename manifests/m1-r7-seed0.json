@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 204800,
   "budget_minutes": 10.04,
-  "mlflow_run_id": "9d2f9eae0cf94e7fb18850a8c53f915b",
+  "mlflow_run_id": "261c7fd8138a4680a56ec904ac1ef43e",
   "mlflow_experiment": "warehouse-m1",
   "config_uri": "configs/experiments/m1_r7_choque_01.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v3 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -102,5 +102,7 @@
   },
   "decision": "rechazado",
   "decision_reason": "No supera al control m1-r2 (invalid -0.2, collision -5) en >=5 pp de éxito (0 pp). FRENAR en 94.4% de los pasos; 0 entregas. En 1 de 50 episodios (semilla 10033) quedó atascada chocando 199-219 veces hasta agotar la batería. Se conserva la evidencia.",
-  "weights_dvc": "models/m1-r7-seed0.dvc"
+  "weights_dvc": "models/m1-r7-seed0.dvc",
+  "mlflow_run_id_local": "9d2f9eae0cf94e7fb18850a8c53f915b",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

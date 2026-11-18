@@ -22,7 +22,7 @@ Rubric: versioning, traceability, historical recovery **30%** · experimental de
 | R3 Versioner, pipeline, API | `pipelines/{flow,registry,tracking}.py`, `manifests/`, `api/`, `dvc.yaml` | persistent MLflow, DVC, SHA-256 manifests, model catalog, Prefect flow, FastAPI, rollback test | versioning 30% + pipeline 20% |
 | R4 Web and deploy | `web/` | Vite+TS+Three.js scene, catalog, comparison, modes (manual/random/reference/evaluation/training), Vercel URL | pipeline/deploy 20% (shared) |
 
-Open team decisions (agree with the teacher): where persistent MLflow lives, where the HTTPS API is hosted, Prefect vs Airflow.
+Open team decisions (agree with the teacher): where the HTTPS API is hosted, Prefect vs Airflow. **Decided 2026-11-18: persistent MLflow = DagsHub** (`https://dagshub.com/mamezquita/Warehouse-Rush.mlflow`, public read; see versioning.md section 6).
 
 Extra brief details (Warehouse Rush scenario text, levels, web build order, architecture, final package, milestones, setup steps): bottom of [references/requirements.md](references/requirements.md).
 

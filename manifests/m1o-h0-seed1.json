@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 0,
   "budget_minutes": 9.89,
-  "mlflow_run_id": "2df70cc95f9141de830cb0ba5dd9623a",
+  "mlflow_run_id": "a054cbad33274db086199366a4460c89",
   "mlflow_experiment": "warehouse-m1o",
   "config_uri": "configs/experiments/m1o_h0_bc_seed1.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v7 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -138,5 +138,7 @@
       }
     }
   },
-  "weights_dvc": "models/m1o-h0-seed1.dvc"
+  "weights_dvc": "models/m1o-h0-seed1.dvc",
+  "mlflow_run_id_local": "2df70cc95f9141de830cb0ba5dd9623a",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

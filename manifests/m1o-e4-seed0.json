@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 204800,
   "budget_minutes": 10.66,
-  "mlflow_run_id": "141ac4f7535143f783c6f264179be60f",
+  "mlflow_run_id": "7e0595f0c548430fa282b9a19640655d",
   "mlflow_experiment": "warehouse-m1o",
   "config_uri": "configs/experiments/m1o_e4_ambos_002.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v5 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -108,5 +108,7 @@
   },
   "decision": "rechazado",
   "decision_reason": "No supera al control m1o-c0 en >=5 pp de éxito (0 pp), por lo que se rechaza según los criterios; es el run más avanzado hasta ahora: recoge en 12/50 episodios (15 productos, 3 episodios con 2), baja la bandeja tras cargar en 6/50 y tuvo 1 éxito de 3 entregas en 512 episodios de entrenamiento. Gasta 159 interacciones inválidas por episodio (CARGAR con la bandeja a otra altura).",
-  "weights_dvc": "models/m1o-e4-seed0.dvc"
+  "weights_dvc": "models/m1o-e4-seed0.dvc",
+  "mlflow_run_id_local": "141ac4f7535143f783c6f264179be60f",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

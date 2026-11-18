@@ -1,10 +1,11 @@
-# Contrato del ambiente · `warehouse-v7` (ficha 0.7.0)
+# Contrato del ambiente · `warehouse-v10` (ficha 0.10.0)
 
 Contrato congelado entre ambiente, entrenamiento, evaluación, API y web. Cualquier cambio de orden,
 unidades, rangos, acciones, dt, física o recompensa **sube la versión** (`warehouse-v6`), abre una nueva
 familia de modelos y se anota en `docs/decisiones.md`. Ficha completa: [docs/ambiente-v0.2.md](../docs/ambiente-v0.2.md) (base) [docs/ambiente-v0.3.md](../docs/ambiente-v0.3.md) (v3: recompensa por run) y [docs/ambiente-v0.4.md](../docs/ambiente-v0.4.md) (v4: término de distancia Manhattan y mapa abierto) [docs/ambiente-v0.5.md](../docs/ambiente-v0.5.md) (v5: diferencia de distancia y penalización por altura) [docs/ambiente-v0.6.md](../docs/ambiente-v0.6.md) (v6: bono por bajar la bandeja, retirado en v7) y [docs/ambiente-v0.7.md](../docs/ambiente-v0.7.md) (v7: hito de la mitad del camino al despacho con la carga).
 
-- Código: `envs/` (`ENV_VERSION = "warehouse-v7"`, `__version__ = "0.7.0"`). Fábrica: `envs.make_env(blocked, layout_path, orders, reward_overrides)`.
+- Código: `envs/` (`ENV_VERSION = "warehouse-v10"`, `__version__ = "0.10.0"`). Fábrica: `envs.make_env(blocked, layout_path, orders, reward_overrides, catalog="legacy-18")`.
+- Catálogo de productos (escenario de pedidos): `warehouse-v10` = `legacy-18` (18 productos, 1 por nivel de estante, 5 unidades). Es el catálogo con que se entrenaron y evaluaron todos los runs, y `make_env` lo fija. La web usa `trendy-27-v1` (27 productos de Naomi). No cambia observaciones, acciones ni recompensa; el diagnóstico de los modelos recomendados está en `docs/resultados/eval/catalogo-trendy-27/` (2026-11-18).
 - Clase: `envs.missions.MakeupMissionEnv` (hereda `envs.env.WarehouseRushEnv`). **v2 solo ofrece el modo maquillaje.**
 - Mapa por defecto: `configs/layout_v0.4.json` (25 × 19 celdas de 1 m). `configs/layout_v0.5.json` es la misma bodega **sin muro interior ni paso cerrable** (se elige con `layout:` en el YAML del run; nivel `m1o`).
 - Paso de decisión: 1 acción = 1 s simulado. Una sola política decide en cada paso; la animación no cambia las reglas.

@@ -424,3 +424,161 @@ def test_cors_permite_y_expone_x_sesion_solo_al_origen_configurado(cliente):
     otro = cliente.options("/api/step", headers={"Origin": "https://otro.example", "Access-Control-Request-Method": "POST",
                                                   "Access-Control-Request-Headers": "x-sesion"})
     assert "access-control-allow-origin" not in otro.headers
+
+
+# --- Paridad con ViewerSession (/api de Vercel) y con el ambiente directo ---------------------------
+# Adaptadas de tests/test_viewer.py y tests/test_served_models.py (Lis): el visor de Render debe hacer lo mismo
+# que el visor de Vercel, con la política NumPy en lugar de torch.
+
+import re  # noqa: E402
+
+from api._viewer import ViewerSession  # noqa: E402
+from envs import make_env  # noqa: E402
+from envs.env import WarehouseRushEnv  # noqa: E402
+from pipelines.baselines import HeuristicPolicy  # noqa: E402
+
+UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+
+
+def normalizar(payload: dict) -> dict:
+    """Quita lo que por diseño difiere entre dos sesiones iguales: el id de sesión y los UUID de los pedidos."""
+    return json.loads(UUID.sub("<uuid>", json.dumps({k: v for k, v in payload.items() if k != "sesion_id"})))
+
+
+@pytest.mark.parametrize("ajustes,acciones", [
+    ({"makeup": True, "orders": 1, "policy": "heuristic", "blocked": False, "seed": 3}, [None] * 20),
+    ({"makeup": True, "orders": 1, "policy": "heuristic", "blocked": True, "seed": 4}, [None] * 20),
+    ({"makeup": True, "orders": 1, "policy": "random", "blocked": False, "seed": 9}, [None] * 15),
+    ({"makeup": True, "orders": 1, "policy": "manual", "blocked": False, "seed": 5}, [1, 0, 0, 2, 3, 0, 4, 6, 7, 1]),
+    ({"makeup": False, "orders": 2, "policy": "heuristic", "blocked": False, "seed": 10_000}, [None] * 20),
+    ({"makeup": False, "orders": 1, "policy": "random", "blocked": True, "seed": 2}, [None] * 15),
+])
+def test_payload_identico_al_de_viewersession_paso_a_paso(ctx, ajustes, acciones):
+    viejo, nuevo = ViewerSession(settings=ajustes), SesionVisor(ctx, ajustes)
+    assert normalizar(nuevo.payload()) == normalizar(viejo.payload())
+    for accion in acciones:
+        assert normalizar(nuevo.step(accion)) == normalizar(viejo.step(accion))
+    # mapa, catálogo y huella: se leen del ambiente del visor viejo porque su layout_payload() consulta SB3
+    layout = nuevo.layout_payload()
+    assert layout["layout"] == viejo.env.layout.data and layout["layout_sha256"] == viejo.env.layout.digest
+    assert layout["catalog"] == list(viejo.inventory.catalog.values())
+    assert layout["catalog_version"] == viejo.inventory.catalog_version
+
+
+def test_inventario_compartido_identico_al_de_viewersession(ctx):
+    """Dos pedidos seguidos en la misma sesión: el stock restante coincide con el de Vercel."""
+    ajustes = {"makeup": True, "orders": 1, "policy": "heuristic", "blocked": False, "seed": 21}
+    viejo, nuevo = ViewerSession(settings=ajustes), SesionVisor(ctx, ajustes)
+    for sesion in (viejo, nuevo):
+        correr(sesion)
+        sesion.reset({**ajustes, "seed": 22})
+        correr(sesion)
+    assert normalizar(nuevo.payload()) == normalizar(viejo.payload())
+    assert nuevo.inventory.total == viejo.inventory.total
+
+
+@pytest.mark.parametrize("orders,blocked", [(1, False), (1, True), (2, False), (2, True)])
+def test_pasos_identicos_al_ambiente_de_python_en_el_modo_antiguo(ctx, orders, blocked):
+    sesion = SesionVisor(ctx)
+    payload = sesion.reset({"orders": orders, "blocked": blocked, "policy": "heuristic"})
+    referencia = WarehouseRushEnv(orders, blocked)
+    observation, _ = referencia.reset(seed=10_000)
+    politica = HeuristicPolicy()
+    while not payload["done"]:
+        accion = politica.action(observation, referencia)
+        observation, recompensa, terminado, truncado, _ = referencia.step(accion)
+        payload = sesion.step()
+        assert payload["state"] == referencia.snapshot() and payload["last_action"]["code"] == accion
+        assert payload["last_reward"] == recompensa and payload["observation"] == observation.tolist()
+        assert payload["terminated"] == terminado and payload["truncated"] == truncado
+    assert payload["info"]["success"] and payload["route"] == [] and payload["events"][-1]["text"] == "Misión completada"
+    with pytest.raises(ValueError, match="terminó"):
+        sesion.step()
+
+
+def test_acciones_manuales_y_reset_invalido_conservan_el_estado_real(ctx):
+    sesion = SesionVisor(ctx)
+    sesion.reset({"policy": "manual", "orders": 1, "blocked": False})
+    with pytest.raises(ValueError, match="manual"):
+        sesion.step()
+    payload = sesion.step(0)  # pared interior frente a BASE
+    assert payload["state"]["colisiones"] == 1 and (payload["state"]["x"], payload["state"]["y"]) == (2, 11)
+    antes = sesion.payload()
+    with pytest.raises(ValueError):
+        sesion.reset({"orders": 3})
+    with pytest.raises(ValueError):
+        sesion.step(1.5)
+    assert sesion.payload() == antes
+
+
+def test_ruta_de_referencia_respeta_el_mapa_y_el_cierre(ctx):
+    sesion = SesionVisor(ctx)
+    normal = sesion.reset({"orders": 1, "blocked": False})
+    cerrada = sesion.reset({"orders": 1, "blocked": True})
+    assert len(cerrada["route"]) > len(normal["route"])
+    assert [4, 10] in normal["route"] and [4, 10] not in cerrada["route"]
+    for celda in cerrada["route"]:
+        assert sesion.env.layout.free(tuple(celda), True)
+    assert tuple(cerrada["route"][-1]) in sesion.env.layout.approaches("P1", True)
+    assert sesion.layout_payload()["layout_sha256"] == sesion.env.layout.digest and cerrada["route_kind"] == "bfs_reference"
+
+
+CASOS_MODELO = [("m1b-i1-seed1-best", True, 10_000), ("m1b-i1-seed1-best", False, 10_001),
+                ("m1-c3-seed0", False, 10_002), ("m1-c3-seed0", True, 10_000)]
+
+
+@pytest.mark.parametrize("modelo,bloqueado,semilla", CASOS_MODELO)
+def test_episodio_por_http_identico_a_la_evaluacion_directa(cliente, ctx, modelo, bloqueado, semilla):
+    """Cada paso de /api/step reproduce el ambiente con la política NumPy fuera de la API (misma recompensa y celda)."""
+    cargado = ctx.almacen.obtener(modelo)
+    manifest = cargado.manifiesto
+    env = make_env(bloqueado, str(REPO / manifest["layout_path"]), 3, manifest.get("reward_overrides") or None,
+                   catalog="trendy-27-v1")
+    obs, _ = env.reset(seed=semilla)
+    directo, hecho = [], False
+    while not hecho:
+        obs, recompensa, terminado, truncado, info = env.step(cargado.politica.action(obs, env))
+        directo.append((tuple(env.position), round(recompensa, 6)))
+        hecho = terminado or truncado
+    estado = cliente.post("/api/reset", json={"policy": "ppo", "model": modelo, "blocked": bloqueado, "seed": semilla}).json()
+    sesion, visor = estado["sesion_id"], []
+    assert estado["model"]["id"] == modelo and estado["environment_version"] == "warehouse-v10"
+    while not estado["done"]:
+        estado = cliente.post("/api/step", json={}, headers=con_id(sesion)).json()
+        visor.append((tuple(estado["trail"][-1]), round(estado["last_reward"], 6)))
+    assert [r for _, r in visor] == [r for _, r in directo] and visor[-1][0] == directo[-1][0]
+    assert estado["info"]["success"] == info["success"] and estado["info"]["steps"] == info["steps"]
+
+
+@pytest.mark.parametrize("modelo,bloqueado,semilla", CASOS_MODELO)
+def test_visor_y_episodios_dan_el_mismo_resultado(cliente, modelo, bloqueado, semilla):
+    """Las dos formas de jugar un modelo en la API (/api/* y /episodios) terminan igual."""
+    visor = cliente.post("/api/reset", json={"policy": "ppo", "model": modelo, "blocked": bloqueado, "seed": semilla}).json()
+    id_visor = visor["sesion_id"]
+    while not visor["done"]:
+        visor = cliente.post("/api/step", json={}, headers=con_id(id_visor)).json()
+    episodio = cliente.post("/episodios", json={"run_id": modelo, "bloqueado": bloqueado, "seed": semilla}).json()
+    final = cliente.post(f"/episodios/{episodio['episodio_id']}/correr").json()["final"]
+    for clave in ("success", "end_reason", "steps", "collisions", "deliveries", "total_reward"):
+        assert visor["info"][clave] == final["info"][clave], clave
+    assert visor["state"]["order"]["lines"] == final["state"]["order"]["lines"]
+
+
+def test_visor_con_numpy_da_las_mismas_acciones_que_sb3():
+    """Si hay torch y los pesos de DVC: la sesión del visor (NumPy) decide igual que SB3 en todo el episodio."""
+    pytest.importorskip("torch")
+    pesos = REPO / "models/m1-c3-seed0/model.zip"
+    if not pesos.is_file():
+        pytest.skip("pesos de DVC no descargados (dvc pull models/m1-c3-seed0.dvc)")
+    from pipelines.baselines import make_policy
+
+    contexto = Contexto(AlmacenModelos(REPO), REPO, Metricas())
+    sesion = SesionVisor(contexto)
+    sesion.reset({"policy": "ppo", "model": "m1-c3-seed0", "blocked": True, "seed": 10_000})  # 400 pasos: el caso largo
+    sb3 = make_policy("ppo", model_path=pesos)
+    pasos = 0
+    while not sesion.done:
+        esperado = sb3.action(sesion.observation, sesion.env)
+        assert sesion.step()["last_action"]["code"] == esperado
+        pasos += 1
+    assert pasos == 400

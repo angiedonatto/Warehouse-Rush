@@ -1,0 +1,84 @@
+{
+  "que_es": "Tiempos de la capa /api/* (api/_visor.py) con los límites de Render Free, medidos en local",
+  "como": "docker run --cpus=0.1 --memory=512m con la imagen construida desde git archive del commit indicado; peticiones HTTP a localhost (nada va a Render); un solo cliente",
+  "commit_medido": "0bb59bc (rutas /api/* + CORS; el commit 3 solo agrega pruebas)",
+  "fecha": "2026-11-19",
+  "limitaciones": [
+    "una sola corrida",
+    "latencias de red de localhost (≈0), en Render suman ~0.2-0.4 s por petición",
+    "episodios de la semilla indicada, no una muestra"
+  ],
+  "resultados": {
+    "ram_inicial": "57.76MiB / 512MiB",
+    "layout_primera_ms": 161.8,
+    "layout_segunda_ms": 91.7,
+    "state_sin_id_ms": 304.6,
+    "state_con_id": {
+      "n": 10,
+      "p50_ms": 100.0,
+      "p95_ms": 101.5,
+      "max_ms": 106.1
+    },
+    "reset_heuristica_makeup": {
+      "n": 5,
+      "p50_ms": 204.4,
+      "p95_ms": 295.6,
+      "max_ms": 392.5
+    },
+    "mision_heuristica_pasos": 57,
+    "mision_heuristica_total_s": 7.9,
+    "step_heuristica": {
+      "n": 57,
+      "p50_ms": 102.2,
+      "p95_ms": 299.7,
+      "max_ms": 391.7
+    },
+    "reset_modelo_ms": 497.8,
+    "step_modelo": {
+      "n": 111,
+      "p50_ms": 97.5,
+      "p95_ms": 293.9,
+      "max_ms": 297.0
+    },
+    "modelo_exito": true,
+    "modelo_pasos": 111,
+    "evaluate_10_m1b-i1-seed1-best_cerrado": {
+      "s": 5.7,
+      "exito": 1.0,
+      "certificado": false
+    },
+    "evaluate_10_m1-c3-seed0_abierto": {
+      "s": 4.7,
+      "exito": 1.0,
+      "certificado": false
+    },
+    "evaluate_10_m1-c3-seed0_cerrado": {
+      "s": 13.7,
+      "exito": 0.0,
+      "certificado": false
+    },
+    "durante_evaluar_rapido": {
+      "n": 15,
+      "p50_ms": 400.4,
+      "p95_ms": 498.7,
+      "max_ms": 503.3
+    },
+    "reset_durante_evaluar_ms": 597.8,
+    "segunda_evaluar_simultanea": {
+      "estado": 429,
+      "codigo": "diagnostico_en_curso"
+    },
+    "sesion_101": {
+      "estado": 429,
+      "codigo": "demasiadas_sesiones"
+    },
+    "sesiones_creadas": 99,
+    "ram_con_100_sesiones": "127.7MiB / 512MiB",
+    "monitoreo_sesiones": {
+      "sesiones": 100,
+      "activas": 100,
+      "maximo": 100,
+      "ttl_s": 1800
+    }
+  }
+}

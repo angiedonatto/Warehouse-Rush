@@ -1,17 +1,19 @@
 import { test, expect } from '@playwright/test';
+import { viewerSession } from './api-session.js';
 
 test('upper shelf requires a raised platform, real pickup and lowering before travel', async ({ page, request }) => {
-  let payload=await (await request.post('/api/reset',{data:{makeup:true,orders:1,seed:24,policy:'heuristic',blocked:true}})).json();
+  const api=viewerSession(request);
+  let payload=await (await api.post('reset',{makeup:true,orders:1,seed:24,policy:'heuristic',blocked:true})).json();
   const top=payload.state.order.lines.find(l=>l.height_m===2.6);
   expect(top).toBeTruthy();
   const initial=payload.state.inventory.products.find(p=>p.sku===top.sku).stock_total;
   for(let n=0;payload.state.lift.phase!=='ready'||payload.state.lift.height!==2.6;n++) {
     expect(n).toBeLessThan(250);expect(payload.done).toBe(false);
-    payload=await(await request.post('/api/step',{data:{}})).json();
+    payload=await(await api.post('step',{})).json();
   }
   expect(payload.state.order.lines.find(l=>l.sku===top.sku).picked).toBe(0);
   const position=[payload.state.x,payload.state.y,payload.state.theta];
-  await page.goto('/');await expect(page.locator('#scene-loading')).toBeHidden();
+  await api.attach(page);await page.goto('/');await expect(page.locator('#scene-loading')).toBeHidden();
   await expect(page.locator('#handling-status')).toContainText('2.60 m');
   await expect(page.locator('#handling-status')).toContainText('Altura alcanzada');
   await page.evaluate(()=>{
@@ -21,18 +23,18 @@ test('upper shelf requires a raised platform, real pickup and lowering before tr
   });
   await page.waitForFunction(()=>Math.abs(window.warehouseViewer.scene.stockVisuals.lift.height-2.6)<.01);
   await page.screenshot({path: `${process.env.SHOT_DIR || 'test-results/capturas'}/05-elevador-nivel-superior.png`});
-  payload=await(await request.post('/api/step',{data:{}})).json();
+  payload=await(await api.post('step',{})).json();
   // Desde 2026-11-13 el elevador es instantáneo por acción (sin fase 'lowering', docs/decisiones.md):
   // tras recoger sigue arriba ('ready') y baja con BAJAR sin desplazarse (bucle siguiente).
   expect(payload.state.lift.phase).toBe('ready');
   expect(payload.state.order.lines.find(l=>l.sku===top.sku).picked).toBe(top.quantity);
   expect(payload.state.inventory.products.find(p=>p.sku===top.sku).stock_total).toBe(initial-top.quantity);
   while(payload.state.lift.phase!=='idle') {
-    payload=await(await request.post('/api/step',{data:{}})).json();
+    payload=await(await api.post('step',{})).json();
     expect([payload.state.x,payload.state.y,payload.state.theta]).toEqual(position);
   }
   expect(payload.state.lift.height).toBe(.55);
-  while(!payload.done)payload=await(await request.post('/api/step',{data:{}})).json();
+  while(!payload.done)payload=await(await api.post('step',{})).json();
   expect(payload.info.success).toBe(true);
   expect(payload.state.lift.dispatch_visits).toBe(1);
 });

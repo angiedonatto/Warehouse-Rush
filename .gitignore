@@ -43,3 +43,6 @@ web/playwright-report/
 
 # Configuración local del editor (hace que git_dirty salga true en runs, fichas y catálogo)
 .vscode/
+
+# Políticas PPO exportadas a NumPy para la API (≈ 27 KB c/u, verificadas contra SB3; pipelines/exportar_numpy.py)
+!/models/numpy/

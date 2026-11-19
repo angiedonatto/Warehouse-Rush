@@ -1,0 +1,99 @@
+{
+  "formato_numpy": 1,
+  "run_id": "m1-c3-seed3",
+  "level_id": "m1",
+  "environment_version": "warehouse-v10",
+  "model_uri": "models/m1-c3-seed3/model.zip",
+  "model_sha256": "33bae5af67bf61d802f7539f501ff43d0511b0f80406d273e5af5ea3be88d76d",
+  "npz_uri": "models/numpy/m1-c3-seed3.npz",
+  "npz_sha256": "2b804f45c7def77fdd9bbff77cf0c914285dcaebad7cf8ca57bc1c5ad4e15c3a",
+  "red": {
+    "capas": [
+      {
+        "nombre": "capa0_w",
+        "origen": "mlp_extractor.policy_net.0.weight",
+        "forma": [
+          64,
+          27
+        ]
+      },
+      {
+        "nombre": "capa0_b",
+        "origen": "mlp_extractor.policy_net.0.bias",
+        "forma": [
+          64
+        ]
+      },
+      {
+        "nombre": "capa1_w",
+        "origen": "mlp_extractor.policy_net.2.weight",
+        "forma": [
+          64,
+          64
+        ]
+      },
+      {
+        "nombre": "capa1_b",
+        "origen": "mlp_extractor.policy_net.2.bias",
+        "forma": [
+          64
+        ]
+      },
+      {
+        "nombre": "accion_w",
+        "origen": "action_net.weight",
+        "forma": [
+          8,
+          64
+        ]
+      },
+      {
+        "nombre": "accion_b",
+        "origen": "action_net.bias",
+        "forma": [
+          8
+        ]
+      }
+    ],
+    "activacion": "tanh",
+    "accion": "argmax(logits), determinista",
+    "dtype": "float32",
+    "observacion": "Box(27) sin normalizar (envs/CONTRATO.md)",
+    "acciones": "Discrete(8)"
+  },
+  "verificacion": {
+    "criterio": "0 acciones distintas frente a model.predict(deterministic=True)",
+    "acciones_distintas": 0,
+    "pasos": 39964,
+    "max_dif_logit": 3.814697265625e-06,
+    "margen_min_logit": 0.0002684593200683594,
+    "por_suite": {
+      "suite-m1-v1": {
+        "episodios": 50,
+        "pasos": 20000,
+        "acciones_distintas": 0,
+        "max_dif_logit": 3.814697265625e-06,
+        "margen_min_logit": 0.0019659996032714844
+      },
+      "suite-m1b-v1": {
+        "episodios": 50,
+        "pasos": 19964,
+        "acciones_distintas": 0,
+        "max_dif_logit": 3.337860107421875e-06,
+        "margen_min_logit": 0.0002684593200683594
+      }
+    }
+  },
+  "versiones": {
+    "stable-baselines3": "2.4.1",
+    "torch": "2.2.2+cpu",
+    "numpy": "1.26.4",
+    "gymnasium": "1.0.0"
+  },
+  "conversor": {
+    "script": "pipelines/exportar_numpy.py",
+    "git_commit": "dd276b82fb2ce38d744fc3a9cc1cc8068d2ca6a4",
+    "git_dirty": "false"
+  },
+  "creado_en": "2026-11-19T02:51:48.376155+00:00"
+}

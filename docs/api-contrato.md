@@ -9,7 +9,8 @@ siempre está en `GET /docs` (documentación interactiva de FastAPI).
 - **Formato:** todo es JSON. Las peticiones con cuerpo llevan `Content-Type: application/json`.
 - **Quién manda:** la simulación corre en la API (Python). La web solo dibuja lo que la API devuelve.
 - **Estado de esta versión:** cubre modelos, evaluaciones y episodios con los modelos del catálogo. **Todavía no
-  existe** la capa para el visor libre de maquillaje (ver «Lo que aún no hay», al final).
+  existe** la capa para el **visor libre de pedidos** (la casilla «Pedidos de maquillaje» de la web: crear pedidos de
+  la bodega uno tras otro, con heurística, aleatoria o a mano; ver «Lo que aún no hay», al final).
 
 ## 1. Lo básico que conviene saber primero
 
@@ -411,7 +412,8 @@ gratuito); y mostrar siempre un mensaje claro cuando haya que esperar.
 
 ## 9. Lo que aún no hay
 
-Esta versión de la API **no** incluye lo que hoy hace el `/api` de Vercel para el visor libre de maquillaje:
+Esta versión de la API **no** incluye lo que hoy hace el `/api` de Vercel para el visor libre de pedidos (la casilla «Pedidos de maquillaje», donde se juega pedido tras pedido con la bodega
+compartida):
 
 - El visor libre (heurística, aleatoria o manual con **inventario compartido entre pedidos**, pedidos de 1 a 3
   productos y «Generar pedido»). Los episodios de aquí son pedidos de 3 productos con el stock repuesto en cada uno.

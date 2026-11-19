@@ -1,6 +1,9 @@
 // Catálogo de modelos y experimentos (R4), con el mismo diálogo que el catálogo de productos de Naomi
 // (catalog.js): buscar, filtrar, ver identidad, cargar en la bodega, evaluar y comparar.
-// Datos: /modelos/catalogo.json, generado por `python -m pipelines.catalogo` desde manifiestos + MLflow.
+// Datos: GET /catalogo de la API (estado, alias, evaluable, sha256, presupuesto, decisión y evaluación de la
+// suite: la API manda) + /modelos/catalogo.json estático (`python -m pipelines.catalogo`), que solo aporta
+// hipótesis, cambios, curva, enlace a MLflow y causas de fin. Se unen por run_id; lo que la API no lista no se muestra.
+import { apiClient } from './api-client.js';
 
 const ESTADOS = { recomendado: 'Recomendado', candidato: 'Candidato', rechazado: 'Rechazado', fallido: 'Fallido', interrumpido: 'Interrumpido' };
 const POLITICAS = { ppo: 'PPO', heuristic: 'Referencia (regla)', random: 'Aleatoria' };
@@ -12,9 +15,37 @@ function table(headers, rows) {
   return el('table', { className: 'model-table' }, el('thead', {}, head), el('tbody', {}, ...rows.map(r => el('tr', {}, ...r.map(c => el('td', { textContent: c }))))));
 }
 const reasons = r => r ? Object.entries(r).map(([k, v]) => `${k} ${v}`).join(', ') : '—';
-function ppoSuccess(model) {
-  return Object.values(model.evaluacion || {}).map(p => p.ppo?.success_rate).filter(v => v != null);
+// Evaluación de la API: {suite, episodios, determinista, ppo: {...}} o {..., por_escenario: {etiqueta: {...}}}.
+function apiScenarios(evaluacion) {
+  if (!evaluacion) return [];
+  if (evaluacion.por_escenario) return Object.entries(evaluacion.por_escenario);
+  return evaluacion.ppo ? [[evaluacion.suite, evaluacion.ppo]] : [];
 }
+function ppoSuccess(model) {
+  return apiScenarios(model.evaluacion).map(([, m]) => m.success_rate).filter(v => v != null);
+}
+// Causas de fin del catálogo estático (la API no las publica): misma etiqueta de escenario o, si solo hay uno, ese.
+function endReasons(estatico, etiqueta) {
+  const evaluacion = estatico?.evaluacion || {};
+  const entrada = evaluacion[etiqueta] || (Object.keys(evaluacion).length === 1 ? Object.values(evaluacion)[0] : null);
+  return entrada?.ppo?.end_reasons || null;
+}
+function merge(api, estatico) {
+  return {
+    id: api.run_id, estado: api.estado, alias: api.alias || [], level_id: api.level_id, nivel: estatico?.nivel || api.level_id,
+    seed: api.seed, environment_version: api.environment_version, algorithm: api.algorithm, model_sha256: api.model_sha256,
+    manifiesto: api.manifest_uri, presupuesto_pasos: api.budget_steps, minutos: api.budget_minutes, decision: api.decision_reason,
+    evaluable_con_api: api.evaluable_con_api, evaluacion: api.evaluacion, suite: api.evaluacion?.suite || api.evaluation_suite_id,
+    test_final_api: api.test_final,
+    // Solo del estático: descripción del experimento y detalle numérico del test final.
+    hipotesis: estatico?.hipotesis, cambios: estatico?.cambios, curva: estatico?.curva, mlflow: estatico?.mlflow,
+    test_final: estatico?.test_final, estatico,
+    // Temporal: «Cargar» y «Evaluar 10 episodios» siguen en la API del visor hasta migrar episodios y evaluaciones.
+    servido: Boolean(estatico?.servido),
+  };
+}
+const ALIAS = { 'servido:produccion': 'en producción', 'anterior:produccion': 'producción anterior (rollback)' };
+const aliasText = alias => alias.map(a => ALIAS[a] || a.replace(':', ' para ')).join(' · ');
 
 export function setupModelCatalog({ load, initial }) {
   const dialog = el('dialog', { className: 'models-dialog' });
@@ -30,12 +61,22 @@ export function setupModelCatalog({ load, initial }) {
 
   async function data() {
     if (models.length) return;
-    const response = await fetch('/modelos/catalogo.json');
-    if (!response.ok) throw new Error('No se pudo cargar el catálogo de modelos');
-    const json = await response.json();
-    models = json.modelos;tracking = json.tracking_uri;
-    for (const level of new Set(models.map(m => m.nivel))) $('#models-level').add(new Option(level, level));
+    const [publicado, estatico] = await Promise.all([
+      apiClient().get('/catalogo'),
+      fetch('/modelos/catalogo.json').then(r => r.ok ? r.json() : null).catch(() => null),
+    ]);
+    const porId = new Map((estatico?.modelos || []).map(m => [m.run_id || m.id, m]));
+    models = publicado.modelos.map(m => merge(m, porId.get(m.run_id)));tracking = estatico?.tracking_uri || '';
+    for (const level of new Set(models.map(m => m.level_id))) $('#models-level').add(new Option(models.find(m => m.level_id === level).nivel, level));
     for (const state of new Set(models.map(m => m.estado))) $('#models-state').add(new Option(ESTADOS[state] || state, state));
+  }
+
+  function apiEvaluationBlock(model) {
+    const scenarios = apiScenarios(model.evaluacion);
+    if (!scenarios.length) return null;
+    const rows = scenarios.map(([scenario, m]) => [scenario, 'PPO', pct(m.success_rate), num(m.mean_steps), num(m.mean_collisions, 2), reasons(endReasons(model.estatico, scenario))]);
+    return el('div', {}, el('h4', { textContent: `Evaluación registrada · ${model.suite || ''} · ${model.evaluacion.episodios} episodios${model.evaluacion.determinista ? ' · determinista' : ''}` }),
+      table(['Escenario', 'Política', 'Éxito', 'Pasos', 'Choques/ep', 'Causas de fin'], rows));
   }
 
   function evaluationBlock(title, block) {
@@ -93,19 +134,20 @@ export function setupModelCatalog({ load, initial }) {
         el('dt', { textContent: 'Hipótesis' }), el('dd', { textContent: model.hipotesis || '—' }),
         el('dt', { textContent: 'Cambios frente a la base' }), el('dd', { textContent: changes.join(' · ') || 'receta base' }),
         el('dt', { textContent: 'Presupuesto' }), el('dd', { textContent: `${(model.presupuesto_pasos || 0).toLocaleString('es')} pasos · ${num(model.minutos)} min` }),
-        el('dt', { textContent: 'Estado en MLflow' }), el('dd', {}, `${model.estado} · `, el('a', { href: model.mlflow.run_url, target: '_blank', rel: 'noopener', textContent: `run ${model.mlflow.experimento || ''} ↗` })),
-        el('dt', { textContent: 'Identidad' }), el('dd', { textContent: `sha256 ${model.model_sha256?.slice(0, 16)}… · ${model.manifiesto}` }),
+        el('dt', { textContent: 'Estado' }), el('dd', {}, model.estado, model.alias.length ? ` · ${aliasText(model.alias)}` : '', model.mlflow?.run_url ? ' · ' : '', model.mlflow?.run_url ? el('a', { href: model.mlflow.run_url, target: '_blank', rel: 'noopener', textContent: `run ${model.mlflow.experimento || ''} en MLflow ↗` }) : null),
+        el('dt', { textContent: 'Identidad' }), el('dd', { textContent: `sha256 ${model.model_sha256?.slice(0, 16)}… · ${model.manifiesto}${model.evaluable_con_api ? ' · ejecutable en la API' : ` · se evalúa desde ${model.environment_version}`}` }),
         model.decision ? el('dt', { textContent: 'Decisión' }) : null, model.decision ? el('dd', { textContent: model.decision }) : null),
       actions, evalOut,
-      evaluationBlock(`Evaluación registrada · ${model.suite || ''}`, model.evaluacion),
-      evaluationBlock('Test final reservado (una sola vez)', model.test_final),
+      apiEvaluationBlock(model),
+      model.test_final_api ? el('p', { className: 'model-kpis', textContent: `Test final reservado (una sola vez) · ${model.test_final_api.suite} · ${model.test_final_api.met ? 'cumple' : 'no cumple'}: ${model.test_final_api.criterion}` }) : null,
+      evaluationBlock('Test final · detalle', model.test_final),
       model.curva ? el('figure', { className: 'model-curve' }, el('span', { className: 'mode-badge training', textContent: 'MODO · ENTRENAMIENTO (registro del run)' }), el('img', { src: model.curva, alt: `Curvas de entrenamiento de ${model.id}`, loading: 'lazy' })) : null);
     history.replaceState(null, '', `${location.pathname}?${new URLSearchParams({ ...Object.fromEntries(new URLSearchParams(location.search)), catalogo: model.id })}`);
   }
 
   function filter() {
     const query = $('#models-search').value.toLocaleLowerCase('es'), level = $('#models-level').value, state = $('#models-state').value;
-    const shown = models.filter(m => (!level || m.nivel === level) && (!state || m.estado === state) && `${m.id} ${m.hipotesis}`.toLocaleLowerCase('es').includes(query));
+    const shown = models.filter(m => (!level || m.level_id === level) && (!state || m.estado === state) && `${m.id} ${m.hipotesis || ''}`.toLocaleLowerCase('es').includes(query));
     grid.replaceChildren();$('#models-count').textContent = `${shown.length} modelos`;
     for (const model of shown) {
       const success = ppoSuccess(model);
@@ -130,9 +172,8 @@ export function setupModelCatalog({ load, initial }) {
     const chosen = models.filter(m => compare.has(m.id));
     const suites = new Set(chosen.map(m => m.suite));
     const rows = [];
-    for (const m of chosen) for (const [scenario, policies] of Object.entries(m.evaluacion || {})) {
-      const p = policies.ppo || {};
-      rows.push([m.id, m.nivel, ESTADOS[m.estado] || m.estado, m.seed, (m.presupuesto_pasos || 0).toLocaleString('es'), scenario, pct(p.success_rate), num(p.mean_steps), num(p.mean_collisions, 2), reasons(p.end_reasons)]);
+    for (const m of chosen) for (const [scenario, p] of apiScenarios(m.evaluacion)) {
+      rows.push([m.id, m.nivel, ESTADOS[m.estado] || m.estado, m.seed, (m.presupuesto_pasos || 0).toLocaleString('es'), scenario, pct(p.success_rate), num(p.mean_steps), num(p.mean_collisions, 2), reasons(endReasons(m.estatico, scenario))]);
     }
     detail.replaceChildren(el('h3', { textContent: 'Comparación de candidatos' }),
       suites.size > 1 ? el('p', { className: 'model-error', textContent: `Atención: suites distintas (${[...suites].join(', ')}); los resultados no son comparables entre niveles o mapas.` }) : el('p', { className: 'preview-help', textContent: `Misma suite (${[...suites][0]}): mismas semillas, política determinista.` }),

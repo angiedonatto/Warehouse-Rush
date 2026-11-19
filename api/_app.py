@@ -39,6 +39,7 @@ import yaml
 
 from api._episodios import CATALOGO_EPISODIOS, CATALOGO_SUITES, NIVELES, GestorEpisodios, Metricas, _orders
 from api._modelos import AlmacenModelos, ErrorModelo
+from api._visor import montar_visor
 from pipelines import registry
 
 log = logging.getLogger("warehouse.api")
@@ -276,8 +277,8 @@ def create_app(raiz: Path = registry.RAIZ, *, almacen: AlmacenModelos | None = N
     app.add_middleware(GZipMiddleware, minimum_size=1000)
     app.add_middleware(CORSMiddleware, allow_origins=_origenes(),
                        allow_origin_regex=os.environ.get("CORS_ORIGIN_REGEX") or None,
-                       allow_methods=["GET", "POST", "DELETE"], allow_headers=["Content-Type"],
-                       allow_credentials=False, expose_headers=["X-Modelo-Servido", "X-Git-Commit"], max_age=600)
+                       allow_methods=["GET", "POST", "DELETE"], allow_headers=["Content-Type", "X-Sesion"],
+                       allow_credentials=False, expose_headers=["X-Modelo-Servido", "X-Git-Commit", "X-Sesion"], max_age=600)
     if not _origenes() and not os.environ.get("CORS_ORIGIN_REGEX"):
         log.warning("CORS_ORIGINS vacío: ningún navegador de otro origen podrá llamar a la API (ej.: %s)",
                     EJEMPLO_ORIGEN)
@@ -522,10 +523,13 @@ def create_app(raiz: Path = registry.RAIZ, *, almacen: AlmacenModelos | None = N
     def monitoreo():
         """Monitoreo mínimo del curso: éxito por escenario, causas de fallo, latencia, errores y versión servida."""
         return {"servido": servido_fijo(), "git_commit": commit, "iniciado_en": iniciado,
-                "evaluaciones": trabajos.estado(),
+                "evaluaciones": trabajos.estado(), "sesiones": app.state.visor.sesiones.estado(),
                 **metricas.resumen(), "http": http.resumen(), "episodios": episodios.estado(),
                 "modelos": almacen.estado()}
 
+    # Capa /api/* con las mismas rutas y formatos que usa la web actual (api/_visor.py); sesión en la cabecera X-Sesion
+    visor = montar_visor(app, almacen=almacen, raiz=raiz, metricas=metricas, commit=commit, servido_fijo=servido_fijo)
+    app.state.visor = visor
     return app
 
 

@@ -1,0 +1,25 @@
+{
+  "git_commit": "8b49d63313792fa5d677e902a624f5aeb85c8ee4",
+  "imagen": "ghcr.io/mamezquita/warehouse-rush-api:8b49d63",
+  "digest": "ghcr.io/mamezquita/warehouse-rush-api@sha256:7b7b7e234feae84f90d4fbd965191ef170a50871bae831f94769b1d1dd6748b5",
+  "motivo": "capa /api/* del visor sobre Render (tanda 2 del PR 2)",
+  "api_url": "https://warehouse-rush-api.onrender.com",
+  "solo_imagen": false,
+  "deploy": {
+    "http": "200",
+    "id": "dep-dbv9irjrjlhs73baqec0"
+  },
+  "tiempos_s": {
+    "build": 3.3,
+    "push": 10.6,
+    "deploy_hook_hasta_version": 25.1,
+    "deploy_hook_hasta_precarga": 25.7
+  },
+  "version_servida": {
+    "run_id": "m1b-i1-seed1-best",
+    "model_sha256": "46984e97b032920cd8e041e44b4f5d27751235cb7f4e04c634f523c2c41fdbb7",
+    "environment_version": "warehouse-v10",
+    "git_commit": "8b49d63313792fa5d677e902a624f5aeb85c8ee4"
+  },
+  "creado_en": "2026-11-19T06:38:18Z"
+}

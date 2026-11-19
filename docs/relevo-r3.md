@@ -1,8 +1,12 @@
 # Relevo R3 · Versionado, pipeline y API
 
-Estado al **2026-11-19 07:00 UTC** (verificado contra Render y GitHub tras desplegar la capa `/api/*`).
-Responsable: miguel (R3). **PR 1:** `dev/miguel` → `main` (https://github.com/angiedonatto/Warehouse-Rush/pull/4, borrador, sin
-fusionar). **PR 2:** rama `dev/miguel-visor` (capa `/api/*`; PR **sin abrir**), que contiene todo lo de `dev/miguel`.
+Estado al **2026-11-19 13:27 UTC** (verificado contra Render y GitHub).
+Responsable: miguel (R3). **PR 1 (#4, https://github.com/angiedonatto/Warehouse-Rush/pull/4): ya está fusionado en `main`**
+(2026-11-19 11:37 UTC, con «merge commit» `57e9ff7`). **PR 2 (#5, https://github.com/angiedonatto/Warehouse-Rush/pull/5):**
+`dev/miguel-visor` → `main`, la capa `/api/*` (6 commits, 8 archivos); lo revisa y fusiona Angie.
+
+**Dominio definitivo de la web:** `https://warehouse-rush-psi.vercel.app` (ya permitido en `CORS_ORIGINS` de Render, junto con
+`experiment-001`).
 
 **Render sirve hoy el commit `8b49d63`** (imagen `ghcr.io/mamezquita/warehouse-rush-api:8b49d63`, rama `dev/miguel-visor`):
 la API nueva más la capa `/api/*` del visor, con producción = `m1b-i1-seed1-best`. Anteriores: `e51f075` (PR 1, el
@@ -12,13 +16,14 @@ rollback real) y `661fe5a` (primer despliegue real). Evidencia en `docs/resultad
 
 La API nueva (FastAPI, sin torch) **corre en Render (`8b49d63`)** con la capa `/api/*` que usa el visor de la web
 (mismas rutas y formatos que el `/api` de Vercel, sesión en la cabecera `X-Sesion`), verificada en producción, con CORS
-resuelto para los dos dominios de la web. Falta que la web migre sus llamadas a esta API y fusionar los PR a `main`.
+resuelto para los dos dominios de la web. El PR 1 ya está en `main`; falta que Angie fusione el PR 2 (#5). **La migración de
+la web a Render (`docs/api-contrato.md`, sección 9) queda como siguiente paso después de la entrega.**
 
 ## Arquitectura acordada
 
 | Capa | Dónde | Estado |
 |---|---|---|
-| Web (interfaz, Three.js) | Vercel (`warehouse-rush-psi.vercel.app`, lis/Naomi) | En producción; episodios y «Evaluar» todavía por el `/api` de Vercel |
+| Web (interfaz, Three.js) | Vercel, dominio definitivo `https://warehouse-rush-psi.vercel.app` (lis/Naomi) | En producción; episodios y «Evaluar» todavía por el `/api` de Vercel hasta que migre (después de la entrega) |
 | API única de modelos, evaluaciones y episodios | Render Free (`https://warehouse-rush-api.onrender.com`), FastAPI | **Sirve `8b49d63`** (API + capa `/api/*` de `dev/miguel-visor`; producción `m1b-i1-seed1-best`) |
 | Registro de experimentos y modelos | MLflow en DagsHub (`mamezquita/Warehouse-Rush.mlflow`) | 94 runs migrados (lis) + run del flujo |
 | Pesos | DVC en Cloudflare R2 (entrenamiento) y `models/numpy/` en Git (API) | Hecho |
@@ -108,13 +113,14 @@ Render reinició el servicio (`iniciado_en` 06:52:57) y se comprobó, **sin publ
 5. ~~Capa `/api/*` con `ViewerSession`~~: **hecha y desplegada** (`8b49d63`, ver arriba), sin tocar `api/_viewer.py` ni
    nada de Vercel (archivo nuevo `api/_visor.py`). `/episodios` se mantiene como está.
 5b. ~~Arreglar `CORS_ORIGINS` en Render~~: **hecho** (2026-11-19 06:53 UTC; los dos dominios pasan el preflight con `X-Sesion`).
-5c. **La web migra** (lis y Naomi): `docs/api-contrato.md` sección 9 (dirección base, `X-Sesion`, sesión perdida,
-    «Evaluar» no certificado).
+5c. **La web migra a Render** (lis y Naomi): `docs/api-contrato.md` sección 9 (dirección base, `X-Sesion`, sesión perdida,
+    «Evaluar» no certificado). **Queda como siguiente paso después de la entrega**; hasta entonces la web sigue con su `/api`
+    de Vercel (que no se toca) y usa de Render solo `/catalogo`, `/version` y `/monitoreo`.
 6. `pipelines/flow.py`: espera configurable en la etapa 8 (un redeploy tarda minutos, no segundos).
 7. `docs/decisiones.md`: registrar las decisiones de la tabla de abajo marcadas «por registrar».
 8. ~~`docs/api-contrato.md` para lis y Naomi~~: **hecho** (rutas, errores, cabeceras, CORS, evaluación asíncrona, episodios y servidor gratuito).
-9. **PR 1** (`dev/miguel` → `main`, borrador #4) y **PR 2** (`dev/miguel-visor`, sin abrir), con revisión de Angie y validación
-   conjunta. Fusionar con «merge commit», no con «squash» (la trazabilidad de `/version`).
+9. ~~PR 1 (#4)~~: **fusionado en `main`** (2026-11-19 11:37 UTC, merge commit `57e9ff7`). **PR 2 (#5)** (`dev/miguel-visor` → `main`,
+   base ya cambiada a `main`): lo revisa y fusiona Angie, con «merge commit», no con «squash» (la trazabilidad de `/version`).
 10. Cuando la web ya no lo use: retirar el `/api` de Vercel en un commit aparte (`api/index.py`, `api/_cloud.py`,
     `pipelines/servir.py`, `configs/modelos_servidos.json`, `models/servidos/`) y lo heredado de `warehouse-v1`.
 
@@ -158,9 +164,9 @@ Render reinició el servicio (`iniciado_en` 06:52:57) y se comprobó, **sin publ
 - Episodios, evaluaciones y métricas viven en memoria: se pierden al dormirse o redesplegarse Render.
 - Render Free: 0.1 CPU (una evaluación larga ocupa la CPU), 512 MB, se duerme a los 15 min y la primera petición
   tarda ~18 s en despertarlo.
-- Mientras la web no migre, conviven dos servidores (Vercel y Render): la versión servida que muestra la web viene de
-  Render, pero los episodios corren en Vercel.
-- **CORS:** `CORS_ORIGINS` debe listar cada dominio de la web (hoy `experiment-001` y `psi`); un dominio nuevo (por ejemplo un
+- Hasta que la web migre (siguiente paso, después de la entrega) conviven dos servidores (Vercel y Render): la versión servida
+  que muestra la web viene de Render, pero los episodios corren en Vercel.
+- **CORS:** `CORS_ORIGINS` debe listar cada dominio de la web (hoy `experiment-001` y el definitivo `psi`); un dominio nuevo (por ejemplo un
   preview de Vercel) no funciona hasta agregarlo y guardar (Render reinicia el servicio y se pierden las sesiones en memoria).
 - Las sesiones del visor (`/api/*`) también viven en memoria (30 min, máx. 100): se pierden al redesplegar o dormirse; la web
   debe manejar `sesion_no_encontrada` (contrato, 9.6).

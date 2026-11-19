@@ -13,8 +13,9 @@ test('catálogo de modelos: ficha, evaluar, cargar, comparar, enlace directo', a
   await expect(page.locator('#model-detail h3')).toHaveText('m1b-i1-seed1-best');
   await page.screenshot({ path: `${shots}/1-ficha.png` });
   await page.locator('#models-blocked').check();
-  await page.getByRole('button', { name: 'Evaluar 10 episodios' }).click();
+  await page.getByRole('button', { name: /Diagnóstico rápido · 10 episodios \(no certificado\)/ }).click();
   await expect(page.locator('.model-eval-out .model-kpis')).toBeVisible({ timeout: 90000 });
+  await expect(page.locator('.model-eval-out .mode-badge')).toHaveText('DIAGNÓSTICO · NO CERTIFICADO');
   await page.screenshot({ path: `${shots}/2-evaluacion.png` });
   // comparar dos modelos
   await page.locator('#models-state').selectOption('');

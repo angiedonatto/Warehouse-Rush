@@ -38,3 +38,6 @@ web/playwright-report/
 .env*
 # .env.example es la plantilla sin secretos y sí va a Git; debe ir después de «.env*» para que la excepción gane
 !.env.example
+
+# Configuración local del editor (hace que git_dirty salga true en runs, fichas y catálogo)
+.vscode/

@@ -8,9 +8,10 @@ siempre está en `GET /docs` (documentación interactiva de FastAPI).
 - **Dirección en producción:** `https://warehouse-rush-api.onrender.com`
 - **Formato:** todo es JSON. Las peticiones con cuerpo llevan `Content-Type: application/json`.
 - **Quién manda:** la simulación corre en la API (Python). La web solo dibuja lo que la API devuelve.
-- **Estado de esta versión:** cubre modelos, evaluaciones y episodios con los modelos del catálogo. **Todavía no
-  existe** la capa para el **visor libre de pedidos** (la casilla «Pedidos de maquillaje» de la web: crear pedidos de
-  la bodega uno tras otro, con heurística, aleatoria o a mano; ver «Lo que aún no hay», al final).
+- **Qué cubre:** modelos, evaluaciones oficiales y episodios con los modelos del catálogo (secciones 2 a 8) y,
+  **además, la capa `/api/*`** (sección 9): las mismas rutas y formatos que hoy usa la web contra Vercel
+  (`/api/layout`, `/api/state`, `/api/reset`, `/api/step`, `/api/evaluate`), para que la web cambie solo la dirección
+  base y la forma de guardar la sesión. Incluye el **visor libre de pedidos** (la casilla «Pedidos de maquillaje»).
 
 ## 1. Lo básico que conviene saber primero
 
@@ -21,7 +22,7 @@ siempre está en `GET /docs` (documentación interactiva de FastAPI).
 | Evaluaciones | Son asíncronas: pides, recibes un número y consultas hasta que termine (sección 6). |
 | Episodios | Viven en la memoria del servidor 30 minutos y **se pierden** si el servidor se redespliega o se duerme (sección 7). |
 | Servidor gratuito | Se duerme tras 15 min sin uso y puede tardar en despertar; y va más lento mientras evalúa (sección 8). |
-| Cookies | No se usan. Haz las peticiones con `credentials: 'omit'`. El episodio se identifica por su `episodio_id`. |
+| Cookies | No se usan. Haz las peticiones con `credentials: 'omit'`. El episodio se identifica por su `episodio_id` y la sesión del visor por la cabecera `X-Sesion` (sección 9). |
 
 ## 2. Rutas
 
@@ -301,9 +302,9 @@ es `desconocido`.
 - Solo los dominios listados en la variable `CORS_ORIGINS` del servidor pueden llamar a la API desde un
   navegador. Hoy: `https://warehouse-rush-experiment-001.vercel.app` y `https://warehouse-rush-psi.vercel.app`.
   **Un dominio nuevo (por ejemplo, un preview de Vercel) no funciona hasta que se agregue** a esa variable.
-- Métodos permitidos: `GET`, `POST`, `DELETE`. Cabecera de petición permitida: `Content-Type`.
+- Métodos permitidos: `GET`, `POST`, `DELETE`. Cabeceras de petición permitidas: `Content-Type` y `X-Sesion`.
 - **Sin credenciales:** no se envían ni se aceptan cookies. En `fetch`, usa `credentials: 'omit'`.
-- Cabeceras visibles para el navegador: `X-Modelo-Servido` y `X-Git-Commit`.
+- Cabeceras visibles para el navegador: `X-Modelo-Servido`, `X-Git-Commit` y `X-Sesion`.
 - El navegador guarda 10 minutos la respuesta de las consultas previas (`OPTIONS`).
 - Si un dominio no está permitido, el servidor responde pero **sin** la cabecera de permiso, y el navegador bloquea
   la respuesta (en la consola aparece un error de CORS, no uno de la API).
@@ -411,20 +412,190 @@ Recomendaciones para la web: usar `correr` y animar localmente; hacer el sondeo 
 segundos y no más seguido; no llamar a `/monitoreo` ni `/version` en bucle (cada llamada gasta CPU del plan
 gratuito); y mostrar siempre un mensaje claro cuando haya que esperar.
 
-## 9. Lo que aún no hay
+## 9. Capa `/api/*`: el visor de la web actual sobre esta API
 
-Esta versión de la API **no** incluye lo que hoy hace el `/api` de Vercel para el visor libre de pedidos (la casilla «Pedidos de maquillaje», donde se juega pedido tras pedido con la bodega
-compartida):
+Es la capa de compatibilidad: **las mismas rutas, cuerpos y respuestas que la web usa hoy con el `/api` de Vercel**
+(el visor, «Cargar en la bodega» y «Evaluar»), pero ejecutadas por esta API. La web solo tiene que cambiar la
+dirección base y la forma de guardar la sesión. El visor libre de pedidos (pedido tras pedido con la bodega
+compartida, «Generar pedido», pedidos de 1 a 3 productos) y el modo antiguo sin maquillaje **funcionan**, porque se usa el mismo
+motor de sesión del visor (`ViewerSession`). Las respuestas son idénticas a las de Vercel (pasos, ruta de referencia,
+inventario, eventos); las pruebas lo comparan paso a paso.
 
-- El visor libre (heurística, aleatoria o manual con **inventario compartido entre pedidos**, pedidos de 1 a 3
-  productos y «Generar pedido»). Los episodios de aquí son pedidos de 3 productos con el stock repuesto en cada uno.
-- Los campos `route` (ruta de referencia), `makeup`, `orders` y `model` que lee la web actual, y las rutas
-  `/api/layout`, `/api/state`, `/api/reset`, `/api/step` y `/api/evaluate` con su formato de error.
-- El «Evaluar» rápido de 10 episodios con el catálogo `trendy-27` (se mantendrá como diagnóstico **no certificado**).
+### 9.1 Las rutas
 
-Esas piezas son la «capa `/api/*`» planeada; **espera el acuerdo de Angie y Lis** para adaptar `api/_viewer.py`. Hasta
-entonces, la web debe seguir usando su `/api` de Vercel para eso y esta API para el catálogo, los modelos, las
-evaluaciones oficiales y los episodios con modelos del catálogo.
+| Método | Ruta | Recibe | Devuelve |
+|---|---|---|---|
+| GET | `/api/layout` | nada (opcional `X-Sesion`) | `layout`, `catalog` (27 productos), `catalog_version`, `layout_sha256`, `available_ppo`, `models` (2 recomendados), `environment_version` |
+| GET | `/api/state` | `X-Sesion` (opcional) | el estado de la sesión (ver abajo); **sin cabecera crea una sesión nueva** |
+| POST | `/api/reset` | `{orders, policy, blocked, seed, makeup}` o `{policy: "ppo", model, blocked, seed}` | el estado de la misión nueva |
+| POST | `/api/step` | `{}` o `{action}` (0 a 7, solo en modo manual) + `X-Sesion` | el estado tras un paso |
+| POST | `/api/evaluate` | `{model, blocked, episodes, seed}` | diagnóstico rápido (**no certificado**) |
+| GET | `/api/health` | nada | `status`, `environment_version`, `served_models`, `commit`, número de sesiones |
+
+- **El estado** trae lo de siempre: `state`, `info`, `observation`, `policy`, `orders`, `makeup`, `seed`, `done`,
+  `terminated`, `truncated`, `last_action`, `last_reward`, `route` y `route_kind` (la ruta de referencia, solo para
+  dibujar), `trail`, `events`, `model` (la ficha del modelo, o `null`), `environment_version` y **`sesion_id`** (nuevo).
+- `policy` puede ser `heuristic`, `random`, `manual` o `ppo` (esta última **solo con `model`**; ver 9.5). `orders` es
+  1 o 2. **Envía siempre todos los campos** en `reset`, como ya hace la web: los que falten toman los valores
+  del visor antiguo (`orders` 2, `blocked` true, `policy` heuristic, `seed` 10000, `makeup` false).
+- **`layout.models`** lista solo los modelos recomendados que la API puede ejecutar (hoy `m1b-i1-seed1-best`, el de
+  producción, y `m1-c3-seed0`), con la misma ficha de siempre: `id`, `nivel`, `estado`, `environment_version`,
+  `model_sha256`, `test_final`, etc. Con `{policy: "ppo", model: "<id>"}` también se puede cargar cualquier otro modelo del
+  catálogo que `GET /catalogo` marque con `evaluable_con_api: true`.
+- **`layout.environment_version`** es la versión del **mapa** (`"0.4.0"`), igual que antes; la del ambiente
+  (`"warehouse-v10"`) está en el estado.
+- Los cuerpos pesan como máximo 4096 bytes y llevan `Content-Type: application/json`.
+
+### 9.2 Cómo funciona la sesión (`X-Sesion`)
+
+En Vercel la sesión viajaba en una cookie firmada. Entre dos dominios (web en Vercel, API en Render) las cookies no
+sirven, así que ahora la sesión es **un identificador que la web guarda y envía en cada petición**:
+
+1. Al abrir la web: `GET /api/layout` (sin sesión) y `GET /api/state` (sin sesión). El segundo **crea la sesión** y
+   devuelve su identificador en la cabecera `X-Sesion` y en el cuerpo (`sesion_id`).
+2. La web **guarda ese identificador** (propongo `sessionStorage`: sobrevive a recargar la página y se borra al cerrar
+   la pestaña).
+3. Desde entonces, **toda** petición lleva `X-Sesion: <id>`: `state`, `reset`, `step` (y opcionalmente `layout`).
+4. `POST /api/reset` con el identificador reinicia **la misma sesión** (mismo `sesion_id`, y la bodega compartida
+   sigue con el stock que quedó). Sin identificador, o con uno desconocido, **crea una sesión nueva** y devuelve su
+   identificador: la web debe quedarse con el último que reciba.
+5. Cada petición renueva la sesión: **caduca a los 30 minutos sin uso**. Hay un máximo de **100 sesiones**; si se llena se
+   descarta la más antigua ya terminada, y si todas están en curso, `429` (`demasiadas_sesiones`).
+6. **No llames a `state` sin identificador en bucle:** cada llamada crea una sesión nueva. Llámalo sin identificador
+   solo al abrir la web y guarda lo que devuelva.
+
+### 9.3 Ejemplo de uso desde la web
+
+Reemplazo de la función `api()` de `web/src/main.js` (hoy usa `/api/...` del mismo dominio):
+
+```js
+const API_BASE = import.meta.env.VITE_API_BASE_URL;                 // sin barra final
+const CLAVE_SESION = 'warehouse-sesion';
+let sesionId = sessionStorage.getItem(CLAVE_SESION);
+
+async function api(path, body) {
+  const headers = { Accept: 'application/json' };
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (sesionId) headers['X-Sesion'] = sesionId;
+  let response;
+  try {
+    response = await fetch(`${API_BASE}/api/${path}`, {
+      method: body === undefined ? 'GET' : 'POST', headers, credentials: 'omit',   // sin cookies
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch {
+    throw new Error('No se pudo conectar con la API. Si estuvo inactiva, puede estar despertando (~20 s): reintenta.');
+  }
+  const result = await response.json();
+  const nueva = response.headers.get('X-Sesion') || result.sesion_id;          // la API la devuelve siempre
+  if (nueva && nueva !== sesionId) { sesionId = nueva; sessionStorage.setItem(CLAVE_SESION, nueva); }
+  if (!response.ok) {
+    if (result.codigo === 'sesion_no_encontrada') { sesionId = null; sessionStorage.removeItem(CLAVE_SESION); }
+    const error = new Error(result.error || `HTTP ${response.status}`);        // `error` sigue siendo un texto
+    error.codigo = result.codigo;
+    throw error;
+  }
+  return result;
+}
+```
+
+Pedir lo mismo con `curl` (la sesión va en la cabecera):
+
+```bash
+API=https://warehouse-rush-api.onrender.com
+curl -s -i $API/api/state | grep -i '^x-sesion'                      # crea la sesión y la devuelve
+curl -s -X POST $API/api/reset -H 'Content-Type: application/json' -H "X-Sesion: $ID" \
+     -d '{"policy":"ppo","model":"m1b-i1-seed1-best","blocked":true,"seed":10000}'
+curl -s -X POST $API/api/step  -H 'Content-Type: application/json' -H "X-Sesion: $ID" -d '{}'
+curl -s -X POST $API/api/evaluate -H 'Content-Type: application/json' \
+     -d '{"model":"m1b-i1-seed1-best","blocked":true,"episodes":10}'
+```
+
+### 9.4 Qué cambia en la web
+
+1. **Dirección:** `fetch` pasa de `/api/...` (mismo dominio) a `${VITE_API_BASE_URL}/api/...`. El prefijo `/api` se conserva.
+2. **Sesión:** enviar `X-Sesion` y guardar el identificador (9.2 y 9.3); usar `credentials: 'omit'`. Ya no hay cookie.
+3. **Sesión perdida:** manejar el error `sesion_no_encontrada` (9.6).
+4. **Errores:** siguen siendo `{"error": "texto"}`, como en Vercel, así que `new Error(result.error)` funciona tal cual. Se
+   añade `codigo` (estable) por si quieres distinguir casos.
+5. **«Evaluar» rápido:** la respuesta trae **`certificado: false`**, `catalog: "trendy-27-v1"` y una `nota`. Conviene
+   mostrar «diagnóstico no certificado» y enviar al usuario a la evaluación oficial (`POST /evaluaciones`, sección 6). Puede
+   tardar hasta ~14 s si el modelo falla (unos 5 s si funciona): mostrar un aviso de espera. Corre de a uno: si ya hay otro,
+   `429` (`diagnostico_en_curso`).
+6. **PPO genérico:** `layout.available_ppo` es `{"1": false, "2": false}`, así que la opción «PPO entrenado» queda
+   desactivada con el código actual de la web (se recomienda quitarla). Un `reset` con `policy: "ppo"` sin `model` responde 400.
+7. **Modo antiguo sin maquillaje (P1/P2, 1 o 2 pedidos):** sigue funcionando, para que Naomi decida si se conserva.
+8. **Ritmo:** cada `step` tarda ~0.1 s de CPU en el servidor más la red (unos 0.2 a 0.4 s). Mantener el ritmo actual (650 ms por
+   paso) y no lanzar pasos en paralelo (la web ya usa una bandera `busy`).
+9. **Servidor dormido:** la primera petición después de unos 15 min sin uso puede tardar ~18 s. Mostrar «despertando el
+   servidor…» en vez de un error.
+
+### 9.5 Diferencias con el `/api` de Vercel
+
+| | Vercel | Render |
+|---|---|---|
+| Sesión | cookie firmada (2 h) | identificador en `X-Sesion` (30 min sin uso) |
+| Tras reiniciar el servidor | la partida sigue (viene en la cookie) | **se pierde** (vive en memoria) |
+| Modelos | `configs/modelos_servidos.json` con torch | catálogo de la API con inferencia NumPy |
+| PPO genérico del experimento 001 | existía | **ya no existe** |
+| Errores | `{"error": "texto"}` | igual, con `codigo` añadido |
+| «Evaluar» | síncrono, 1 a 20 episodios | igual, con `certificado: false`; uno a la vez |
+| Límite de sesiones | ninguno | 100 |
+
+### 9.6 Qué hacer cuando la sesión se pierde
+
+La sesión vive en la memoria del servidor. Se pierde cuando **el servidor se redespliega**, **se duerme** (15 min sin
+tráfico), la sesión **caduca** (30 min sin uso) o se descarta porque el servidor estaba lleno. Entonces `state` y `step`
+responden `404` con `codigo: "sesion_no_encontrada"` y el texto «La sesión no existe o caducó…».
+
+Lo que debe hacer la web:
+
+1. Al recibir ese error, **borrar el identificador guardado** (el ejemplo 9.3 ya lo hace) y **avisar al usuario** con un
+   mensaje claro, por ejemplo: «La sesión se perdió porque el servidor se reinició o estuvo inactivo. Se reinicia la misión».
+2. **Llamar a `POST /api/reset`** con los valores actuales de los controles (política, pasos cerrados, semilla…). `reset` nunca
+   da este error: crea una sesión nueva y devuelve su identificador, que la web guarda.
+3. Con la **misma semilla** el pedido es el mismo; lo que se pierde es el avance de la misión y el **stock acumulado de la
+   bodega compartida** (la sesión nueva empieza con el stock inicial).
+
+```js
+async function executeStep(action) {
+  /* … */
+  try { renderState(await api('step', action === undefined ? {} : { action })); }
+  catch (error) {
+    if (error.codigo === 'sesion_no_encontrada') { pause(); toast('La sesión se perdió; se reinicia la misión.'); await reset(); }
+    else { pause(); toast(error.message); }
+  }
+}
+```
+
+Al abrir la página con un identificador guardado de una sesión que ya no existe, `GET /api/state` responde el mismo error:
+trátalo igual (descartar el identificador y llamar a `reset`, o volver a pedir `state` sin identificador). Para saber de antemano
+si hubo un reinicio, compara `iniciado_en` de `GET /health` con el valor que viste antes.
+
+### 9.7 Errores de `/api/*`
+
+Todos con la forma `{"error": "texto", "codigo": "…"}`:
+
+| Estado | `codigo` | Cuándo |
+|---|---|---|
+| 400 | `parametro_invalido` | Cuerpo vacío, mayor de 4096 bytes o que no es un objeto JSON; valores inválidos (`orders` distinto de 1 o 2, `seed` negativa, acción fuera de 0 a 7 o enviada fuera del modo manual…); `policy: "ppo"` sin `model` |
+| 400 | `falta_sesion` | `step` sin `X-Sesion` |
+| 404 | `sesion_no_encontrada` | `state` o `step` con una sesión que no existe o caducó |
+| 404 | `modelo_no_encontrado` | El modelo no existe en el catálogo |
+| 404 | `ruta_no_encontrada` | Ruta `/api/...` desconocida |
+| 409 | `modelo_incompatible` / `sin_version_numpy` | El modelo es de otra versión del ambiente o no se puede ejecutar |
+| 415 | `tipo_no_soportado` | La petición no es `application/json` |
+| 429 | `demasiadas_sesiones` | Hay 100 sesiones en curso |
+| 429 | `diagnostico_en_curso` | Ya hay un «Evaluar» corriendo |
+| 500 | `integridad`, `error_interno` | Fallos internos (por ejemplo, la huella de un modelo no coincide) |
+
+Fuera de `/api/*`, los errores siguen el formato uniforme de la sección 3.
+
+### 9.8 Lo que no incluye
+
+- El PPO genérico de `warehouse-v1` (`experiment-001`), que no es compatible con `warehouse-v10`.
+- Sesiones que sobrevivan a un reinicio del servidor (ver 9.6).
+- `POST /api/evaluate` **no es la evaluación oficial**: para eso, `POST /evaluaciones` (sección 6).
 
 ## 10. Para probar a mano
 

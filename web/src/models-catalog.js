@@ -46,6 +46,26 @@ function merge(api, estatico) {
     servido: Boolean(api.evaluable_con_api),
   };
 }
+// Evaluación oficial (docs/api-contrato.md, sección 6): POST /evaluaciones (202) y sondeo cada 2.5 s de
+// GET /evaluaciones/trabajos/{id}. Suites fijas, política determinista, catálogo legacy-18: certificado: true.
+// Solo suites de warehouse-v10 compatibles con el mapa del modelo (m1 y m1b: layout_v0.4; m1o: layout_v0.5).
+const SUITES = { m1: ['suite-m1-v1', 'suite-m1b-v1', 'dev-m1-v1'], m1b: ['suite-m1b-v1', 'suite-m1-v1', 'dev-m1-v1'], m1o: ['suite-m1o-v1', 'dev-m1o-v1'] };
+const POLITICAS_OFICIALES = { ppo: 'Este modelo (PPO)', heuristic: 'Referencia (regla BFS)', random: 'Aleatoria' };
+const SONDEO_MS = 2500;
+const ERRORES_OFICIALES = {
+  cola_llena: 'La cola de evaluaciones está llena (3 esperando). Reintenta en un minuto.',
+  evaluacion_no_encontrada: 'La evaluación se perdió: el servidor se reinició o pasaron más de 30 minutos. Lánzala de nuevo.',
+  modelo_incompatible: 'El modelo no es compatible con esa suite (otro mapa o versión del ambiente).',
+};
+const espera = ms => new Promise(resolve => setTimeout(resolve, ms));
+// Evaluación registrada en el manifiesto para esa suite (para comparar con la que se acaba de reconstruir).
+function registrada(model, suite) {
+  const ev = model.evaluacion;
+  if (!ev) return null;
+  if (ev.por_escenario) return Object.entries(ev.por_escenario).find(([label]) => label.startsWith(suite))?.[1] || null;
+  return ev.suite === suite ? ev.ppo : null;
+}
+
 const ALIAS = { 'servido:produccion': 'en producción', 'anterior:produccion': 'producción anterior (rollback)' };
 const aliasText = alias => alias.map(a => ALIAS[a] || a.replace(':', ' para ')).join(' · ');
 
@@ -59,6 +79,7 @@ export function setupModelCatalog({ load, initial }) {
   const opener = el('button', { id: 'open-models', className: 'button', textContent: 'Modelos y experimentos ↗' });
   document.querySelector('#open-catalog').after(opener);
   let models = [], tracking = '', selected = null;
+  const oficiales = new Map();   // clave run|suite|política → estado de la evaluación oficial (sobrevive a cambiar de ficha)
   const compare = new Set();
 
   async function data() {
@@ -112,6 +133,49 @@ export function setupModelCatalog({ load, initial }) {
     } finally { button.disabled = false; }
   }
 
+  function renderOficial(out, trabajo, model) {
+    if (!out.isConnected && out.dataset.clave) return;   // la ficha cambió: el estado queda en `oficiales`
+    const { estado, progreso = {}, error } = trabajo;
+    const nodos = [el('span', { className: 'mode-badge evaluation', textContent: 'EVALUACIÓN OFICIAL · CERTIFICADA' }),
+      el('p', { className: 'preview-help', textContent: `${trabajo.suite_id || trabajo.suite} · ${POLITICAS_OFICIALES[trabajo.politica] || trabajo.politica}${trabajo.episodios ? ` · ${trabajo.episodios} episodios` : ''}${trabajo.semillas ? ` · semillas ${trabajo.semillas.join('–')}` : ''}${trabajo.catalog_version ? ` · catálogo ${trabajo.catalog_version}` : ''}${trabajo.model_sha256 ? ` · sha256 ${trabajo.model_sha256.slice(0, 12)}` : ''}` })];
+    if (error) nodos.push(el('p', { className: 'model-error', textContent: error }));
+    else if (estado === 'enviando') nodos.push(el('p', { className: 'preview-help', textContent: 'Enviando… (si el servidor estaba dormido, tarda unos 20 s en despertar)' }));
+    else if (estado === 'en_cola') nodos.push(el('p', { className: 'preview-help', textContent: `En cola: posición ${trabajo.posicion_en_cola ?? '—'} (se evalúa de a una).` }));
+    else if (estado === 'en_curso') {
+      const hechos = progreso.episodios_hechos, total = progreso.episodios_total || trabajo.episodios;
+      const barra = el('progress', { className: 'official-progress', max: total || 1 });
+      if (hechos != null) barra.value = hechos;
+      nodos.push(barra, el('p', { className: 'preview-help', textContent: hechos != null ? `En curso: ${hechos} de ${total} episodios` : 'En curso (la política aleatoria no informa avance)' }));
+    } else if (estado === 'terminada') {
+      const r = trabajo.resultado.resumen, previa = trabajo.politica === 'ppo' ? registrada(model, trabajo.suite_id) : null;
+      nodos.push(el('p', { className: 'model-kpis', textContent: `Éxito ${pct(r.success_rate)} · pasos ${num(r.mean_steps)} · choques/ep ${num(r.mean_collisions, 2)} · entregas/ep ${num(r.mean_deliveries, 2)} · causas: ${reasons(r.end_reasons)} · ${num(trabajo.segundos)} s en el servidor` }));
+      if (previa) {
+        const igual = Math.abs(previa.success_rate - r.success_rate) < 1e-9 && Math.abs((previa.mean_steps ?? 0) - (r.mean_steps ?? 0)) < 0.005;
+        nodos.push(el('p', { className: igual ? 'preview-help official-match' : 'model-error', textContent: `Registrada en el manifiesto: éxito ${pct(previa.success_rate)} · pasos ${num(previa.mean_steps)} → ${igual ? 'la evaluación se reproduce igual' : 'no coincide con la registrada'}` }));
+      }
+      nodos.push(table(['Semilla', 'Éxito', 'Pasos', 'Choques', 'Entregas', 'Fin'], trabajo.resultado.por_episodio.map(e => [e.seed, e.success ? 'sí' : 'no', e.steps ?? '—', e.collisions ?? '—', e.deliveries ?? '—', e.end_reason || '—'])));
+    } else if (estado === 'fallida') nodos.push(el('p', { className: 'model-error', textContent: `La evaluación no terminó: ${trabajo.error?.mensaje || trabajo.error || 'error desconocido'}` }));
+    out.replaceChildren(...nodos);
+  }
+
+  async function evaluarOficial(model, suite, politica, out, button) {
+    const clave = `${model.id}|${suite}|${politica}`;
+    const trabajo = { estado: 'enviando', suite, politica };
+    oficiales.set(clave, trabajo);out.dataset.clave = clave;
+    const pintar = () => { if (out.dataset.clave === clave) renderOficial(out, trabajo, model); };
+    button.disabled = true;pintar();
+    try {
+      const cuerpo = politica === 'ppo' ? { suite_id: suite, politica, run_id: model.id } : { suite_id: suite, politica };
+      Object.assign(trabajo, await apiClient().post('/evaluaciones', cuerpo));pintar();
+      while (trabajo.estado === 'en_cola' || trabajo.estado === 'en_curso') {
+        await espera(SONDEO_MS);
+        Object.assign(trabajo, await apiClient().get(`/evaluaciones/trabajos/${encodeURIComponent(trabajo.evaluacion_id)}`));pintar();
+      }
+    } catch (error) {
+      trabajo.error = ERRORES_OFICIALES[error.codigo] || error.message;pintar();
+    } finally { if (button.isConnected) button.disabled = false; }
+  }
+
   function choose(model) {
     selected = model;
     grid.querySelectorAll('.product-card').forEach(card => card.setAttribute('aria-pressed', card.dataset.id === model.id ? 'true' : 'false'));
@@ -124,6 +188,24 @@ export function setupModelCatalog({ load, initial }) {
       c.layout ? `mapa ${c.layout.split('/').pop()}` : null,
     ].filter(Boolean);
     const evalOut = el('div', { className: 'model-eval-out' });
+    const suites = SUITES[model.level_id] || [];
+    const officialOut = el('div', { className: 'official-out', id: 'official-out' });
+    const suiteSelect = el('select', { id: 'official-suite' }, ...suites.map(s => new Option(s, s, s === model.suite, s === model.suite)));
+    const politicaSelect = el('select', { id: 'official-policy' }, ...Object.entries(POLITICAS_OFICIALES).map(([v, t]) => new Option(t, v)));
+    const officialButton = el('button', { className: 'button', id: 'official-run', textContent: 'Evaluación oficial · suite fija (certificada)' });
+    const mostrarOficial = () => {
+      const clave = `${model.id}|${suiteSelect.value}|${politicaSelect.value}`, trabajo = oficiales.get(clave);
+      officialOut.dataset.clave = clave;
+      if (trabajo) renderOficial(officialOut, trabajo, model); else officialOut.replaceChildren();
+      officialButton.disabled = trabajo && ['enviando', 'en_cola', 'en_curso'].includes(trabajo.estado);
+    };
+    suiteSelect.setAttribute('aria-label', 'Suite de la evaluación oficial');politicaSelect.setAttribute('aria-label', 'Política a evaluar');
+    suiteSelect.addEventListener('change', mostrarOficial);politicaSelect.addEventListener('change', mostrarOficial);
+    officialButton.addEventListener('click', () => evaluarOficial(model, suiteSelect.value, politicaSelect.value, officialOut, officialButton));
+    const official = model.servido && suites.length ? el('section', { className: 'official-eval' },
+      el('h4', { textContent: 'Evaluación oficial (la del registro)' }),
+      el('p', { className: 'preview-help', textContent: 'Corre en el servidor sobre una suite fija (semillas fijas, determinista, catálogo legacy-18), igual que la evaluación registrada. Tarda unos 25 s con 50 episodios, más si el modelo falla. Se evalúa de a una.' }),
+      el('div', { className: 'model-actions' }, suiteSelect, politicaSelect, officialButton), officialOut) : null;
     const blockedInput = el('input', { type: 'checkbox', id: 'models-blocked' });
     const actions = model.servido ? el('div', { className: 'model-actions' },
       el('label', { className: 'model-check' }, blockedInput, ' Paso (6,14) cerrado'),
@@ -141,11 +223,12 @@ export function setupModelCatalog({ load, initial }) {
         el('dt', { textContent: 'Estado' }), el('dd', {}, model.estado, model.alias.length ? ` · ${aliasText(model.alias)}` : '', model.mlflow?.run_url ? ' · ' : '', model.mlflow?.run_url ? el('a', { href: model.mlflow.run_url, target: '_blank', rel: 'noopener', textContent: `run ${model.mlflow.experimento || ''} en MLflow ↗` }) : null),
         el('dt', { textContent: 'Identidad' }), el('dd', { textContent: `sha256 ${model.model_sha256?.slice(0, 16)}… · ${model.manifiesto}${model.evaluable_con_api ? ' · ejecutable en la API' : ` · se evalúa desde ${model.environment_version}`}` }),
         model.decision ? el('dt', { textContent: 'Decisión' }) : null, model.decision ? el('dd', { textContent: model.decision }) : null),
-      actions, evalOut,
+      actions, evalOut, official,
       apiEvaluationBlock(model),
       model.test_final_api ? el('p', { className: 'model-kpis', textContent: `Test final reservado (una sola vez) · ${model.test_final_api.suite} · ${model.test_final_api.met ? 'cumple' : 'no cumple'}: ${model.test_final_api.criterion}` }) : null,
       evaluationBlock('Test final · detalle', model.test_final),
       model.curva ? el('figure', { className: 'model-curve' }, el('span', { className: 'mode-badge training', textContent: 'MODO · ENTRENAMIENTO (registro del run)' }), el('img', { src: model.curva, alt: `Curvas de entrenamiento de ${model.id}`, loading: 'lazy' })) : null);
+    if (official) mostrarOficial();   // muestra una evaluación oficial en curso o terminada de este modelo
     history.replaceState(null, '', `${location.pathname}?${new URLSearchParams({ ...Object.fromEntries(new URLSearchParams(location.search)), catalogo: model.id })}`);
   }
 

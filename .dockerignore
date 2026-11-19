@@ -1,0 +1,18 @@
+# Imagen de la API (api/Dockerfile): lista de lo que SÍ entra. Todo lo demás queda fuera, en particular .env,
+# .dvc/ (credenciales en config.local), models/<run>/ (pesos .zip de DVC), web/, tests/, mlruns/ y la suite reservada.
+**
+!requirements-api.txt
+!envs/
+!pipelines/
+!api/
+!configs/
+!docs/resultados/eval/
+!models/numpy/
+!manifests/
+!VERSION.json
+
+# Nunca, aunque estén dentro de una carpeta permitida
+configs/suites/test-final*
+**/__pycache__
+**/*.pyc
+**/.env*

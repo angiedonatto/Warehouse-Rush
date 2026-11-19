@@ -61,7 +61,7 @@ YAML per planned run in `configs/experiments/`; code never holds hyperparameters
 - Metrics: `train/*` per step; `eval/exito`, `eval/entregas`, `eval/choques`, `eval/tiempo_pedido` per eval step; final: real steps and minutes.
 - Artifacts: `config.json`, model, normalization stats, `evaluacion.json`, curves JSON/PNG.
 - Failed runs: status `fallido`, error text, tag "sin checkpoint disponible".
-- Registry: register model name `warehouse-<nivel>`; stages replaced by aliases (`recomendado`, `anterior`); never delete versions.
+- Registry (done 2026-11-18): `warehouse-m1` v1 = `m1-c3-seed0`, `warehouse-m1b` v1 = `m1b-i1-seed1-best`, alias `recomendado`, version tags `estado`, `model_sha256`, `manifiesto`, `test_final`; `python -m pipelines.registrar_modelos` registers every `recomendado` manifest, idempotent by `model_sha256` (uploads a best checkpoint as `modelo_best/` after checking its hash). Never delete versions; add an `anterior` alias when promoting a new one.
 - R3 provides `pipelines/tracking.py` so R2 does not duplicate this logic: `start_run(config_path, ...)`, `log_resolved_config`, `finish_run(status, ...)`, `register_model(...)`. Define its function signatures first week.
 
 ## 7. Manifest (`manifests/<run_id>.json`, one per recoverable model)
@@ -82,6 +82,7 @@ Weights + SHA-256; obs/action spec; normalization + clipping; compatible env (ve
 Stages = course minimum sequence (see roles.md). Each stage writes status + evidence to MLflow/local log. Idempotent: rerun reuses or creates an explicit new version. Tasks: `validate`, `test`, `train_or_load`, `evaluate`, `register`, `decide`, `publish_catalog`, `verify_served`.
 
 ## 12. Deployment and rollback
+- **Serving (done 2026-11-18):** `python -m pipelines.servir` copies every `recomendado` manifest's weights compatible with `ENV_VERSION` to `models/servidos/<model>.zip` (sha256 checked; never overwrites different content) and writes `configs/modelos_servidos.json` (identity, exact eval config: layout, orders, reward overrides, `catalogo_evaluacion`/`catalogo_web` and the catalog diagnostic). The API verifies sha256, layout hash and env version at load. `python -m pipelines.catalogo` writes `web/public/modelos/catalogo.json` + reduced curves from manifests + configs + MLflow ids (public read). Rerun both whenever a manifest changes, then `npm run build`.
 - Vercel linked to GitHub, deploys tied to commits; record deploy commit and tag in the catalog; `/version` (or `/health`) endpoint on the API returns env version, model version, git commit.
 - Rollback = point catalog `recomendado` back to `anterior` (alias change + publish catalog) and redeploy previous Vercel deployment/tag if the web changed. Write `docs/rollback.md` and **test it** (course requires a rollback test, with evidence).
 - Monitoring minimum: success per scenario, failure causes, inference latency/errors, served version.

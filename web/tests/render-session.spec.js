@@ -33,6 +33,8 @@ test('sin cookies: la sesión viaja en X-Sesion y se guarda en sessionStorage', 
   const enviadas = [];
   page.on('request', r => { if (r.url().startsWith(`${API}/api/`)) enviadas.push({ url: r.url(), sesion: r.headers()['x-sesion'], cookie: r.headers().cookie }); });
   await open(page);
+  // El rótulo junto a «Simulador conectado» dice dónde corre la simulación (antes decía «LOCAL» siempre).
+  await expect(page.locator('.local-tag')).toHaveText(/127\.0\.0\.1|localhost/.test(API) ? 'API LOCAL' : 'EN LÍNEA');
   const id = await guardada(page);
   expect(id).toBeTruthy();
   await page.locator('#step').click();

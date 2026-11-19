@@ -41,8 +41,9 @@ function merge(api, estatico) {
     // Solo del estático: descripción del experimento y detalle numérico del test final.
     hipotesis: estatico?.hipotesis, cambios: estatico?.cambios, curva: estatico?.curva, mlflow: estatico?.mlflow,
     test_final: estatico?.test_final, estatico,
-    // «Cargar en la bodega» y el diagnóstico rápido van a la capa /api/* de la API (los 2 modelos recomendados que ejecuta).
-    servido: Boolean(estatico?.servido),
+    // «Cargar en la bodega» y el diagnóstico rápido: cualquier modelo que la API puede ejecutar (GET /catalogo
+    // evaluable_con_api: versión NumPy verificada y ambiente vigente), no solo los dos recomendados (contrato 9.1).
+    servido: Boolean(api.evaluable_con_api),
   };
 }
 const ALIAS = { 'servido:produccion': 'en producción', 'anterior:produccion': 'producción anterior (rollback)' };
@@ -128,7 +129,7 @@ export function setupModelCatalog({ load, initial }) {
       el('label', { className: 'model-check' }, blockedInput, ' Paso (6,14) cerrado'),
       el('button', { className: 'button', textContent: 'Cargar en la bodega', onclick: () => { dialog.close();load(model.id, blockedInput.checked); } }),
       el('button', { className: 'button', textContent: 'Diagnóstico rápido · 10 episodios (no certificado)', title: 'Diagnóstico no certificado: 10 semillas con el catálogo de la web. La evaluación oficial usa las suites fijas.', onclick: event => evaluate(model, blockedInput.checked, evalOut, event.currentTarget) }))
-      : el('p', { className: 'preview-help', textContent: 'Modelo histórico: identidad, evaluación y curva disponibles; la API ejecuta en vivo los modelos recomendados (pesos de los demás en DVC).' });
+      : el('p', { className: 'preview-help', textContent: `Modelo histórico: identidad, evaluación y curva disponibles. La API no lo ejecuta (${model.environment_version !== 'warehouse-v10' ? `es de ${model.environment_version}; se reproduce desde su etiqueta env/${model.environment_version}` : 'sin versión NumPy publicada'}); sus pesos están en DVC.` });
     detail.replaceChildren(
       el('span', { className: `state-badge ${model.estado}`, textContent: ESTADOS[model.estado] || model.estado }),
       el('h3', { textContent: model.id }),

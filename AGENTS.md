@@ -429,9 +429,9 @@ Configuración que se conserva:
 - Install: `npm ci --prefix web`.
 - Build: `npm run build --prefix web`.
 - Output: `web/dist`.
-- `api/index.py`, rutas `/api/*`, modelo archivado y configuraciones necesarias del backend incluidos.
-- `WAREHOUSE_SESSION_SECRET` estable en Vercel, sin copiarlo a Git ni rotarlo para una tarea visual.
-- `VERCEL_SUPPORT_LARGE_FUNCTIONS=1` según la configuración existente del proyecto para las dependencias Python de ML.
+- Desde 2026-11-19 Vercel sirve **solo la web**: la simulación, los modelos y las rutas `/api/*` viven en la API de
+  Render (`https://warehouse-rush-api.onrender.com`, `docs/api-contrato.md`), a la que apunta `VITE_API_BASE_URL`
+  (Production y Preview). `api/index.py` y la función Python de Vercel se retiraron (`docs/decisiones.md`).
 
 **No depender de scripts de `/tmp` ni del historial de este chat.** Son herramientas temporales de una sesión, no un pipeline versionado. Si el mecanismo de subida usa un manifiesto/lista de archivos, comprobar que incluye los nuevos GLB/texturas, en especial `web/public/`; un build local correcto no prueba que se hayan subido esos assets a Vercel. Revisar también `.vercelignore` y las exclusiones de funciones sin confundirlas con la publicación de archivos estáticos.
 

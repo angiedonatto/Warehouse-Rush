@@ -6,6 +6,7 @@
 // - Espera: si una petición tarda más de SLOW_MS, se avisa (Render Free tarda ~18 s en despertar, sección 8).
 
 const API_BASE = String(import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/+$/, '');
+export const API_BASE_URL = API_BASE;   // '' = mismo servidor que la web (desarrollo local)
 export const CLAVE_SESION = 'warehouse-sesion';
 const SLOW_MS = 3000;
 export const MENSAJE_DESPERTANDO = 'Despertando el servidor… (la primera petición puede tardar unos 20 s)';

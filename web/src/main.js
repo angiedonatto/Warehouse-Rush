@@ -1,7 +1,7 @@
 import { setupCatalog } from './catalog.js';
 import { setupModelCatalog } from './models-catalog.js';
 import { setupServiceStatus } from './service-status.js';
-import { api as viewerApi, onWait } from './viewer-api.js';
+import { api as viewerApi, onWait, API_BASE_URL } from './viewer-api.js';
 import './style.css';
 import { renderOrderSheet, renderRack } from './order-sheet.js';
 import { WarehouseScene } from './warehouse.js';
@@ -55,6 +55,14 @@ async function api(path, body) {
 const waitNotice = document.createElement('div');waitNotice.id = 'server-wait';waitNotice.className = 'server-wait';
 waitNotice.setAttribute('role', 'status');waitNotice.setAttribute('aria-live', 'polite');waitNotice.hidden = true;document.body.append(waitNotice);
 onWait(message => { waitNotice.hidden = !message;waitNotice.textContent = message || ''; });
+// Dónde corre la simulación: el rótulo decía «LOCAL» siempre, también en el sitio publicado.
+{
+  const tag = document.querySelector('.local-tag');
+  let host = '';
+  try { host = API_BASE_URL ? new URL(API_BASE_URL).hostname : ''; } catch { host = ''; }
+  const local = !API_BASE_URL || ['localhost', '127.0.0.1', '0.0.0.0', '[::1]'].includes(host);
+  if (tag) { tag.textContent = !API_BASE_URL ? 'LOCAL' : local ? 'API LOCAL' : 'EN LÍNEA';tag.title = `Simulación: ${API_BASE_URL || 'mismo servidor que la web'}`; }
+}
 
 // Modelos recomendados que sirve la API (configs/modelos_servidos.json): cada uno corre en el ambiente
 // exacto de su evaluación (mapa, pedidos y recompensa), con identidad verificable.
@@ -70,6 +78,15 @@ function populateModels() {
     option.textContent = `PPO · ${model.id} · ${model.nivel.split(' · ')[0]} (${model.estado})`;
     anchor.after(option);
   }
+}
+// Un modelo del catálogo que no está entre los recomendados (layout.models) también se puede cargar si la API lo
+// ejecuta: se agrega su opción al selector, fuera de las que populateModels() reconstruye.
+function ensureModelOption(id) {
+  const select = $('#policy');
+  if ([...select.options].some(option => option.value === `model:${id}`)) return;
+  const option = document.createElement('option');
+  option.value = `model:${id}`;option.dataset.extra = '1';option.textContent = `PPO · ${id} · catálogo`;
+  select.querySelector('option[value="ppo"]').after(option);
 }
 function modelDetail(model) {
   const final = model.test_final?.ppo || {};
@@ -266,13 +283,14 @@ async function start() {
     const state = () => api('state').catch(error => { if (error.codigo !== 'sesion_no_encontrada') throw error;toast(error.message);return api('state'); });
     [layoutInfo, current] = await Promise.all([api('layout'), state()]);
     populateModels();
+    if (current.model) ensureModelOption(current.model.id);
     $('#policy').value = policyValue(current);$('#orders').value = Math.min(2, current.orders);$('#blocked').checked = current.state.pasillo_bloqueado;$('#makeup').checked = current.makeup;seedInput.value = current.seed;
     mountScene();
     renderState(current, true);
     $('#scene-loading').hidden = true;
     const linked = params.get('modelo');
-    if (linked && layoutInfo.models?.some(m => m.id === linked)) {
-      $('#policy').value = `model:${linked}`;$('#blocked').checked = params.get('cerrado') === '1';
+    if (linked && /^[\w.-]+$/.test(linked)) {
+      ensureModelOption(linked);$('#policy').value = `model:${linked}`;$('#blocked').checked = params.get('cerrado') === '1';
       if (/^\d+$/.test(params.get('semilla') || '')) seedInput.value = params.get('semilla');
       await reset();
     } else if (current.model) syncUrl(current);
@@ -285,7 +303,7 @@ async function start() {
 }
 setupCatalog();
 setupModelCatalog({
-  load: (id, blocked) => { $('#policy').value = `model:${id}`;$('#blocked').checked = blocked;reset(); },
+  load: (id, blocked) => { ensureModelOption(id);$('#policy').value = `model:${id}`;$('#blocked').checked = blocked;reset(); },
   initial: params.get('catalogo'),
 });
 setupServiceStatus();

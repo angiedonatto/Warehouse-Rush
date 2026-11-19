@@ -44,3 +44,35 @@ test('catálogo de modelos: ficha, evaluar, cargar, comparar, enlace directo', a
   await other.screenshot({ path: `${shots}/modelos-movil.png` });
   expect(errors).toEqual([]);
 });
+
+// El profe elige un run histórico (no recomendado), revisa su identidad, lo carga y corre una evaluación.
+test('modelo histórico ejecutable: ficha, cargar, diagnóstico, recarga y enlace directo', async ({ page }) => {
+  test.setTimeout(240000);
+  const errors = [];page.on('pageerror', e => errors.push(e.message));
+  await page.goto('/');
+  await expect(page.locator('#scene-loading')).toBeHidden({ timeout: 60000 });
+  await page.locator('#open-models').click();
+  await page.locator('#models-search').fill('m1-c3-seed1');
+  await page.locator('.model-card', { hasText: 'm1-c3-seed1' }).first().click();
+  await expect(page.locator('#model-detail h3')).toHaveText('m1-c3-seed1');
+  await expect(page.locator('#model-detail')).toContainText('candidato');
+  await page.getByRole('button', { name: /Diagnóstico rápido/ }).click();
+  await expect(page.locator('.model-eval-out .mode-badge')).toHaveText('DIAGNÓSTICO · NO CERTIFICADO', { timeout: 90000 });
+  await page.getByRole('button', { name: 'Cargar en la bodega' }).click();
+  await expect(page.locator('#mode-badge')).toContainText('m1-c3-seed1', { timeout: 60000 });
+  await expect(page.locator('#policy')).toHaveValue('model:m1-c3-seed1');
+  await page.locator('#step').click();
+  await expect(page.locator('#steps')).toHaveText('1');
+  // La URL ya es el enlace directo (?modelo=…&semilla=…): al recargar, el modelo sigue cargado y la misión
+  // se vuelve a crear desde el enlace (mismo comportamiento que con los modelos recomendados).
+  await expect(page).toHaveURL(/modelo=m1-c3-seed1/);
+  await page.reload();
+  await expect(page.locator('#scene-loading')).toBeHidden({ timeout: 60000 });
+  await expect(page.locator('#policy')).toHaveValue('model:m1-c3-seed1');
+  await expect(page.locator('#mode-badge')).toContainText('m1-c3-seed1');
+  const other = await page.context().browser().newPage();
+  await other.goto(new URL('/?modelo=m1-c3-seed1&semilla=10001', page.url()).href);
+  await expect(other.locator('#mode-badge')).toContainText('m1-c3-seed1', { timeout: 60000 });
+  await other.close();
+  expect(errors).toEqual([]);
+});

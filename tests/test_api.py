@@ -1,7 +1,8 @@
 """API FastAPI (api/_app.py, api/_modelos.py, api/_episodios.py).
 
-- Sin pesos ni red: el almacén de modelos usa copias de manifiestos reales con pesos falsos y una política
-  falsa; la app usa el repositorio real (catálogo, suites, mapas) con la heurística y sin precargar modelos.
+- Sin pesos de DVC ni red: el almacén de modelos sirve las políticas NumPy de models/numpy/ (en Git, verificadas
+  contra SB3 por pipelines/exportar_numpy.py) sobre copias de manifiestos reales; la app usa el repositorio real
+  (catálogo, suites, mapas) sin precargar modelos.
 - Con pesos (se saltan si no están en disco; `dvc pull models/m1-c3-seed0.dvc models/m1b-i1-seed1.dvc`):
   reproducen por la API las evaluaciones congeladas de los dos modelos de producción y la degradación de
   m1-c3-seed0 con el paso cerrado (antecedente de docs/rollback.md). Los episodios usan el catálogo de la web
@@ -9,6 +10,8 @@
 """
 import json
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -20,7 +23,6 @@ from api._app import create_app  # noqa: E402
 from api._episodios import GestorEpisodios  # noqa: E402
 from api._modelos import AlmacenModelos, ErrorModelo  # noqa: E402
 from pipelines import registry as R  # noqa: E402
-from pipelines.tracking import sha256_file  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
 ORIGEN = "https://warehouse-rush-experiment-001.vercel.app"
@@ -30,31 +32,27 @@ con_pesos = pytest.mark.skipif(not all(p.is_file() for p in PESOS.values()),
                                reason="pesos de producción no descargados (dvc pull)")
 
 
-# --- Almacén de modelos (sin pesos reales) ---------------------------------------------------------
-
-class PoliticaFalsa:
-    def __init__(self, path):
-        self.path = path
-
-    def action(self, observation, env):
-        return 3  # FRENAR
-
+# --- Almacén de modelos (NumPy, sin torch ni DVC) --------------------------------------------------
 
 @pytest.fixture
-def raiz_falsa(tmp_path, monkeypatch):
-    """Manifiestos reales con pesos falsos (sha256 recalculado) y alias de producción inicializados."""
-    monkeypatch.setattr("pipelines.baselines.PPOPolicy", PoliticaFalsa)
+def raiz_falsa(tmp_path):
+    """Copia de manifiestos reales, sus .npz y fichas de models/numpy/ y alias de producción inicializados."""
     (tmp_path / "manifests").mkdir()
+    (tmp_path / "models/numpy").mkdir(parents=True)
     shutil.copy(REPO / "manifests/schema.json", tmp_path / "manifests/schema.json")
     for run in ("m1b-i1-seed1-best", "m1-c3-seed0", "m1-c3-seed1", "m1-c4-seed1", "m1o-e4l-seed0"):
-        manifest = json.loads((REPO / f"manifests/{run}.json").read_text())
-        pesos = tmp_path / manifest["model_uri"]
-        pesos.parent.mkdir(parents=True, exist_ok=True)
-        pesos.write_bytes(f"pesos falsos de {run}".encode())
-        manifest["model_sha256"] = sha256_file(pesos)
-        (tmp_path / f"manifests/{run}.json").write_text(json.dumps(manifest))
-    R.inicializar_aliases(produccion="m1b-i1-seed1-best", anterior_produccion="m1-c3-seed0",
-                          motivo="prueba", autor="test", raiz=tmp_path)
+        shutil.copy(REPO / f"manifests/{run}.json", tmp_path / f"manifests/{run}.json")
+        for ext in ("npz", "json"):
+            origen = REPO / f"models/numpy/{run}.{ext}"
+            if origen.is_file():  # m1o-e4l-seed0 (warehouse-v5) no tiene versión NumPy
+                shutil.copy(origen, tmp_path / f"models/numpy/{run}.{ext}")
+    # aliases.json con la forma de pipelines.registry; no se usa inicializar_aliases porque verifica los .zip de DVC,
+    # que esta raíz (como la imagen de Render) no tiene
+    ranuras = {"m1": {"actual": "m1-c3-seed0", "anterior": None},
+               "m1b": {"actual": "m1b-i1-seed1-best", "anterior": None},
+               R.PRODUCCION: {"actual": "m1b-i1-seed1-best", "anterior": "m1-c3-seed0"}}
+    (tmp_path / "manifests/aliases.json").write_text(json.dumps(
+        {"schema_version": 1, "version": 1, "actualizado_en": "prueba", "ranuras": ranuras, "historial": []}))
     return tmp_path
 
 
@@ -70,27 +68,20 @@ def test_almacen_rechaza_inexistente_e_incompatible(raiz_falsa):
     assert codigo(almacen.obtener, "m1o-e4l-seed0") == (409, "modelo_incompatible")  # warehouse-v5
 
 
-def test_almacen_no_carga_un_hash_distinto(raiz_falsa):
-    (raiz_falsa / "models/m1-c3-seed1/model.zip").write_bytes(b"alterado")
+def test_almacen_no_carga_si_falla_la_cadena_de_hashes(raiz_falsa):
+    npz, ficha = raiz_falsa / "models/numpy/m1-c3-seed1.npz", raiz_falsa / "models/numpy/m1-c3-seed1.json"
+    npz.write_bytes(npz.read_bytes() + b"x")  # .npz alterado
+    assert codigo(AlmacenModelos(raiz_falsa).obtener, "m1-c3-seed1") == (500, "integridad")
+    shutil.copy(REPO / "models/numpy/m1-c3-seed1.npz", npz)
+    datos = json.loads(ficha.read_text())
+    ficha.write_text(json.dumps({**datos, "model_sha256": "0" * 64}))  # ficha de otro modelo
     assert codigo(AlmacenModelos(raiz_falsa).obtener, "m1-c3-seed1") == (500, "integridad")
 
 
-def test_almacen_sin_pesos_y_dvc_fallido_responde_503(raiz_falsa, monkeypatch):
-    """Simula el fallo de `dvc pull` (sin credenciales o sin red); el camino real se comprobó a mano en una copia
-    sin .git (docs/decisiones.md, 2026-11-18). Aquí importa que se clasifique como 503 y no se cargue nada."""
-    import subprocess
-
-    llamadas = []
-
-    def dvc_falla(cmd, **kwargs):
-        llamadas.append(cmd)
-        return subprocess.CompletedProcess(cmd, 1, "", "ERROR: Unable to locate credentials")
-
-    monkeypatch.setattr("pipelines.registry.subprocess.run", dvc_falla)
-    (raiz_falsa / "models/m1-c3-seed1/model.zip").unlink()
+def test_almacen_sin_version_numpy_responde_409(raiz_falsa):
+    (raiz_falsa / "models/numpy/m1-c3-seed1.npz").unlink()
     almacen = AlmacenModelos(raiz_falsa)
-    assert codigo(almacen.obtener, "m1-c3-seed1") == (503, "pesos_no_disponibles")
-    assert llamadas and llamadas[0][-2:] == ["pull", "models/m1-c3-seed1.dvc"]
+    assert codigo(almacen.obtener, "m1-c3-seed1") == (409, "sin_version_numpy")
     assert almacen.estado()["cargados"] == []
 
 
@@ -104,6 +95,37 @@ def test_almacen_fija_produccion_y_desaloja_el_resto(raiz_falsa):
     cargados = {m["run_id"]: m["fijo"] for m in almacen.estado()["cargados"]}
     assert cargados == {"m1b-i1-seed1-best": True, "m1-c3-seed0": True, "m1-c4-seed1": False}
     assert almacen.servido()["run_id"] == "m1b-i1-seed1-best"
+
+
+def test_precarga_no_muere_ante_un_error_inesperado(raiz_falsa, monkeypatch):
+    def explota(self, manifest):
+        raise RuntimeError("fallo inesperado")
+
+    monkeypatch.setattr(AlmacenModelos, "_cargar", explota)
+    precarga = AlmacenModelos(raiz_falsa).precargar_produccion()
+    assert precarga["estado"] == "fallido"
+    assert {m["codigo"] for m in precarga["modelos"].values()} == {"error_interno"}
+
+
+def test_inferencia_sin_torch_y_monitoreo_de_empates():
+    """Como en la imagen de Render: torch y SB3 bloqueados; el modelo de producción completa un episodio."""
+    codigo_py = (
+        "import sys\n"
+        "sys.modules['torch'] = None; sys.modules['stable_baselines3'] = None\n"
+        "from api._modelos import AlmacenModelos\n"
+        "from envs import make_env\n"
+        "almacen = AlmacenModelos()\n"
+        "m = almacen.obtener('m1b-i1-seed1-best')\n"
+        "env = make_env(True, m.manifiesto['layout_path'], 3, m.manifiesto['reward_overrides'])\n"
+        "obs, _ = env.reset(seed=10000); fin = False\n"
+        "while not fin:\n"
+        "    obs, _, a, b, info = env.step(m.politica.action(obs, env)); fin = a or b\n"
+        "e = almacen.estado()\n"
+        "print(info['success'], info['steps'], e['decisiones'], e['casi_empates'])\n")
+    salida = subprocess.run([sys.executable, "-c", codigo_py], cwd=REPO, capture_output=True, text=True, timeout=120)
+    assert salida.returncode == 0, salida.stderr[-500:]
+    exito, pasos, decisiones, empates = salida.stdout.split()
+    assert (exito, pasos, decisiones, empates) == ("True", "107", "107", "0")  # = evaluación congelada (legacy-18)
 
 
 # --- Episodios (heurística, sin pesos) -------------------------------------------------------------

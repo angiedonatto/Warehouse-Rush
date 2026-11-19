@@ -69,3 +69,5 @@ body,.masthead{background:#fff5f9}.toolbar,.panel,.mission-bar,.workspace-footer
 .served-model{font-size:10px;font-weight:700;letter-spacing:.6px;padding:5px 10px;border-radius:12px;background:#f1dbe7;color:#6f405a;align-self:flex-end;margin-bottom:5px;max-width:100%;overflow-wrap:anywhere}.served-model.error{background:#ffe1e1;color:#8a1f2b}
 .monitor-dialog .monitor-actions{display:flex;gap:8px}.monitor-dialog #monitor-body{max-height:70vh;overflow:auto}.monitor-dialog .model-table{margin-bottom:8px}
 @media(max-width:760px){.masthead{flex-wrap:wrap}.served-model{align-self:auto;font-size:9px}.monitor-dialog header{flex-wrap:wrap}.monitor-dialog .model-table{display:block;overflow-x:auto}}
+/* Aviso «Despertando el servidor…» mientras una petición a la API tarda más de unos 3 s (viewer-api.js) */
+.server-wait{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:1000;max-width:calc(100vw - 32px);padding:8px 14px;border-radius:16px;background:#fff0c9;color:#6a4a00;border:1px solid #e8cf86;font-size:12px;font-weight:700;box-shadow:0 6px 24px #6b214d26;text-align:center}.server-wait[hidden]{display:none}

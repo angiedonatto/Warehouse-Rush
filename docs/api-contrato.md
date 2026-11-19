@@ -392,7 +392,8 @@ batería, conteo de acciones…). Con `politica: "random"` el progreso no se pue
 La API corre en el plan gratuito de Render (0.1 de CPU y 512 MB de memoria):
 
 - **Se duerme** tras 15 minutos sin ninguna petición. La primera petición después tendrá que **esperar a que
-  despierte**: Render habla de hasta ~1 minuto (nosotros todavía no lo hemos medido). Mientras tanto la web puede
+  despierte**: Render habla de hasta ~1 minuto; lo medimos una vez y tardó unos 18 s (la siguiente petición, ya
+  despierto, 0.4 s). Mientras tanto la web puede
   recibir una demora larga o un error de conexión: conviene mostrar un «despertando el servidor…» y reintentar
   `/health` hasta que `precarga` sea `ok`. Si alguien quiere demostrarlo, conviene abrir la URL unos minutos antes.
 - **Va más lento mientras evalúa.** Una evaluación ocupa casi toda la CPU. Medido en una simulación del mismo plan:

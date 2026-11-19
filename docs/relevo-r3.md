@@ -73,8 +73,8 @@ solo cambian los manifiestos. `publicar.sh` nunca imprime el deploy hook ni los 
    *Settings → Image*, cambiar la etiqueta por defecto a la nueva para que un reinicio manual no vuelva al prototipo.
 2. **Commit de la evidencia del despliegue** (`docs/resultados/despliegues/`).
 3. ~~Rollback real en Render~~: **hecho** (2026-11-19, tiempos en `docs/rollback.md`).
-4. **Medir el despertar de Render** tras 15 min sin tráfico (la web de lis consulta `/version` y lo mantiene
-   despierto: hacerlo cuando nadie la tenga abierta).
+4. ~~Medir el despertar de Render~~: **hecho** (2026-11-19): 17.6 s la primera petición, 0.38 s después (detalle en
+   `docs/rollback.md`). Una sola medición; repetir en otra franja si hace falta.
 5. **Capa `/api/*` con `ViewerSession`** (mismas rutas y formatos que usa la web; sesión en la cabecera `X-Sesion`;
    `/episodios` como alias; `/api/evaluate` como diagnóstico no certificado): **espera la confirmación de Angie y lis**
    para adaptar `api/_viewer.py` en vez de retirarlo. Hasta entonces no se toca `_viewer.py` ni nada de Vercel.
@@ -107,7 +107,8 @@ solo cambian los manifiestos. `publicar.sh` nunca imprime el deploy hook ni los 
 | Qué | Valor |
 |---|---|
 | RAM de la API con torch / con NumPy | 368 MiB / 70 MiB |
-| Arranque en frío del contenedor (0.1 CPU, simulado) | 15 s; Render añade su propio despertar (~1 min según su documentación, por medir) |
+| Arranque en frío del contenedor (0.1 CPU, simulado) | 15 s |
+| **Despertar real de Render** (1.ª petición a `/version` tras >25 min sin tráfico) / `/health` ya despierto | **17.6 s** (`iniciado_en` 05:40:41, 14 s después de la petición: arranque nuevo confirmado) / **0.38 s** |
 | **Redeploy real en Render** (deploy hook → `/version` con el commit nuevo / → precarga ok) | **3.6 s / 21.5 s** (las capas pesadas ya estaban en caché de Render por el prototipo; con una imagen sin capas previas será mayor) |
 | Build de la imagen / push a GHCR (capas en caché) | 3.1 s / 20.3 s |
 | **Rollback real** (deploy hook → `/version` con el commit nuevo): ida / vuelta | **25.8 s / 25.1 s** (precarga lista a los 26.6 s / 25.8 s) |
@@ -120,7 +121,8 @@ solo cambian los manifiestos. `publicar.sh` nunca imprime el deploy hook ni los 
 ## Riesgos y limitaciones abiertas
 
 - Episodios, evaluaciones y métricas viven en memoria: se pierden al dormirse o redesplegarse Render.
-- Render Free: 0.1 CPU (una evaluación larga ocupa la CPU), 512 MB, se duerme a los 15 min.
+- Render Free: 0.1 CPU (una evaluación larga ocupa la CPU), 512 MB, se duerme a los 15 min y la primera petición
+  tarda ~18 s en despertarlo.
 - Mientras la web no migre, conviven dos servidores (Vercel y Render): la versión servida que muestra la web viene de
   Render, pero los episodios corren en Vercel.
 - Casi empates de NumPy frente a torch: el más ajustado fue `m1-c4-seed1` (margen 3.2× la diferencia numérica, 0

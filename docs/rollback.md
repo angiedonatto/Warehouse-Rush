@@ -1,6 +1,6 @@
 # Rollback del modelo servido
 
-Estado: **rollback real probado en Render** (2026-11-19, miguel). El despertar tras 15 min sin tráfico sigue por medir.
+Estado: **rollback real y despertar de Render medidos** (2026-11-19, miguel).
 (Hugging Face quedó descartado: Spaces Docker exige PRO.)
 
 ## Qué significa rollback en este proyecto
@@ -114,7 +114,28 @@ evaluación congelada (0% y 21.62 choques/ep).
 de construir) se detuvo, como debe. La prueba usa ahora `run_id` explícito y comprueba aparte que sin `run_id` se
 usa el modelo servido (`20deead`).
 
+## Despertar de Render Free tras un rato sin tráfico (medido 2026-11-19)
+
+Medición con **una sola petición** a `/version` después de más de 25 min sin tráfico (la última petición real fue la
+verificación de la vuelta del rollback, ~05:14 UTC), seguida de una a `/health` ya despierto:
+
+| Medida | Resultado |
+|---|---|
+| **Primera petición a `/version` (servicio dormido)** | **17.6 s en total** (HTTP 200): 0.08 s de DNS, 0.28 s hasta TLS y **17.59 s hasta el primer byte** |
+| Segunda petición, `GET /health` (ya despierto) | **0.38 s** (0.17 s de TLS) |
+| Precarga de producción al arrancar | ya lista en la primera respuesta (`precarga: ok`, 0.1 s) |
+
+**Confirmación de que de verdad se durmió y despertó:** la petición salió a las 05:40:27 UTC y la respuesta llegó a las
+05:40:44; el `iniciado_en` de la respuesta es **05:40:41.8**, es decir, el proceso arrancó 14 s *después* de
+recibir la petición. El arranque anterior fue el despliegue de la vuelta del rollback (`e51f075`), entre las 05:13 y
+las 05:14 (no se guardó su `iniciado_en` exacto; se deduce de la evidencia `20261119T051327Z-e51f075.json`:
+build desde 05:12:49 y /version con el commit 25 s después del deploy hook). El `iniciado_en` cambió, así que fue un
+arranque nuevo: los episodios, las evaluaciones y las métricas en memoria se perdieron, como se documenta arriba.
+
+**Lectura:** un servicio dormido responde la primera petición en unos **18 s** (Render anuncia «about one minute»;
+aquí fue bastante menos). Es una sola medición con la imagen en caché de Render; con otra hora o con la imagen
+fuera de caché puede variar. Si hay una demostración, conviene abrir la URL unos minutos antes.
+
 ## Pendiente
 
-- Tiempo de despertar de Render Free tras 15 min sin tráfico: la primera medición (2026-11-18) no sirvió porque el
-  servicio no llegó a dormirse (mismo proceso antes y después); repetirla sin tráfico de nadie.
+- Repetir el despertar en otra franja horaria para ver la variación (una sola medición: 17.6 s).

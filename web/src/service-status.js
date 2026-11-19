@@ -34,7 +34,7 @@ export function setupServiceStatus() {
     version = null;render(`MODELO SERVIDO · ${runId} · sha256 ${sha || '—'}`);
   });
 
-  const dialog = el('dialog', { className: 'models-dialog monitor-dialog' });
+  const dialog = el('dialog', { className: 'monitor-dialog' });
   dialog.innerHTML = `<header><div><span class="eyebrow">API · GET /monitoreo</span><h2>Monitoreo</h2></div><div class="monitor-actions"><button class="button" id="monitor-refresh">Actualizar</button><button class="button" id="close-monitor" aria-label="Cerrar monitoreo">Cerrar ×</button></div></header><div id="monitor-body" aria-live="polite"></div>`;
   document.body.append(dialog);
   const body = dialog.querySelector('#monitor-body'), refresh = dialog.querySelector('#monitor-refresh');

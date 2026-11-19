@@ -3,7 +3,7 @@
 - Sin pesos de DVC ni red: el almacén de modelos sirve las políticas NumPy de models/numpy/ (en Git, verificadas
   contra SB3 por pipelines/exportar_numpy.py) sobre copias de manifiestos reales; la app usa el repositorio real
   (catálogo, suites, mapas) sin precargar modelos.
-- Con pesos (se saltan si no están en disco; `dvc pull models/m1-c3-seed0.dvc models/m1b-i1-seed1.dvc`):
+- Las evaluaciones certificadas son asíncronas (POST /evaluaciones → 202, GET /evaluaciones/trabajos/{id}) y
   reproducen por la API las evaluaciones congeladas de los dos modelos de producción y la degradación de
   m1-c3-seed0 con el paso cerrado (antecedente de docs/rollback.md). Los episodios usan el catálogo de la web
   (trendy-27-v1) y las evaluaciones en suites el certificado (legacy-18).
@@ -26,10 +26,6 @@ from pipelines import registry as R  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
 ORIGEN = "https://warehouse-rush-experiment-001.vercel.app"
-PESOS = {run: REPO / json.loads((REPO / f"manifests/{run}.json").read_text())["model_uri"]
-         for run in ("m1b-i1-seed1-best", "m1-c3-seed0")}
-con_pesos = pytest.mark.skipif(not all(p.is_file() for p in PESOS.values()),
-                               reason="pesos de producción no descargados (dvc pull)")
 
 
 # --- Almacén de modelos (NumPy, sin torch ni DVC) --------------------------------------------------
@@ -204,11 +200,30 @@ def test_evaluaciones_rechazan_suites_reservadas_o_de_otra_familia(cliente):
         assert cliente.post("/evaluaciones", json=cuerpo).status_code == estado, cuerpo
 
 
+def evaluar_y_esperar(cliente, cuerpo: dict, limite_s: float = 300) -> dict:
+    """POST /evaluaciones (202) y consulta GET /evaluaciones/trabajos/{id} hasta que termine."""
+    import time
+
+    respuesta = cliente.post("/evaluaciones", json=cuerpo)
+    assert respuesta.status_code == 202, respuesta.json()
+    trabajo = respuesta.json()
+    assert trabajo["estado"] in ("en_cola", "en_curso") and trabajo["sondeo"].endswith(trabajo["evaluacion_id"])
+    fin = time.monotonic() + limite_s
+    while trabajo["estado"] in ("en_cola", "en_curso"):
+        assert time.monotonic() < fin, trabajo
+        time.sleep(0.2)
+        trabajo = cliente.get(trabajo["sondeo"]).json()
+    assert trabajo["estado"] == "terminada", trabajo.get("error")
+    assert trabajo["progreso"] == {"episodios_hechos": trabajo["episodios"], "episodios_total": trabajo["episodios"]}
+    return trabajo
+
+
 def test_evaluacion_de_la_heuristica_en_suite_fija(cliente):
-    resultado = cliente.post("/evaluaciones", json={"suite_id": "dev-m1-v1", "politica": "heuristic"}).json()
-    assert resultado["episodios"] == 10 and resultado["semillas"] == [1000, 1009]
-    assert resultado["resumen"]["success_rate"] == 1.0
-    assert len(resultado["por_episodio"]) == 10
+    trabajo = evaluar_y_esperar(cliente, {"suite_id": "dev-m1-v1", "politica": "heuristic"})
+    assert trabajo["episodios"] == 10 and trabajo["semillas"] == [1000, 1009]
+    assert trabajo["certificado"] is True and trabajo["catalog_version"] == "legacy-18"
+    assert trabajo["resultado"]["resumen"]["success_rate"] == 1.0
+    assert len(trabajo["resultado"]["por_episodio"]) == 10
     monitoreo = cliente.get("/monitoreo").json()
     fila = next(f for f in monitoreo["exito_por_escenario"] if f["quien"] == "heuristic")
     assert (fila["escenario"], fila["episodios"], fila["origen"]) == ("m1/abierto", 10, {"evaluacion": 10})
@@ -248,26 +263,33 @@ def test_episodios_usan_el_catalogo_de_la_web(cliente):
     assert all(linea["sku"] in CATALOGS["trendy-27-v1"] for linea in episodio["state"]["order"]["lines"])
 
 
-# --- Con los pesos de producción -------------------------------------------------------------------
+# --- Modelos de producción (NumPy) frente a las evaluaciones congeladas ----------------------------
 
-@con_pesos
 def test_evaluacion_por_api_reproduce_las_congeladas(cliente):
-    produccion = cliente.post("/evaluaciones", json={"suite_id": "suite-m1b-v1", "run_id": "m1b-i1-seed1-best"}).json()
+    produccion = evaluar_y_esperar(cliente, {"suite_id": "suite-m1b-v1", "run_id": "m1b-i1-seed1-best"})
+    assert produccion["inferencia"] == "numpy" and produccion["catalog_version"] == "legacy-18"
     esperado = json.loads((REPO / "manifests/m1b-i1-seed1-best.json").read_text())
     esperado = esperado["evaluation"]["by_scenario"]["suite-m1b-v1 (paso (6,14) cerrado)"]["ppo"]
-    assert produccion["resumen"]["success_rate"] == esperado["success_rate"] == 1.0
-    assert produccion["resumen"]["mean_steps"] == pytest.approx(esperado["mean_steps"])
+    resumen = produccion["resultado"]["resumen"]
+    assert resumen["success_rate"] == esperado["success_rate"] == 1.0
+    assert resumen["mean_steps"] == pytest.approx(esperado["mean_steps"])
 
-    assert produccion["catalog_version"] == "legacy-18"  # las suites siguen con el catálogo certificado
-    rollback = cliente.post("/evaluaciones", json={"suite_id": "suite-m1b-v1", "run_id": "m1-c3-seed0"}).json()
+    rollback = evaluar_y_esperar(cliente, {"suite_id": "suite-m1b-v1", "run_id": "m1-c3-seed0"})
     congelada = json.loads((REPO / "docs/resultados/eval/incidente-m1-c3-seed0/evaluation.json").read_text())
+    por_semilla = {e["seed"]: e for e in congelada["episodes"] if e["policy"] == "ppo" and e["scenario"] == "blocked"}
     congelada = next(s for s in congelada["summary"] if s["policy"] == "ppo" and s["scenario"] == "blocked")
-    assert rollback["resumen"]["success_rate"] == congelada["success_rate"] == 0.0
-    assert rollback["resumen"]["mean_collisions"] == pytest.approx(congelada["mean_collisions"])
-    assert rollback["resumen"]["end_reasons"] == congelada["end_reasons"]
+    resumen = rollback["resultado"]["resumen"]
+    assert resumen["success_rate"] == congelada["success_rate"] == 0.0
+    assert resumen["mean_collisions"] == pytest.approx(congelada["mean_collisions"])
+    assert resumen["end_reasons"] == congelada["end_reasons"]
+    for e in rollback["resultado"]["por_episodio"]:  # episodio a episodio, con la política NumPy
+        c = por_semilla[e["seed"]]
+        assert (e["steps"], e["collisions"], e["end_reason"]) == (c["steps"], c["collisions"], c["end_reason"])
+    monitoreo = cliente.get("/monitoreo").json()
+    assert monitoreo["evaluaciones"]["por_estado"]["terminada"] >= 2
+    assert monitoreo["latencia_decision"]["m1-c3-seed0"]["n"] > 0
 
 
-@con_pesos
 def test_rollback_pierde_el_escenario_del_incidente(cliente):
     """docs/rollback.md («Con el catálogo de la web»): con trendy-27-v1, m1-c3-seed0 completa con el paso abierto y no
     completa con el paso cerrado (semilla 10000; medir_rollback.py da lo mismo); el modelo de producción sí."""
@@ -286,3 +308,44 @@ def test_rollback_pierde_el_escenario_del_incidente(cliente):
             (esperado["success"], esperado["end_reason"], esperado["steps"], esperado["collisions"])
     assert abierto["success"] and not cerrado["success"]
     assert produccion["success"] and produccion["collisions"] == 0
+
+
+# --- Cola de evaluaciones ---------------------------------------------------------------------------
+
+def test_cola_de_evaluaciones_limite_fallos_y_caducidad():
+    import threading
+    import time
+
+    from api._app import TrabajosEvaluacion
+
+    reloj = [0.0]
+    trabajos = TrabajosEvaluacion(cola_max=3, ttl_s=1800, reloj=lambda: reloj[0])
+    soltar = threading.Event()
+    primero = trabajos.encolar({"episodios": 1}, lambda: soltar.wait(5) and {"ok": True})
+    for _ in range(50):  # el hilo toma el primero
+        if trabajos.ver(primero["evaluacion_id"])["estado"] == "en_curso":
+            break
+        time.sleep(0.02)
+    en_cola = [trabajos.encolar({"episodios": 1}, lambda: {"ok": True}) for _ in range(3)]
+    assert [t["posicion_en_cola"] for t in en_cola] == [1, 2, 3]
+    with pytest.raises(ErrorModelo) as exc:
+        trabajos.encolar({"episodios": 1}, lambda: {"ok": True})
+    assert (exc.value.estado_http, exc.value.codigo) == (429, "cola_llena")
+
+    def falla():
+        raise RuntimeError("se rompió")
+
+    soltar.set()
+    for t in en_cola:
+        while trabajos.ver(t["evaluacion_id"])["estado"] != "terminada":
+            time.sleep(0.02)
+    fallida = trabajos.encolar({"episodios": 1}, falla)
+    while (vista := trabajos.ver(fallida["evaluacion_id"]))["estado"] in ("en_cola", "en_curso"):
+        time.sleep(0.02)
+    assert vista["estado"] == "fallida" and vista["error"]["codigo"] == "error_interno"
+    assert trabajos.ver(primero["evaluacion_id"])["resultado"] == {"ok": True}
+    reloj[0] += 1801  # 30 min sin consultar: caducan
+    with pytest.raises(ErrorModelo) as exc:
+        trabajos.ver(primero["evaluacion_id"])
+    assert (exc.value.estado_http, exc.value.codigo) == (404, "evaluacion_no_encontrada")
+

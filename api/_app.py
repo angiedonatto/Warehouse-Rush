@@ -1,15 +1,16 @@
-"""API FastAPI de Warehouse Rush (Hugging Face Space, Docker): catálogo, modelos, evaluación, episodios y monitoreo.
+"""API FastAPI de Warehouse Rush (Render, Docker): el único servidor de modelos y episodios (decisión del equipo,
+2026-11-18). Catálogo, modelos, evaluaciones certificadas (asíncronas), episodios y monitoreo.
 
-Arranque (un solo worker: DVC no admite descargas concurrentes, ver docs/decisiones.md):
-  uvicorn api._app:app --host 0.0.0.0 --port 7860 --workers 1
+Arranque (un solo worker: episodios y evaluaciones viven en la memoria de un proceso, ver docs/decisiones.md):
+  uvicorn api._app:app --host 0.0.0.0 --port ${PORT:-7860} --workers 1
 
 Variables de entorno:
   CORS_ORIGINS        orígenes permitidos separados por coma, p. ej. https://warehouse-rush-experiment-001.vercel.app
   CORS_ORIGIN_REGEX   opcional, p. ej. para los previews del proyecto en Vercel
-  AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY   token R2 de solo lectura (dvc pull de los pesos)
   GIT_COMMIT          opcional; si no, VERSION.json de la imagen o `git rev-parse HEAD` en local
   WAREHOUSE_PRECARGAR 0 para no precargar producción al arrancar (pruebas)
 
+Inferencia en NumPy (models/numpy/, en Git): la imagen no lleva torch ni DVC ni credenciales.
 Todas las respuestas llevan `X-Modelo-Servido: <run_id>@<sha12>` y `X-Git-Commit`. Los errores tienen una sola
 forma: {"error": {"codigo", "mensaje", "detalle"}}. La simulación Python es la autoridad; la web solo dibuja.
 """
@@ -77,10 +78,13 @@ class Evaluar(_Estricto):
 def _git_commit(raiz: Path) -> str:
     if os.environ.get("GIT_COMMIT"):
         return os.environ["GIT_COMMIT"]
-    version = raiz / "VERSION.json"  # lo escribe el despliegue del Space (la imagen no tiene .git)
+    version = raiz / "VERSION.json"  # lo escribe la publicación de la imagen (la imagen no tiene .git)
     if version.is_file():
         return json.loads(version.read_text()).get("git_commit", "desconocido")
-    proc = subprocess.run(["git", "rev-parse", "HEAD"], cwd=raiz, capture_output=True, text=True)
+    try:  # en local; la imagen slim no trae el binario git
+        proc = subprocess.run(["git", "rev-parse", "HEAD"], cwd=raiz, capture_output=True, text=True)
+    except OSError:
+        return "desconocido"
     return proc.stdout.strip() or "desconocido"
 
 
@@ -114,6 +118,114 @@ class MetricasHttp:
             return salida
 
 
+# --- Evaluaciones asíncronas -----------------------------------------------------------------------
+
+class _ContadorEpisodios:
+    """Envuelve la política inyectada en una evaluación: cuenta episodios (cada uno empieza con tiempo 0) para el
+    progreso y mide cada decisión para /monitoreo. No cambia la acción."""
+
+    def __init__(self, politica, al_decidir):
+        self.politica, self.al_decidir, self.episodios = politica, al_decidir, 0
+
+    def action(self, observation, env) -> int:
+        if env.state.tiempo == 0:
+            self.episodios += 1
+        inicio = time.perf_counter()
+        accion = self.politica.action(observation, env)
+        self.al_decidir((time.perf_counter() - inicio) * 1000)
+        return accion
+
+
+class TrabajosEvaluacion:
+    """Cola de evaluaciones: un hilo las corre de a una (Render Free tiene 0.1 CPU); hasta `cola_max` esperan
+    (más → 429). Los resultados caducan `ttl_s` después de la última consulta una vez terminados."""
+
+    def __init__(self, *, cola_max: int = 3, ttl_s: float = 30 * 60, reloj=time.monotonic):
+        import queue
+
+        self.cola_max, self.ttl_s, self._reloj = cola_max, ttl_s, reloj
+        self._cola: queue.Queue = queue.Queue()
+        self._trabajos: dict[str, dict] = {}
+        self._lock = threading.Lock()
+        self._hilo: threading.Thread | None = None
+
+    def encolar(self, descripcion: dict, tarea, contador=None) -> dict:
+        import secrets
+
+        with self._lock:
+            self._purgar()
+            esperando = sum(t["estado"] == "en_cola" for t in self._trabajos.values())
+            if esperando >= self.cola_max:
+                raise ErrorModelo("cola_llena", f"Ya hay {esperando} evaluaciones en cola; reintenta en un minuto", 429,
+                                  {"en_cola": esperando, "cola_max": self.cola_max})
+            id_ = secrets.token_urlsafe(9)
+            self._trabajos[id_] = {"evaluacion_id": id_, "estado": "en_cola", **descripcion,
+                                   "creada_en": datetime.now(timezone.utc).isoformat(),
+                                   "sondeo": f"/evaluaciones/trabajos/{id_}",
+                                   "_tarea": tarea, "_contador": contador, "_acceso": self._reloj()}
+            if self._hilo is None or not self._hilo.is_alive():
+                self._hilo = threading.Thread(target=self._trabajar, name="evaluaciones", daemon=True)
+                self._hilo.start()
+        self._cola.put(id_)
+        return self.ver(id_)
+
+    def _trabajar(self) -> None:
+        while True:
+            id_ = self._cola.get()
+            with self._lock:
+                trabajo = self._trabajos.get(id_)
+                if trabajo is None:
+                    continue
+                trabajo.update(estado="en_curso", iniciada_en=datetime.now(timezone.utc).isoformat())
+            inicio = time.perf_counter()
+            resultado, error = None, None
+            try:
+                resultado = trabajo["_tarea"]()
+            except ErrorModelo as exc:
+                error = {"codigo": exc.codigo, "mensaje": exc.mensaje, "detalle": exc.detalle}
+            except Exception as exc:  # se informa en el trabajo; el hilo sigue atendiendo la cola
+                log.exception("Evaluación %s fallida", id_)
+                error = {"codigo": "error_interno", "mensaje": f"{type(exc).__name__}: {exc}"[:300], "detalle": {}}
+            with self._lock:
+                trabajo.update(estado="fallida" if error else "terminada", resultado=resultado, error=error,
+                               terminada_en=datetime.now(timezone.utc).isoformat(),
+                               segundos=round(time.perf_counter() - inicio, 2), _acceso=self._reloj())
+
+    def _purgar(self) -> None:
+        """Con el lock tomado: quita los terminados o fallidos sin consultar desde hace más de `ttl_s`."""
+        ahora = self._reloj()
+        for id_, t in list(self._trabajos.items()):
+            if t["estado"] in ("terminada", "fallida") and ahora - t["_acceso"] > self.ttl_s:
+                del self._trabajos[id_]
+
+    def ver(self, id_: str) -> dict:
+        with self._lock:
+            self._purgar()
+            trabajo = self._trabajos.get(id_)
+            if trabajo is None:
+                raise ErrorModelo("evaluacion_no_encontrada",
+                                  "La evaluación no existe o caducó (30 min después de terminar)", 404,
+                                  {"evaluacion_id": id_})
+            trabajo["_acceso"] = self._reloj()
+            vista = {k: v for k, v in trabajo.items() if not k.startswith("_")}
+            contador = trabajo["_contador"]
+            vista["progreso"] = {"episodios_hechos": (contador.episodios if contador else None)
+                                 if trabajo["estado"] != "terminada" else trabajo["episodios"],
+                                 "episodios_total": trabajo["episodios"]}
+            if trabajo["estado"] == "en_cola":
+                en_cola = [i for i, t in self._trabajos.items() if t["estado"] == "en_cola"]
+                vista["posicion_en_cola"] = en_cola.index(id_) + 1
+            return vista
+
+    def estado(self) -> dict:
+        with self._lock:
+            self._purgar()
+            cuenta = {}
+            for t in self._trabajos.values():
+                cuenta[t["estado"]] = cuenta.get(t["estado"], 0) + 1
+            return {"por_estado": cuenta, "cola_max": self.cola_max, "ttl_s": self.ttl_s}
+
+
 # --- Aplicación ------------------------------------------------------------------------------------
 
 def create_app(raiz: Path = registry.RAIZ, *, almacen: AlmacenModelos | None = None,
@@ -125,14 +237,14 @@ def create_app(raiz: Path = registry.RAIZ, *, almacen: AlmacenModelos | None = N
     http = MetricasHttp()
     commit = _git_commit(raiz)
     iniciado = datetime.now(timezone.utc).isoformat()
-    evaluando = threading.Semaphore(1)  # una evaluación a la vez: es CPU y el Space gratuito tiene poca
+    trabajos = TrabajosEvaluacion()  # evaluaciones certificadas, asíncronas, de a una (0.1 CPU en Render Free)
     if precargar is None:
         precargar = os.environ.get("WAREHOUSE_PRECARGAR", "1") != "0"
 
     @asynccontextmanager
     async def lifespan(_app):
-        # Sin load_dotenv: la API no usa MLflow y no debe copiar credenciales de .env al proceso. DVC lee las suyas
-        # de .dvc/config.local en local y de los secrets AWS_* en el Space.
+        # Sin load_dotenv: la API no usa MLflow ni DVC (políticas NumPy en Git) y no debe copiar credenciales de .env
+        # al proceso.
         if precargar:  # en segundo plano: el puerto abre ya y /health informa el progreso
             almacen.precarga = {"estado": "en curso"}
             threading.Thread(target=almacen.precargar_produccion, name="precarga", daemon=True).start()
@@ -272,49 +384,62 @@ def create_app(raiz: Path = registry.RAIZ, *, almacen: AlmacenModelos | None = N
                 salida["resultados"]["episodes"] = datos.get("episodes")
         return salida
 
-    @app.post("/evaluaciones")
+    @app.post("/evaluaciones", status_code=202)
     def evaluar(cuerpo: Evaluar):
-        """Evaluación determinista en una suite fija con `pipelines.evaluate` (la misma del flujo)."""
+        """Evaluación CERTIFICADA, asíncrona: suite fija, catálogo legacy-18, determinista, con `pipelines.evaluate`
+        (la misma del flujo). Valida y carga el modelo aquí (errores inmediatos: 400/404/409/500) y encola; el
+        resultado se consulta en GET /evaluaciones/trabajos/{id}. PPO usa la política NumPy verificada."""
+        from pipelines.baselines import make_policy
         from pipelines.evaluate import evaluate
 
         datos = suite(cuerpo.suite_id)
-        recompensa, model_path, sha = None, None, None
+        recompensa, sha, npz_sha = None, None, None
         if cuerpo.politica == "ppo":
             run_id = cuerpo.run_id or almacen.servido()["run_id"]
-            cargado = almacen.obtener(run_id)  # verifica el sha256 (y descarga si falta)
+            cargado = almacen.obtener(run_id)  # cadena de hashes manifiesto → ficha → .npz
             layout = cargado.manifiesto.get("layout_path")
             if NIVELES[datos["nivel"]]["layout"] != layout:
                 raise ErrorModelo("modelo_incompatible", f"{run_id} usa {layout}; {cuerpo.suite_id} usa otro mapa",
                                   409, {"run_id": run_id, "suite_id": cuerpo.suite_id})
             recompensa = cargado.manifiesto.get("reward_overrides") or None
-            model_path, sha = raiz / cargado.manifiesto["model_uri"], cargado.model_sha256
+            sha, npz_sha, politica = cargado.model_sha256, cargado.npz_sha256, cargado.politica
         elif cuerpo.run_id is not None:
             raise ErrorModelo("parametro_invalido", "run_id solo aplica a la política ppo", 400)
         else:
             run_id, layout = None, NIVELES[datos["nivel"]]["layout"]
-        if not evaluando.acquire(blocking=False):
-            raise ErrorModelo("evaluacion_en_curso", "Ya hay una evaluación en curso; reintenta en unos segundos", 429)
-        try:
-            inicio = time.perf_counter()
-            with tempfile.TemporaryDirectory(prefix="eval-") as tmp:
-                resultado = evaluate(policies=(cuerpo.politica,), orders=_orders(datos["nivel"], raiz),
-                                     episodes=datos["episodios"], seed_start=datos["semillas"][0],
-                                     scenarios=(datos["bloqueado"],), model_path=model_path,
-                                     layout_path=str(raiz / layout), output_dir=tmp, reward_overrides=recompensa)
-            segundos = time.perf_counter() - inicio
-        finally:
-            evaluando.release()
-        if resultado["errors"]:
-            raise ErrorModelo("evaluacion_fallida", "La evaluación no terminó", 500, {"errores": resultado["errors"]})
+            politica = make_policy("heuristic") if cuerpo.politica == "heuristic" else None  # random: por semilla
         quien = run_id or cuerpo.politica
         escenario = f"{datos['nivel']}/{'cerrado' if datos['bloqueado'] else 'abierto'}"
-        for fila in resultado["episodes"]:
-            metricas.registrar_fin(quien, escenario, fila["success"], fila["end_reason"], origen="evaluacion")
-        return {"suite_id": cuerpo.suite_id, "politica": cuerpo.politica, "run_id": run_id, "model_sha256": sha,
-                "escenario": escenario, "catalog_version": CATALOGO_SUITES,
-                "episodios": datos["episodios"], "semillas": [datos["semillas"][0], datos["semillas"][-1]],
-                "determinista": True, "segundos": round(segundos, 2), "resumen": resultado["summary"][0],
-                "por_episodio": resultado["episodes"]}
+        contador = (_ContadorEpisodios(politica, lambda ms: metricas.registrar_decision(quien, ms))
+                    if politica is not None else None)
+
+        def tarea() -> dict:
+            with tempfile.TemporaryDirectory(prefix="eval-") as tmp:
+                # model_path inexistente a propósito: la política va inyectada y evaluate() no debe leer metadatos
+                resultado = evaluate(policies=(cuerpo.politica,), orders=_orders(datos["nivel"], raiz),
+                                     episodes=datos["episodios"], seed_start=datos["semillas"][0],
+                                     scenarios=(datos["bloqueado"],), model_path=Path(tmp) / "politica-inyectada",
+                                     layout_path=str(raiz / layout), output_dir=tmp, reward_overrides=recompensa,
+                                     policy_objects={cuerpo.politica: contador} if contador else None)
+            if resultado["errors"]:
+                raise ErrorModelo("evaluacion_fallida", "La evaluación no terminó", 500, {"errores": resultado["errors"]})
+            for fila in resultado["episodes"]:
+                metricas.registrar_fin(quien, escenario, fila["success"], fila["end_reason"], origen="evaluacion")
+            return {"resumen": resultado["summary"][0], "por_episodio": resultado["episodes"]}
+
+        descripcion = {"suite_id": cuerpo.suite_id, "politica": cuerpo.politica, "run_id": run_id,
+                       "model_sha256": sha, "npz_sha256": npz_sha,
+                       "inferencia": "numpy" if cuerpo.politica == "ppo" else cuerpo.politica,
+                       "escenario": escenario, "catalog_version": CATALOGO_SUITES, "certificado": True,
+                       "determinista": True, "episodios": datos["episodios"],
+                       "semillas": [datos["semillas"][0], datos["semillas"][-1]]}
+        return trabajos.encolar(descripcion, tarea, contador)
+
+    @app.get("/evaluaciones/trabajos/{evaluacion_id}")
+    def ver_evaluacion(evaluacion_id: str):
+        """Estado de una evaluación: en_cola (con posición), en_curso (con progreso), terminada (con resultado)
+        o fallida (con error). Caduca a los 30 min sin consultarse una vez terminada."""
+        return trabajos.ver(evaluacion_id)
 
     # --- Episodios -----------------------------------------------------------------------------
 
@@ -359,6 +484,7 @@ def create_app(raiz: Path = registry.RAIZ, *, almacen: AlmacenModelos | None = N
     def monitoreo():
         """Monitoreo mínimo del curso: éxito por escenario, causas de fallo, latencia, errores y versión servida."""
         return {"servido": almacen.servido(), "git_commit": commit, "iniciado_en": iniciado,
+                "evaluaciones": trabajos.estado(),
                 **metricas.resumen(), "http": http.resumen(), "episodios": episodios.estado(),
                 "modelos": almacen.estado()}
 

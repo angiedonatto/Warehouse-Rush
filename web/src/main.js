@@ -1,5 +1,6 @@
 import { setupCatalog } from './catalog.js';
 import { setupModelCatalog } from './models-catalog.js';
+import { setupServiceStatus } from './service-status.js';
 import './style.css';
 import { renderOrderSheet, renderRack } from './order-sheet.js';
 import { WarehouseScene } from './warehouse.js';
@@ -274,4 +275,5 @@ setupModelCatalog({
   load: (id, blocked) => { $('#policy').value = `model:${id}`;$('#blocked').checked = blocked;reset(); },
   initial: params.get('catalogo'),
 });
+setupServiceStatus();
 start();

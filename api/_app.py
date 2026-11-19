@@ -236,6 +236,27 @@ def create_app(raiz: Path = registry.RAIZ, *, almacen: AlmacenModelos | None = N
     episodios = episodios or GestorEpisodios(almacen, metricas=metricas)
     http = MetricasHttp()
     commit = _git_commit(raiz)
+    # Opción A (2026-11-19): lo que no puede cambiar dentro de una imagen se calcula UNA vez al arrancar. Una promoción o
+    # un rollback siempre es una imagen nueva (aliases.json y manifests/ van dentro), así que el modelo servido, el
+    # catálogo publicado y su «al día» son constantes del proceso. Antes cada respuesta releía el manifiesto (cabecera
+    # X-Modelo-Servido) y cada /version reconstruía el catálogo (~55 ms de CPU, ~0.55 s con 0.1 CPU).
+    estatico: dict = {}
+    try:
+        estatico["servido"] = almacen.servido()
+    except Exception as exc:  # la API arranca igual; /health y /version informan el problema
+        estatico["servido_error"] = exc
+    try:
+        publicado_arranque = json.loads((raiz / "manifests/catalog.json").read_text())
+        estatico["catalogo"] = publicado_arranque
+        estatico["al_dia"] = (publicado_arranque["contenido_sha256"]
+                              == registry.construir_catalogo(raiz)["contenido_sha256"])
+    except Exception as exc:
+        estatico["catalogo_error"] = exc
+
+    def servido_fijo() -> dict:
+        if "servido" not in estatico:
+            raise estatico["servido_error"]
+        return estatico["servido"]
     iniciado = datetime.now(timezone.utc).isoformat()
     trabajos = TrabajosEvaluacion()  # evaluaciones certificadas, asíncronas, de a una (0.1 CPU en Render Free)
     if precargar is None:
@@ -263,7 +284,7 @@ def create_app(raiz: Path = registry.RAIZ, *, almacen: AlmacenModelos | None = N
 
     def servido_cabecera() -> str:
         try:
-            s = almacen.servido()
+            s = servido_fijo()
             return f"{s['run_id']}@{s['model_sha256'][:12]}"
         except Exception:
             return "desconocido"
@@ -313,7 +334,7 @@ def create_app(raiz: Path = registry.RAIZ, *, almacen: AlmacenModelos | None = N
         Enlaces relativos (detrás del proxy de Render una URL absoluta podría salir con http://)."""
         from envs import ENV_VERSION
 
-        servido = almacen.servido()
+        servido = servido_fijo()
         return {"api": "Warehouse Rush API",
                 "descripcion": "Único servidor de modelos, evaluaciones y episodios de Warehouse Rush "
                                "(la web en Vercel solo dibuja; la simulación Python es la autoridad).",
@@ -335,12 +356,13 @@ def create_app(raiz: Path = registry.RAIZ, *, almacen: AlmacenModelos | None = N
         """Lo que compara la etapa 8 del flujo (run_id, model_sha256, environment_version) y la procedencia."""
         from envs import __version__ as ficha
 
-        servido = almacen.servido()
-        publicado = catalogo_publicado()
+        servido = servido_fijo()
+        if "catalogo" not in estatico:
+            raise estatico["catalogo_error"]
+        publicado = estatico["catalogo"]
         return {**servido, "git_commit": commit, "environment_sheet_version": ficha,
                 "catalogo": {"contenido_sha256": publicado["contenido_sha256"],
-                             "aliases_version": publicado["aliases_version"],
-                             "al_dia": publicado["contenido_sha256"] == registry.construir_catalogo(raiz)["contenido_sha256"]},
+                             "aliases_version": publicado["aliases_version"], "al_dia": estatico["al_dia"]},
                 "modelos_cargados": almacen.estado()["cargados"], "precarga": almacen.precarga,
                 "iniciado_en": iniciado}
 
@@ -411,7 +433,7 @@ def create_app(raiz: Path = registry.RAIZ, *, almacen: AlmacenModelos | None = N
         datos = suite(cuerpo.suite_id)
         recompensa, sha, npz_sha = None, None, None
         if cuerpo.politica == "ppo":
-            run_id = cuerpo.run_id or almacen.servido()["run_id"]
+            run_id = cuerpo.run_id or servido_fijo()["run_id"]
             cargado = almacen.obtener(run_id)  # cadena de hashes manifiesto → ficha → .npz
             layout = cargado.manifiesto.get("layout_path")
             if NIVELES[datos["nivel"]]["layout"] != layout:
@@ -499,7 +521,7 @@ def create_app(raiz: Path = registry.RAIZ, *, almacen: AlmacenModelos | None = N
     @app.get("/monitoreo")
     def monitoreo():
         """Monitoreo mínimo del curso: éxito por escenario, causas de fallo, latencia, errores y versión servida."""
-        return {"servido": almacen.servido(), "git_commit": commit, "iniciado_en": iniciado,
+        return {"servido": servido_fijo(), "git_commit": commit, "iniciado_en": iniciado,
                 "evaluaciones": trabajos.estado(),
                 **metricas.resumen(), "http": http.resumen(), "episodios": episodios.estado(),
                 "modelos": almacen.estado()}

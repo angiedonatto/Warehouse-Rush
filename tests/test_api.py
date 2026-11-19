@@ -175,6 +175,22 @@ def test_portada_con_modelo_servido_y_enlaces(cliente):
         assert cliente.get(ruta).status_code == 200, ruta
 
 
+def test_modelo_servido_y_catalogo_se_calculan_una_sola_vez(monkeypatch):
+    """Opción A: dentro de una imagen no pueden cambiar; ni la cabecera ni /version deben releer manifiestos."""
+    from api._modelos import AlmacenModelos
+
+    llamadas = {"servido": 0, "catalogo": 0}
+    servido, construir = AlmacenModelos.servido, R.construir_catalogo
+    monkeypatch.setattr(AlmacenModelos, "servido", lambda self: (llamadas.__setitem__("servido", llamadas["servido"] + 1), servido(self))[1])
+    monkeypatch.setattr(R, "construir_catalogo", lambda raiz=R.RAIZ: (llamadas.__setitem__("catalogo", llamadas["catalogo"] + 1), construir(raiz))[1])
+    with TestClient(create_app(REPO, precargar=False)) as c:
+        arranque = dict(llamadas)
+        for _ in range(5):
+            assert c.get("/version").json()["catalogo"]["al_dia"] is True
+            c.get("/health"), c.get("/")
+        assert llamadas == arranque == {"servido": 1, "catalogo": 1}
+
+
 def test_catalogo_filtra_y_ficha(cliente):
     recomendados = cliente.get("/catalogo", params={"estado": "recomendado"}).json()["modelos"]
     assert {m["run_id"] for m in recomendados} == {"m1-c3-seed0", "m1b-i1-seed1-best"}

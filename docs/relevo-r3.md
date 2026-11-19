@@ -80,7 +80,7 @@ solo cambian los manifiestos. `publicar.sh` nunca imprime el deploy hook ni los 
    para adaptar `api/_viewer.py` en vez de retirarlo. Hasta entonces no se toca `_viewer.py` ni nada de Vercel.
 6. `pipelines/flow.py`: espera configurable en la etapa 8 (un redeploy tarda minutos, no segundos).
 7. `docs/decisiones.md`: registrar las decisiones de la tabla de abajo marcadas «por registrar».
-8. **`docs/api-contrato.md`** para lis y Naomi (endpoints, campos y la limitación de memoria).
+8. ~~`docs/api-contrato.md` para lis y Naomi~~: **hecho** (rutas, errores, cabeceras, CORS, evaluación asíncrona, episodios y servidor gratuito).
 9. **PR de `dev/miguel` a `main`** (revisa y aprueba Angie) y validación conjunta.
 10. Cuando la web ya no lo use: retirar el `/api` de Vercel en un commit aparte (`api/index.py`, `api/_cloud.py`,
     `pipelines/servir.py`, `configs/modelos_servidos.json`, `models/servidos/`) y lo heredado de `warehouse-v1`.

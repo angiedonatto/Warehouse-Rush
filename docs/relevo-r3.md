@@ -11,9 +11,8 @@ rollback real) y `661fe5a` (primer despliegue real). Evidencia en `docs/resultad
 ## En una frase
 
 La API nueva (FastAPI, sin torch) **corre en Render (`8b49d63`)** con la capa `/api/*` que usa el visor de la web
-(mismas rutas y formatos que el `/api` de Vercel, sesión en la cabecera `X-Sesion`), verificada en producción. Falta
-**un cambio de configuración en Render** (el origen `https://warehouse-rush-psi.vercel.app` no está permitido por CORS),
-que la web migre sus llamadas a esta API y fusionar los PR a `main`.
+(mismas rutas y formatos que el `/api` de Vercel, sesión en la cabecera `X-Sesion`), verificada en producción, con CORS
+resuelto para los dos dominios de la web. Falta que la web migre sus llamadas a esta API y fusionar los PR a `main`.
 
 ## Arquitectura acordada
 
@@ -83,24 +82,32 @@ solo cambian los manifiestos. `publicar.sh` nunca imprime el deploy hook ni los 
 | `POST /api/evaluate` (10 ep) | `certificado: false`, `trendy-27-v1`; producción 100% en 6.5 a 7.5 s; `m1-c3-seed0` con el paso cerrado 0% en 16 a 18 s |
 | **Sesión perdida** | `state`/`step` con un id desconocido → **404 `sesion_no_encontrada`** (texto en formato Vercel); `step` sin cabecera → 400 `falta_sesion` |
 | **`reset` la recupera** | con el id perdido crea una sesión nueva (id distinto, misma semilla) y la sesión nueva avanza |
-| CORS | `X-Sesion` permitida y expuesta con el origen `experiment-001`; **el origen `psi.vercel.app` es rechazado** (ver abajo) |
+| CORS | `X-Sesion` permitida y expuesta; al desplegar solo pasaba `experiment-001` y `psi.vercel.app` era rechazado: **resuelto** (ver abajo) |
 
-**Hallazgo pendiente (configuración de Render, no de la imagen):** el preflight desde `https://warehouse-rush-psi.vercel.app`
-responde 400 «Disallowed CORS origin», así que la web de lis en ese dominio **no puede llamar a Render desde el navegador**
-(ni antes ni ahora: el código de CORS no cambió salvo permitir `X-Sesion`). Hay que revisar la variable `CORS_ORIGINS` del
-servicio (debe contener los dos dominios, separados por coma, sin espacios ni barra final) y guardar para que Render reinicie.
+**Hallazgo de CORS: resuelto (2026-11-19, 06:53 UTC).** Al desplegar, el preflight desde
+`https://warehouse-rush-psi.vercel.app` respondía 400 «Disallowed CORS origin» porque `CORS_ORIGINS` de Render solo
+tenía `experiment-001` (configuración, no la imagen). Tras corregir la variable y dejar la etiqueta de imagen en `8b49d63`,
+Render reinició el servicio (`iniciado_en` 06:52:57) y se comprobó, **sin publicar nada**:
+
+| Origen | Preflight `POST /api/step` con `x-sesion` | `GET /api/layout` con `Origin` |
+|---|---|---|
+| `https://warehouse-rush-experiment-001.vercel.app` | 200, `allow-origin` correcto, `X-Sesion` permitida | 200, `allow-origin` correcto, expone `X-Sesion`, 2 modelos |
+| `https://warehouse-rush-psi.vercel.app` | 200, `allow-origin` correcto, `X-Sesion` permitida | 200, `allow-origin` correcto, expone `X-Sesion`, 2 modelos |
+| `https://otro.example` (control) | 400 «Disallowed CORS origin» | 200 sin `allow-origin` (el navegador lo bloquea) |
+
+`/version` sigue en `8b49d63`. La etiqueta de imagen por defecto del servicio también quedó en `8b49d63`.
 
 ## Qué falta, en orden
 
-1. ~~Dockerfile, `publicar.sh` y despliegue de la imagen real~~: **hecho** (`661fe5a`). Pendiente menor: en Render,
-   *Settings → Image*, cambiar la etiqueta por defecto a la nueva para que un reinicio manual no vuelva al prototipo.
+1. ~~Dockerfile, `publicar.sh` y despliegue de la imagen real~~: **hecho** (`661fe5a`). La etiqueta de imagen
+   por defecto de Render ya está en `8b49d63` (un reinicio manual no vuelve a una imagen vieja).
 2. **Commit de la evidencia del despliegue** (`docs/resultados/despliegues/`).
 3. ~~Rollback real en Render~~: **hecho** (2026-11-19, tiempos en `docs/rollback.md`).
 4. ~~Medir el despertar de Render~~: **hecho** (2026-11-19): 17.6 s la primera petición, 0.38 s después (detalle en
    `docs/rollback.md`). Una sola medición; repetir en otra franja si hace falta.
 5. ~~Capa `/api/*` con `ViewerSession`~~: **hecha y desplegada** (`8b49d63`, ver arriba), sin tocar `api/_viewer.py` ni
    nada de Vercel (archivo nuevo `api/_visor.py`). `/episodios` se mantiene como está.
-5b. **Arreglar `CORS_ORIGINS` en Render** (ver el hallazgo de arriba) y repetir la comprobación del preflight.
+5b. ~~Arreglar `CORS_ORIGINS` en Render~~: **hecho** (2026-11-19 06:53 UTC; los dos dominios pasan el preflight con `X-Sesion`).
 5c. **La web migra** (lis y Naomi): `docs/api-contrato.md` sección 9 (dirección base, `X-Sesion`, sesión perdida,
     «Evaluar» no certificado).
 6. `pipelines/flow.py`: espera configurable en la etapa 8 (un redeploy tarda minutos, no segundos).
@@ -153,8 +160,8 @@ servicio (debe contener los dos dominios, separados por coma, sin espacios ni ba
   tarda ~18 s en despertarlo.
 - Mientras la web no migre, conviven dos servidores (Vercel y Render): la versión servida que muestra la web viene de
   Render, pero los episodios corren en Vercel.
-- **CORS:** Render rechaza hoy el origen `https://warehouse-rush-psi.vercel.app` (variable `CORS_ORIGINS` incompleta); sin
-  corregirlo, la web de lis no puede usar Render desde el navegador.
+- **CORS:** `CORS_ORIGINS` debe listar cada dominio de la web (hoy `experiment-001` y `psi`); un dominio nuevo (por ejemplo un
+  preview de Vercel) no funciona hasta agregarlo y guardar (Render reinicia el servicio y se pierden las sesiones en memoria).
 - Las sesiones del visor (`/api/*`) también viven en memoria (30 min, máx. 100): se pierden al redesplegar o dormirse; la web
   debe manejar `sesion_no_encontrada` (contrato, 9.6).
 - Casi empates de NumPy frente a torch: el más ajustado fue `m1-c4-seed1` (margen 3.2× la diferencia numérica, 0

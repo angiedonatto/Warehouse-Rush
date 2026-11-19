@@ -96,5 +96,6 @@
       "ok": true,
       "detalle": ""
     }
-  }
+  },
+  "hallazgo_fuera_de_la_imagen_resuelto": "2026-11-19 06:53 UTC: tras corregir CORS_ORIGINS en Render, los preflights con X-Sesion y los GET /api/layout con Origin pasan (200, allow-origin correcto) para https://warehouse-rush-experiment-001.vercel.app y https://warehouse-rush-psi.vercel.app; un origen no listado sigue rechazado (400). /version seguía en 8b49d63; no se publicó nada."
 }

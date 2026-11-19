@@ -1,3 +1,4 @@
+import { apiClient } from './api-client.js';
 import { setupCatalog } from './catalog.js';
 import { setupModelCatalog } from './models-catalog.js';
 import { setupServiceStatus } from './service-status.js';
@@ -36,7 +37,7 @@ function syncUrl(payload) {
 }
 $('#makeup').addEventListener('change', reset);
 const names = { iso: 'VISTA ISOMÉTRICA', fpv: 'PRIMERA PERSONA', side: 'VISTA LATERAL', station: 'DETALLE DE ESTACIÓN' };
-const actionNames = { AVANZAR: 'Navegando al objetivo', GIRAR_IZQUIERDA: 'Girando a la izquierda', GIRAR_DERECHA: 'Girando a la derecha', FRENAR: 'Robot detenido', INTERACTUAR: 'Interactuando con estación' };
+const actionNames = { AVANZAR: 'Navegando al objetivo', GIRAR_IZQUIERDA: 'Girando a la izquierda', GIRAR_DERECHA: 'Girando a la derecha', FRENAR: 'Robot detenido', INTERACTUAR: 'Interactuando con estación', CARGAR:'Recogiendo producto', DESCARGAR:'Entregando productos', SUBIR:'Elevando plataforma', BAJAR:'Bajando plataforma' };
 const speed = () => Number($('#speed').value);
 
 function toast(message) {
@@ -44,32 +45,43 @@ function toast(message) {
   toastTimer = setTimeout(() => { $('#toast').hidden = true; }, 6500);
 }
 
+const sessionNotice = document.createElement('p');sessionNotice.id='session-notice';sessionNotice.className='session-notice';sessionNotice.hidden=true;sessionNotice.setAttribute('role','alert');
+const networkNotice = document.createElement('p');networkNotice.id='network-notice';networkNotice.className='session-notice';networkNotice.hidden=true;networkNotice.setAttribute('role','status');
+document.querySelector('.toolbar').before(sessionNotice,networkNotice);
+const LOST_SESSION = 'La partida se perdió porque el servidor se reinició o estuvo inactivo. Se inicia una misión nueva; el avance y el inventario acumulado no se pudieron recuperar. La bodega comienza con su stock inicial.';
+function showLostSession() { sessionNotice.textContent=LOST_SESSION;sessionNotice.hidden=false; }
 async function api(path, body) {
-  const response = await fetch(`/api/${path}`, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
+  const result = await apiClient().request(`/api/${path}`, body === undefined ? {} : { method:'POST', body });
   $('#connection-label').textContent = 'Simulador conectado';$('#connection-dot').style.background = '#5ae879';
   return result;
 }
 
-// Modelos recomendados que sirve la API (configs/modelos_servidos.json): cada uno corre en el ambiente
+// Modelos recomendados de la API: su identidad y versión vienen de Render. Cada uno corre en el ambiente
 // exacto de su evaluación (mapa, pedidos y recompensa), con identidad verificable.
 const policyValue = payload => payload.model ? `model:${payload.model.id}` : payload.policy;
 const shortSha = sha => sha ? sha.slice(0, 12) : '';
 function populateModels() {
   const select = $('#policy');
   select.querySelectorAll('option[data-served]').forEach(option => option.remove());
-  const anchor = select.querySelector('option[value="ppo"]');
-  for (const model of [...(layoutInfo?.models || [])].reverse()) {
+
+  for (const model of layoutInfo?.models || []) {
     const option = document.createElement('option');
     option.value = `model:${model.id}`;option.dataset.served = '1';
     option.textContent = `PPO · ${model.id} · ${model.nivel.split(' · ')[0]} (${model.estado})`;
-    anchor.after(option);
+    select.append(option);
   }
+  if(current?.model)ensureModelOption(current.model.id);
+}
+function ensureModelOption(id) {
+  const value=`model:${id}`;
+  if(![...$('#policy').options].some(option=>option.value===value)) {
+    const option=new Option(`PPO · ${id}`,value);option.dataset.served='1';$('#policy').add(option);
+  }
+  return value;
 }
 function modelDetail(model) {
   const final = model.test_final?.ppo || {};
-  const tests = Object.entries(final).map(([scenario, r]) => `${scenario} ${Math.round(r.success_rate * 100)}%`).join(' · ');
+  const tests = Object.entries(final).filter(([,r])=>r && r.success_rate != null).map(([scenario, r]) => `${scenario} ${Math.round(r.success_rate * 100)}%`).join(' · ');
   return `${model.id} · ${model.environment_version} · sha256 ${shortSha(model.model_sha256)}${tests ? ` · test final: ${tests}` : ''}`;
 }
 
@@ -83,10 +95,9 @@ function controls() {
   $('#play span').textContent = running ? 'Pausar' : 'Iniciar';
   $('#play svg').innerHTML = running ? '<path d="M5 4h3v12H5zM12 4h3v12h-3z"/>' : '<path d="m6 3 11 7-11 7z"/>';
   $('#manual-controls').hidden = !manual;
+  for(const button of document.querySelectorAll('[data-action="6"], [data-action="7"]')) button.hidden=!current?.makeup;
   document.querySelectorAll('[data-action]').forEach(button => { button.disabled = !current || current.done || busy || changing; });
-  const ppoOption = $('#policy option[value="ppo"]');
-  ppoOption.disabled = !layoutInfo?.available_ppo?.[$('#orders').value];
-  ppoOption.textContent = ppoOption.disabled ? 'PPO · sin modelo compatible con esta versión' : 'PPO entrenado';
+
 }
 
 function mountScene() {
@@ -103,7 +114,15 @@ function mountScene() {
   $('.minimap-caption > span:last-child').textContent = `${layoutInfo.layout.width} × ${layoutInfo.layout.height} m`;
 }
 
+function settingsKey(){return `warehouse-controls:${apiClient().base}`;}
+function rememberSettings(payload) {
+  const settings=payload.model ? {policy:'ppo',model:payload.model.id,blocked:payload.state.pasillo_bloqueado,seed:payload.seed}
+    : {orders:Math.min(2,payload.orders),policy:payload.policy,blocked:payload.state.pasillo_bloqueado,seed:payload.seed,makeup:payload.makeup};
+  try {sessionStorage.setItem(settingsKey(),JSON.stringify(settings));}catch{/* Almacenamiento no disponible. */}
+}
+function previousSettings(){try{return JSON.parse(sessionStorage.getItem(settingsKey()));}catch{return null;}}
 function renderState(payload, instant = false) {
+  rememberSettings(payload);
   current = payload;
   scene.selectedRack = payload.makeup ? selectedRack : null;
   scene.setState(payload, instant);
@@ -134,7 +153,7 @@ function renderState(payload, instant = false) {
   $('#event-step').textContent = `${String(Math.floor(s.tiempo / 60)).padStart(2, '0')}:${String(s.tiempo % 60).padStart(2, '0')}`;
   $('#footer-detail').textContent = `1 paso = 1 s · Semilla ${payload.seed} · ${payload.model ? `PPO ${modelDetail(payload.model)}` : payload.policy === 'ppo' ? 'PPO real, sin acciones BFS' : payload.policy === 'manual' ? 'Acciones manuales' : payload.policy === 'heuristic' ? 'Baseline heurístico BFS' : 'Baseline aleatorio'}`;
   const [modeKind, modeText] = MODES[payload.policy] || ['', payload.policy];
-  modeBadge.className = `mode-badge ${modeKind}`;modeBadge.textContent = payload.model ? `${modeText} · ${payload.model.id}` : modeText;
+  modeBadge.className = `mode-badge ${modeKind}`;modeBadge.textContent = payload.model ? `${modeText} · ${payload.model.id}` : `${modeText}${!payload.makeup ? ' · MODO HISTÓRICO P1/P2' : ''}`;
   const banner = $('#mission-banner');banner.hidden = !payload.done;
   if (payload.done) {
     banner.classList.toggle('warning', !payload.info.success);
@@ -170,10 +189,16 @@ function pause() {
 
 async function executeStep(action) {
   if (busy || changing || !current || current.done) return;
-  busy = true;controls();
-  try { renderState(await api('step', action === undefined ? {} : { action })); }
-  catch (error) { pause();toast(error.message);$('#connection-label').textContent = 'Revisa la conexión'; }
-  finally { busy = false;controls(); }
+  let lost=false;busy=true;controls();
+  try { renderState(await api('step',action === undefined ? {} : {action})); }
+  catch(error) {
+    pause();
+    if(error.codigo==='sesion_no_encontrada') {showLostSession();lost=true;}
+    else {toast(error.message);$('#connection-label').textContent='Revisa la conexión';}
+  } finally {busy=false;controls();}
+  // Liberar busy antes de reset(): reset espera las transiciones en curso.
+  // Nunca repetir el paso perdido ni reanudar automáticamente la reproducción.
+  if(lost) await reset();
 }
 
 function schedule() {
@@ -191,8 +216,6 @@ async function reset() {
   changing = true;controls();
   try {
     while (busy) await new Promise(resolve => setTimeout(resolve, 20));
-    const ppoUnavailable = $('#policy').value === 'ppo' && !layoutInfo.available_ppo[$('#orders').value];
-    if (ppoUnavailable) { $('#policy').value = 'heuristic';toast('No hay modelo PPO compatible con la versión vigente del ambiente. Se seleccionó el heurístico.'); }
     const choice = $('#policy').value;
     const result = await api('reset', choice.startsWith('model:')
       ? { policy: 'ppo', model: choice.slice(6), blocked: $('#blocked').checked, seed: Number(seedInput.value) }
@@ -205,7 +228,7 @@ async function reset() {
     renderState(result, true);
     $('#makeup').checked = result.makeup;syncUrl(result);
     if (result.model) toast(`Modelo ${modelDetail(result.model)}`);
-    else if (result.policy === 'ppo') toast('El PPO de 20 000 pasos obtuvo 0% de éxito. Se muestra su comportamiento real.');
+
   } catch (error) {
     toast(error.message);
     if (current) { $('#orders').value = Math.min(2, current.orders);$('#policy').value = policyValue(current);$('#blocked').checked = current.state.pasillo_bloqueado; }
@@ -243,7 +266,7 @@ document.querySelectorAll('[data-action]').forEach(button => button.addEventList
 window.addEventListener('keydown', event => {
   if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(document.activeElement.tagName)) return;
   if (current?.policy === 'manual') {
-    const action = { w: 0, ArrowUp: 0, a: 1, ArrowLeft: 1, d: 2, ArrowRight: 2, s: 3, ArrowDown: 3, e: 4 }[event.key];
+    const action = { w: 0, ArrowUp: 0, a: 1, ArrowLeft: 1, d: 2, ArrowRight: 2, s: 3, ArrowDown: 3, e: 4, q: 5, r: 6, f: 7 }[event.key];
     if (action !== undefined) { event.preventDefault();executeStep(action); }
   } else if (event.code === 'Space' && !event.repeat) { event.preventDefault();$('#play').click(); }
 });
@@ -251,7 +274,20 @@ window.addEventListener('pagehide', () => { pause();scene?.dispose(); });
 
 async function start() {
   try {
-    [layoutInfo, current] = await Promise.all([api('layout'), api('state')]);
+    const client=apiClient();
+    client.onActivity(({phase})=>{
+      networkNotice.hidden=!['waking','waiting'].includes(phase);
+      networkNotice.textContent=phase==='waking' ? 'Despertando el servidor… Si estuvo inactivo, el primer acceso puede tardar unos 20 segundos.' : 'Esperando respuesta del servidor…';
+    });
+    client.onSessionChange(({previous,current})=>{if(previous&&current&&previous!==current)showLostSession();});
+    try {current=await api('state');}
+    catch(error) {
+      if(error.codigo!=='sesion_no_encontrada')throw error;
+      showLostSession();
+      current=await api('reset',previousSettings() || {orders:Number($('#orders').value),policy:$('#policy').value,blocked:$('#blocked').checked,seed:Number(seedInput.value),makeup:$('#makeup').checked});
+    }
+    // Primero obtener/reanudar la partida, después su mapa con la misma X-Sesion.
+    layoutInfo=await api('layout');
     populateModels();
     $('#policy').value = policyValue(current);$('#orders').value = Math.min(2, current.orders);$('#blocked').checked = current.state.pasillo_bloqueado;$('#makeup').checked = current.makeup;seedInput.value = current.seed;
     mountScene();
@@ -266,13 +302,15 @@ async function start() {
     // Diagnóstico de la integración sin exponer acciones privilegiadas al modelo.
     window.warehouseViewer = { get state() { return current; }, get scene() { return scene; }, get running() { return running; } };
   } catch (error) {
-    $('#scene-loading').innerHTML = '<b>No se pudo iniciar la visualización</b><span>Comprueba el servidor local y la compatibilidad WebGL de tu navegador.</span>';
+    $('#scene-loading').innerHTML = '<b>No se pudo iniciar la visualización</b><span>Comprueba la conexión con la API y la compatibilidad WebGL de tu navegador. Si el servidor está despertando, espera un momento y recarga.</span>';
     $('#connection-label').textContent = 'Sin conexión';$('#connection-dot').style.background = '#ff6767';toast(error.message);console.error(error);
   }
 }
 setupCatalog();
 setupModelCatalog({
-  load: (id, blocked) => { $('#policy').value = `model:${id}`;$('#blocked').checked = blocked;reset(); },
+  load: (id, blocked) => {
+    $('#policy').value=ensureModelOption(id);$('#blocked').checked=blocked;reset();
+  },
   initial: params.get('catalogo'),
 });
 setupServiceStatus();

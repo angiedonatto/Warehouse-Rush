@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './visor-fixture.js';
 
 test('order checklist follows real pickup, delivery and stock; rack details and mobile', async ({ page, request }) => {
   const response = await request.post('/api/reset', { data: { makeup: true, seed: 24, orders: 1, policy: 'heuristic', blocked: true } });

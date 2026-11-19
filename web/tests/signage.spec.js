@@ -1,7 +1,7 @@
-import {test, expect} from '@playwright/test';
+import {test, expect} from './visor-fixture.js';
 
-test('wide warehouse has mounted signs, no floating rack labels and selectable racks', async ({page})=>{
-  const response=await page.request.post('/api/reset',{data:{makeup:true,orders:1,seed:42,policy:'heuristic',blocked:true}});
+test('wide warehouse has mounted signs, no floating rack labels and selectable racks', async ({page,request})=>{
+  const response=await request.post('/api/reset',{data:{makeup:true,orders:1,seed:42,policy:'heuristic',blocked:true}});
   expect(response.ok()).toBeTruthy();
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.goto('/');await expect(page.locator('#scene-loading')).toBeHidden();
@@ -29,8 +29,8 @@ test('wide warehouse has mounted signs, no floating rack labels and selectable r
   expect(errors).toEqual([]);
 });
 
-test('switching mission modes rebuilds geometry and keeps a single label layer', async ({page})=>{
-  await page.request.post('/api/reset',{data:{makeup:false,orders:1,policy:'heuristic'}});
+test('switching mission modes rebuilds geometry and keeps a single label layer', async ({page,request})=>{
+  await request.post('/api/reset',{data:{makeup:false,orders:1,policy:'heuristic'}});
   await page.goto('/');await expect(page.locator('#scene-loading')).toBeHidden();
   expect(await page.evaluate(()=>window.warehouseViewer.scene.layout.width)).toBe(17);
   await page.locator('#makeup').check();

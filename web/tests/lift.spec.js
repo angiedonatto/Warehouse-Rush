@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './visor-fixture.js';
 
 test('upper shelf requires a raised platform, real pickup and lowering before travel', async ({ page, request }) => {
   let payload=await (await request.post('/api/reset',{data:{makeup:true,orders:1,seed:24,policy:'heuristic',blocked:true}})).json();

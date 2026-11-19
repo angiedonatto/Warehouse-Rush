@@ -41,7 +41,7 @@ function merge(api, estatico) {
     hipotesis: estatico?.hipotesis, cambios: estatico?.cambios, curva: estatico?.curva, mlflow: estatico?.mlflow,
     test_final: estatico?.test_final, estatico,
     // Temporal: «Cargar» y «Evaluar 10 episodios» siguen en la API del visor hasta migrar episodios y evaluaciones.
-    servido: Boolean(estatico?.servido),
+    servido: Boolean(api.evaluable_con_api),
   };
 }
 const ALIAS = { 'servido:produccion': 'en producción', 'anterior:produccion': 'producción anterior (rollback)' };
@@ -91,14 +91,13 @@ export function setupModelCatalog({ load, initial }) {
   }
 
   async function evaluate(model, blocked, out, button) {
-    button.disabled = true;out.replaceChildren(el('p', { className: 'preview-help', textContent: 'Evaluando en el servidor… (modelo congelado, determinista)' }));
+    button.disabled = true;out.replaceChildren(el('p', { className: 'preview-help', textContent: 'Ejecutando diagnóstico no certificado… Puede tardar unos 15 segundos.' }));
     try {
-      const response = await fetch('/api/evaluate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: model.id, blocked, episodes: 10 }) });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Error al evaluar');
+      const result = await apiClient().post('/api/evaluate', { model:model.id, blocked, episodes:10 });
       const s = result.summary, mon = result.monitoring;
       out.replaceChildren(
-        el('span', { className: 'mode-badge evaluation', textContent: 'MODO · EVALUACIÓN' }),
+        el('span', { className: 'mode-badge evaluation', textContent: 'DIAGNÓSTICO NO CERTIFICADO' }),
+        el('p', { className:'diagnostic-note', textContent:result.nota || 'Diagnóstico rápido no certificado. No reemplaza la evaluación oficial con suites fijas.' }),
         el('p', { textContent: `${result.episodes.length} episodios · semillas ${result.seeds.join('–')} · paso ${result.scenario} · catálogo ${result.catalog} · ${result.environment_version}` }),
         el('p', { className: 'model-kpis', textContent: `Éxito ${pct(s.success_rate)} · pasos (éxitos) ${num(s.mean_steps_success)} · choques/ep ${num(s.mean_collisions, 2)} · causas: ${reasons(s.end_reasons)}` }),
         el('p', { className: 'preview-help', textContent: `Monitoreo: inferencia ${num(mon.inference_ms_mean, 2)} ms/paso (p95 ${num(mon.inference_ms_p95, 2)}) · ${mon.steps} pasos · errores ${mon.errors} · sha256 servido ${mon.served_sha256.slice(0, 12)}` }),
@@ -124,8 +123,8 @@ export function setupModelCatalog({ load, initial }) {
     const actions = model.servido ? el('div', { className: 'model-actions' },
       el('label', { className: 'model-check' }, blockedInput, ' Paso (6,14) cerrado'),
       el('button', { className: 'button', textContent: 'Cargar en la bodega', onclick: () => { dialog.close();load(model.id, blockedInput.checked); } }),
-      el('button', { className: 'button', textContent: 'Evaluar 10 episodios', onclick: event => evaluate(model, blockedInput.checked, evalOut, event.currentTarget) }))
-      : el('p', { className: 'preview-help', textContent: 'Modelo histórico: identidad, evaluación y curva disponibles; la API ejecuta en vivo los modelos recomendados (pesos de los demás en DVC).' });
+      el('button', { className: 'button', textContent: 'Evaluar 10 episodios · diagnóstico no certificado', onclick: event => evaluate(model, blockedInput.checked, evalOut, event.currentTarget) }))
+      : el('p', { className: 'preview-help', textContent: 'Modelo histórico: identidad, evaluación y curva disponibles; esta API no dispone de una versión ejecutable compatible.' });
     detail.replaceChildren(
       el('span', { className: `state-badge ${model.estado}`, textContent: ESTADOS[model.estado] || model.estado }),
       el('h3', { textContent: model.id }),
@@ -152,7 +151,7 @@ export function setupModelCatalog({ load, initial }) {
     for (const model of shown) {
       const success = ppoSuccess(model);
       const card = el('button', { className: 'product-card model-card', type: 'button' },
-        el('span', { className: `state-badge ${model.estado}`, textContent: `${ESTADOS[model.estado] || model.estado}${model.servido ? ' · en vivo' : ''}` }),
+        el('span', { className: `state-badge ${model.estado}`, textContent: `${ESTADOS[model.estado] || model.estado}${model.servido ? ' · ejecutable' : ''}` }),
         el('strong', { textContent: model.id }),
         el('small', { textContent: `${model.nivel} · éxito ${success.map(pct).join(' / ') || '—'}` }));
       card.dataset.id = model.id;card.setAttribute('aria-pressed', 'false');

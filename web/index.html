@@ -20,7 +20,7 @@
         <div class="toolbar">
           <div class="playback"><button id="play" class="button primary" disabled><svg viewBox="0 0 20 20"><path d="m6 3 11 7-11 7z"/></svg><span>Iniciar</span></button><button id="step" class="button" title="Ejecutar una transición"><svg viewBox="0 0 20 20"><path d="m4 4 9 6-9 6zM15 4v12"/></svg><span>Un paso</span></button><button id="reset" class="icon-button" aria-label="Reiniciar misión" title="Reiniciar misión"><svg viewBox="0 0 20 20"><path d="M4 7a7 7 0 1 1 0 7M4 2v5h5"/></svg></button></div>
           <div class="toolbar-divider"></div>
-          <label class="field">AGENTE<select id="policy"><option value="heuristic">Heurístico · BFS</option><option value="random">Aleatorio</option><option value="ppo">PPO entrenado</option><option value="manual">Control manual</option></select></label>
+          <label class="field">AGENTE<select id="policy"><option value="heuristic">Heurístico · BFS</option><option value="random">Aleatorio</option><option value="manual">Control manual</option></select></label>
           <label class="field compact">MISIÓN<select id="orders"><option value="1">1 pedido</option><option value="2" selected>2 pedidos</option></select></label>
           <label class="field speed-field">VELOCIDAD<select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
           <label class="switch-label"><input id="blocked" type="checkbox" checked/><span class="switch"></span><span>Bloquear pasillo</span></label>
@@ -43,7 +43,7 @@
         </section>
 
         <div class="mission-bar"><div class="mission-label"><span class="tiny-cube"></span><span id="mission-title">P1 → ENTREGA → P2 → ENTREGA</span></div><div class="mission-sequence" id="mission-sequence"><span>P1</span><i></i><span>D</span><i></i><span>P2</span><i></i><span>D</span></div><span id="mission-status">Esperando inicio</span></div>
-        <div class="manual-controls" id="manual-controls" hidden><span>CONTROL MANUAL</span><button data-action="1">↶ Girar izq. <kbd>A</kbd></button><button data-action="0">↑ Avanzar <kbd>W</kbd></button><button data-action="2">↷ Girar der. <kbd>D</kbd></button><button data-action="3">■ Frenar <kbd>S</kbd></button><button data-action="4">◇ Interactuar <kbd>E</kbd></button></div>
+        <div class="manual-controls" id="manual-controls" hidden><span>CONTROL MANUAL</span><button data-action="1">↶ Girar izq. <kbd>A</kbd></button><button data-action="0">↑ Avanzar <kbd>W</kbd></button><button data-action="2">↷ Girar der. <kbd>D</kbd></button><button data-action="3">■ Frenar <kbd>S</kbd></button><button data-action="4">◇ Recoger <kbd>E</kbd></button><button data-action="5">◇ Entregar <kbd>Q</kbd></button><button data-action="6">↑ Elevar <kbd>R</kbd></button><button data-action="7">↓ Bajar <kbd>F</kbd></button></div>
         <footer class="workspace-footer"><span><span class="footer-dot"></span> GYMNASIUM <b>×</b> THREE.JS</span><span id="footer-detail">Simulación discreta · 1 paso = 1 s</span><span>WAREHOUSE RUSH <b>/</b> v0.2</span></footer>
       </section>
 

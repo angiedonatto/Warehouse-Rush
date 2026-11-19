@@ -17,7 +17,7 @@ Modelos recomendados: `m1b-i1-seed1-best` (producción, N3) y `m1-c3-seed0` (N2,
 | Capa | Dónde | Qué hay |
 |---|---|---|
 | Web, catálogo y comparación | Vercel (estático, `web/dist`) | Vite + Three.js: bodega 3D, catálogo de productos (Naomi) y catálogo «Modelos y experimentos» (`web/public/modelos/catalogo.json`, generado por `pipelines/catalogo.py`) |
-| Simulación e inferencia | Función Python de Vercel (`api/index.py`, 60 s) | La simulación en Python es la autoridad. API sin estado: cada visitante tiene una cookie firmada y la sesión se reconstruye en cada paso. Rutas `GET health\|layout\|state` y `POST reset\|step\|evaluate` |
+| Simulación e inferencia de esta web | Render (`VITE_API_BASE_URL`) | API Python de Miguel; sesión en memoria identificada mediante `X-Sesion`, sin cookies. Visor `/api/*`, identidad `/version`, catálogo `/catalogo` y monitoreo `/monitoreo`. [Integración y configuración](docs/web-render.md). |
 | Modelos servidos | Git (`models/servidos/`, `configs/modelos_servidos.json`) | Los recomendados de `warehouse-v10`, con SHA-256 verificado al cargar (`pipelines/servir.py`) |
 | Pesos de todos los runs | DVC → Cloudflare R2 (remoto `r2`) | `models/<run>.dvc`; `dvc pull` |
 | Experimentos y registro | MLflow en DagsHub (lectura pública) | Runs, métricas y artefactos; Model Registry `warehouse-m1` y `warehouse-m1b` con alias `recomendado` |
@@ -28,7 +28,7 @@ Modelos recomendados: `m1b-i1-seed1-best` (producción, N3) y `m1-c3-seed0` (N2,
 ```
 entrenamiento (PC) ──► MLflow/DagsHub (runs, registro) ──► manifiestos (Git) ──► pipelines/catalogo.py ──► web (Vercel)
         │                                                        │
-        └──► pesos ──► DVC/R2                    pipelines/servir.py ──► models/servidos ──► API (Vercel) ◄── web
+        └──► pesos ──► DVC/R2                    pipelines/servir.py ──► models/servidos ──► API (Render) ◄── web
 ```
 Licencias de assets y dependencias: [docs/licencias.md](docs/licencias.md).
 
@@ -37,7 +37,7 @@ Licencias de assets y dependencias: [docs/licencias.md](docs/licencias.md).
 2. PyTorch CPU: `pip install torch==2.2.2 --index-url https://download.pytorch.org/whl/cpu`
 3. `pip install -r requirements.txt`
 4. Pruebas: `python -m pytest tests -q`
-5. Visor: `npm ci --prefix web && python -m pipelines.cli view` (Node LTS, ver `.nvmrc`)
+5. Web conectada a Render: `npm ci --prefix web` y `VITE_API_BASE_URL=https://warehouse-rush-api.onrender.com npm run dev --prefix web` (Node LTS, ver `.nvmrc`). Para una API local compatible, ver [configuración](docs/web-render.md).
 6. Entrenar (v10): `python -m pipelines.train --config configs/experiments/m1_c3_largo_seed0.yaml` (receta del modelo recomendado de N2; hipótesis de cada config en [docs/experimentos.md](docs/experimentos.md); los configs `c0`–`c6` son de `warehouse-v1` y ya no entrenan)
 7. Pesos grandes: `pip install dvc-s3` (ya en requirements) y `dvc pull` desde el remoto `r2` (Cloudflare R2, bucket `mlops-final-project`). Las credenciales van solo en `.dvc/config.local` (ignorado por Git): `dvc remote modify --local r2 access_key_id ...` y `... secret_access_key ...`; pídelas al equipo. Un modelo concreto: `dvc pull models/<run>.dvc`.
 8. MLflow (historial de experimentos, persistente y compartido): [DagsHub](https://dagshub.com/mamezquita/Warehouse-Rush.mlflow), lectura pública sin instalar nada. Para registrar runs: copia `.env.example` a `.env`, pon tu usuario y token de DagsHub (Settings → Tokens) y carga las variables antes de entrenar: `set -a; source .env; set +a`. Sin `MLFLOW_TRACKING_URI` el entrenamiento se detiene (no queda en un sqlite local); `MLFLOW_PERMITIR_LOCAL=1` solo para pruebas deliberadas. El historial anterior (96 runs del `mlflow.db` local) se copió con `python -m pipelines.migrar_mlflow`; mapa de ids en `docs/resultados/mlflow-migracion.json`; copia del sqlite original en DVC (`dvc pull mlflow.db.dvc mlruns.dvc`).
@@ -60,14 +60,15 @@ ubicaciones, regeneración de assets y verificaciones.
 ## Versión integrada de Naomi
 
 `dev/naomi` reúne la interfaz rosa y el catálogo visual de 27 productos con el
-mapa amplio, elevador, planificación de carga y cinta/caja de Angie. Las misiones
-mantienen sus 18 identificadores TMP y las cookies existentes. Los modelos se
-asocian visualmente sin cambiar las transacciones; el catálogo permite consultar
-los 27 assets. Ver [integración y alcance](docs/integracion-rosa.md).
+mapa amplio, elevador, planificación de carga y cinta/caja de Angie. La integración
+inicial con los 18 identificadores TMP está documentada como historia
+en [integración y alcance](docs/integracion-rosa.md). El catálogo operativo actual usa
+27 SKU TRD; la conexión de la web con Render usa `X-Sesion`, sin cookies.
 
 Esta rama desactiva sus despliegues automáticos de Vercel en `vercel.json`.
-Para verla en el Mac: actualizar `dev/naomi`, compilar con `npm run build --prefix web`
-y ejecutar `python -m pipelines.cli view --no-open` desde el entorno Python.
+Para verla en el Mac: actualizar `dev/naomi` y ejecutar el comando de la sección
+«Reproducir», paso 5. La configuración de Vercel y las pruebas están en
+[Web conectada a Render](docs/web-render.md).
 
 
 ## Catálogo operativo de 27 productos
@@ -78,16 +79,15 @@ Cada producto tiene nombre, SKU TRD, estante/nivel, modelo y stock inicial fijo 
 La distribución, los stocks exactos y la compatibilidad con sesiones TMP anteriores
 se documentan en [catálogo operativo](docs/catalogo-operativo.md).
 
-Después de actualizar el repositorio en el Mac, recompilar y reiniciar el servidor
-para crear un inventario local con el nuevo catálogo. Las sesiones antiguas firmadas
-conservan sus productos y cantidades; una sesión nueva/privada utiliza TRD. Generar
-otro pedido no repone stock ni convierte productos antiguos automáticamente.
+Generar otro pedido conserva el inventario de la sesión vigente en Render. Si el
+servidor pierde la sesión, la web avisa y crea una misión con stock inicial; el avance
+y el inventario acumulado de esa sesión no se recuperan.
 
 
 ## Revisar modelos desde la web
 «Modelos y experimentos ↗» abre el catálogo de los 82 modelos, generado con `python -m pipelines.catalogo` a partir de los manifiestos y de MLflow.
 Cada ficha muestra hipótesis, cambios frente a la base, run, semilla, presupuesto, estado y enlace a MLflow, evaluación con causas de fin, test final y curva de entrenamiento.
-Los dos modelos recomendados se pueden **cargar en la bodega** y **evaluar** (10 episodios en el servidor, con latencia de inferencia y hash servido), y hasta 3 modelos se pueden **comparar**.
+Los modelos que la API identifica como `evaluable_con_api` se pueden **cargar en la bodega** y ejecutar en un **diagnóstico no certificado** (10 episodios, con latencia de inferencia y hash servido); hasta 3 modelos se pueden **comparar**. Las evaluaciones registradas y el test final se muestran por separado.
 La barra muestra el modo activo: control manual, aleatorio, referencia, evaluación o entrenamiento.
 Enlaces directos: `?modelo=m1b-i1-seed1-best&cerrado=1&semilla=10000` carga el modelo y `?catalogo=m1-c3-seed0` abre su ficha.
 

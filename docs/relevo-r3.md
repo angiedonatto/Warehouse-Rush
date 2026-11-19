@@ -1,25 +1,26 @@
 # Relevo R3 · Versionado, pipeline y API
 
-Estado al **2026-11-19 05:15 UTC** (verificado contra Render y GitHub tras el rollback real).
-Responsable: miguel (R3). Rama `dev/miguel` igual que `origin/dev/miguel`; **más de 30 commits por delante de `main`**
-(`b57fa77`), sin commits de `main` pendientes de integrar.
+Estado al **2026-11-19 07:00 UTC** (verificado contra Render y GitHub tras desplegar la capa `/api/*`).
+Responsable: miguel (R3). **PR 1:** `dev/miguel` → `main` (https://github.com/angiedonatto/Warehouse-Rush/pull/4, borrador, sin
+fusionar). **PR 2:** rama `dev/miguel-visor` (capa `/api/*`; PR **sin abrir**), que contiene todo lo de `dev/miguel`.
 
-**Render sirve hoy el commit `e51f075`** (imagen `ghcr.io/mamezquita/warehouse-rush-api:e51f075`) con producción =
-`m1b-i1-seed1-best`, tras la prueba de rollback real (ver `docs/rollback.md`). Primer despliegue real: `661fe5a`
-(2026-11-19 05:00 UTC). Evidencia en `docs/resultados/despliegues/`.
+**Render sirve hoy el commit `8b49d63`** (imagen `ghcr.io/mamezquita/warehouse-rush-api:8b49d63`, rama `dev/miguel-visor`):
+la API nueva más la capa `/api/*` del visor, con producción = `m1b-i1-seed1-best`. Anteriores: `e51f075` (PR 1, el
+rollback real) y `661fe5a` (primer despliegue real). Evidencia en `docs/resultados/despliegues/` y `docs/resultados/visor/`.
 
 ## En una frase
 
-La API nueva (FastAPI, sin torch) **ya corre en Render (`661fe5a`)** y está verificada en producción (portada,
-`/version` con catálogo al día, evaluación certificada asíncrona y episodios). Falta probar el rollback real,
-medir el despertar, migrar la web a la API (capa `/api/*`) e integrar todo a `main`.
+La API nueva (FastAPI, sin torch) **corre en Render (`8b49d63`)** con la capa `/api/*` que usa el visor de la web
+(mismas rutas y formatos que el `/api` de Vercel, sesión en la cabecera `X-Sesion`), verificada en producción. Falta
+**un cambio de configuración en Render** (el origen `https://warehouse-rush-psi.vercel.app` no está permitido por CORS),
+que la web migre sus llamadas a esta API y fusionar los PR a `main`.
 
 ## Arquitectura acordada
 
 | Capa | Dónde | Estado |
 |---|---|---|
 | Web (interfaz, Three.js) | Vercel (`warehouse-rush-psi.vercel.app`, lis/Naomi) | En producción; episodios y «Evaluar» todavía por el `/api` de Vercel |
-| API única de modelos, evaluaciones y episodios | Render Free (`https://warehouse-rush-api.onrender.com`), FastAPI | **Sirve la versión real `e51f075`** (producción `m1b-i1-seed1-best`) |
+| API única de modelos, evaluaciones y episodios | Render Free (`https://warehouse-rush-api.onrender.com`), FastAPI | **Sirve `8b49d63`** (API + capa `/api/*` de `dev/miguel-visor`; producción `m1b-i1-seed1-best`) |
 | Registro de experimentos y modelos | MLflow en DagsHub (`mamezquita/Warehouse-Rush.mlflow`) | 94 runs migrados (lis) + run del flujo |
 | Pesos | DVC en Cloudflare R2 (entrenamiento) y `models/numpy/` en Git (API) | Hecho |
 | Orquestación | Prefect (`pipelines/flow.py`) | Hecho; ejecutado contra DagsHub |
@@ -67,6 +68,28 @@ solo cambian los manifiestos. `publicar.sh` nunca imprime el deploy hook ni los 
 | Episodio (`trendy-27-v1`, paso cerrado, semilla 10000) | `correr` en 1.3 s (8.5 KB con gzip); completa en 111 pasos, 0 choques |
 | `/monitoreo` | 5 457 decisiones, 0 casi empates, p95 0.14 ms por decisión |
 
+**Capa `/api/*` desplegada (2026-11-19, commit `8b49d63`, PR 2)** — `api/_visor.py`, 55 pruebas en `tests/test_visor.py`
+(373 en la suite completa) y `docs/api-contrato.md` sección 9. Despliegue con `publicar.sh`: build 3.3 s, push 10.6 s,
+**deploy hook → `/version` con el commit nuevo 25.1 s**, precarga lista a los 25.7 s. Verificación en producción
+(`docs/resultados/visor/verificacion-produccion.json`, 22 comprobaciones correctas):
+
+| Ruta / caso | Resultado en producción |
+|---|---|
+| `GET /api/layout` | 2 modelos recomendados (producción primero), catálogo `trendy-27-v1` (27), mapa 0.4.0, 11 KB, sin crear sesión; 0.26 a 0.42 s |
+| `GET /api/state` | sin `X-Sesion` crea una sesión (id en la cabecera y en `sesion_id`); con ella devuelve la misma; ~0.3 a 0.5 s |
+| `POST /api/reset` con modelo | `m1b-i1-seed1-best`, «N3 · paso (6,14) cerrado», misma sesión, `X-Modelo-Servido` correcto; ~0.4 s |
+| `POST /api/step` hasta el final | 111 pasos, éxito, 0 choques (= `/episodios` y la evaluación directa); p50 ~0.3 s, p95 ~0.5 s |
+| Visor libre y modo antiguo | «Generar pedido» con inventario compartido (el stock baja y no se repone); modo sin maquillaje funciona |
+| `POST /api/evaluate` (10 ep) | `certificado: false`, `trendy-27-v1`; producción 100% en 6.5 a 7.5 s; `m1-c3-seed0` con el paso cerrado 0% en 16 a 18 s |
+| **Sesión perdida** | `state`/`step` con un id desconocido → **404 `sesion_no_encontrada`** (texto en formato Vercel); `step` sin cabecera → 400 `falta_sesion` |
+| **`reset` la recupera** | con el id perdido crea una sesión nueva (id distinto, misma semilla) y la sesión nueva avanza |
+| CORS | `X-Sesion` permitida y expuesta con el origen `experiment-001`; **el origen `psi.vercel.app` es rechazado** (ver abajo) |
+
+**Hallazgo pendiente (configuración de Render, no de la imagen):** el preflight desde `https://warehouse-rush-psi.vercel.app`
+responde 400 «Disallowed CORS origin», así que la web de lis en ese dominio **no puede llamar a Render desde el navegador**
+(ni antes ni ahora: el código de CORS no cambió salvo permitir `X-Sesion`). Hay que revisar la variable `CORS_ORIGINS` del
+servicio (debe contener los dos dominios, separados por coma, sin espacios ni barra final) y guardar para que Render reinicie.
+
 ## Qué falta, en orden
 
 1. ~~Dockerfile, `publicar.sh` y despliegue de la imagen real~~: **hecho** (`661fe5a`). Pendiente menor: en Render,
@@ -75,13 +98,16 @@ solo cambian los manifiestos. `publicar.sh` nunca imprime el deploy hook ni los 
 3. ~~Rollback real en Render~~: **hecho** (2026-11-19, tiempos en `docs/rollback.md`).
 4. ~~Medir el despertar de Render~~: **hecho** (2026-11-19): 17.6 s la primera petición, 0.38 s después (detalle en
    `docs/rollback.md`). Una sola medición; repetir en otra franja si hace falta.
-5. **Capa `/api/*` con `ViewerSession`** (mismas rutas y formatos que usa la web; sesión en la cabecera `X-Sesion`;
-   `/episodios` como alias; `/api/evaluate` como diagnóstico no certificado): **espera la confirmación de Angie y lis**
-   para adaptar `api/_viewer.py` en vez de retirarlo. Hasta entonces no se toca `_viewer.py` ni nada de Vercel.
+5. ~~Capa `/api/*` con `ViewerSession`~~: **hecha y desplegada** (`8b49d63`, ver arriba), sin tocar `api/_viewer.py` ni
+   nada de Vercel (archivo nuevo `api/_visor.py`). `/episodios` se mantiene como está.
+5b. **Arreglar `CORS_ORIGINS` en Render** (ver el hallazgo de arriba) y repetir la comprobación del preflight.
+5c. **La web migra** (lis y Naomi): `docs/api-contrato.md` sección 9 (dirección base, `X-Sesion`, sesión perdida,
+    «Evaluar» no certificado).
 6. `pipelines/flow.py`: espera configurable en la etapa 8 (un redeploy tarda minutos, no segundos).
 7. `docs/decisiones.md`: registrar las decisiones de la tabla de abajo marcadas «por registrar».
 8. ~~`docs/api-contrato.md` para lis y Naomi~~: **hecho** (rutas, errores, cabeceras, CORS, evaluación asíncrona, episodios y servidor gratuito).
-9. **PR de `dev/miguel` a `main`** (revisa y aprueba Angie) y validación conjunta.
+9. **PR 1** (`dev/miguel` → `main`, borrador #4) y **PR 2** (`dev/miguel-visor`, sin abrir), con revisión de Angie y validación
+   conjunta. Fusionar con «merge commit», no con «squash» (la trazabilidad de `/version`).
 10. Cuando la web ya no lo use: retirar el `/api` de Vercel en un commit aparte (`api/index.py`, `api/_cloud.py`,
     `pipelines/servir.py`, `configs/modelos_servidos.json`, `models/servidos/`) y lo heredado de `warehouse-v1`.
 
@@ -115,6 +141,8 @@ solo cambian los manifiestos. `publicar.sh` nunca imprime el deploy hook ni los 
 | Evaluación certificada de 50 episodios con `m1-c3-seed0` (paso cerrado, falla) / con `m1b-i1-seed1-best` | 75.3 s / 25.2 s en Render |
 | Evaluación de 50 episodios | 26.7 s en Render (producción), 27 s en la simulación con 0.1 CPU |
 | Episodio completo (`correr`) | 1.3 s en Render, 8.5 KB con gzip |
+| **Capa `/api/*` en producción:** `state` / `reset` con modelo / `step` (p50, p95) | 0.3-0.5 s / 0.4 s / 0.3 s, 0.5 s (en local con 0.1 CPU: ~0.1 s por paso; la diferencia es la red) |
+| `POST /api/evaluate` 10 episodios en producción (modelo que funciona / que falla) | 6.5-7.5 s / 16-18 s |
 | `/version` con una evaluación en curso (simulación 0.1 CPU) | 7.4 s antes de calcular una vez al arrancar → 0.5 s después |
 | Rollback de `m1b-i1-seed1-best` a `m1-c3-seed0` | recupera el servicio con el paso abierto (98–100%), pierde el incidente: 0% con el paso cerrado (21.6 choques/ep en `legacy-18`, 85 en `trendy-27`) |
 
@@ -125,6 +153,10 @@ solo cambian los manifiestos. `publicar.sh` nunca imprime el deploy hook ni los 
   tarda ~18 s en despertarlo.
 - Mientras la web no migre, conviven dos servidores (Vercel y Render): la versión servida que muestra la web viene de
   Render, pero los episodios corren en Vercel.
+- **CORS:** Render rechaza hoy el origen `https://warehouse-rush-psi.vercel.app` (variable `CORS_ORIGINS` incompleta); sin
+  corregirlo, la web de lis no puede usar Render desde el navegador.
+- Las sesiones del visor (`/api/*`) también viven en memoria (30 min, máx. 100): se pierden al redesplegar o dormirse; la web
+  debe manejar `sesion_no_encontrada` (contrato, 9.6).
 - Casi empates de NumPy frente a torch: el más ajustado fue `m1-c4-seed1` (margen 3.2× la diferencia numérica, 0
   acciones distintas); `/monitoreo` los cuenta.
 

@@ -1,0 +1,100 @@
+{
+  "que_es": "Verificación en producción de la capa /api/* (rutas, sesión perdida y recuperación)",
+  "fecha": "2026-11-19",
+  "commit_servido": "8b49d63 (dev/miguel-visor)",
+  "api": "https://warehouse-rush-api.onrender.com",
+  "como": "script de verificación contra producción; 22 comprobaciones; las sesiones se identifican con un id de la API",
+  "resultado": "22/22 comprobaciones correctas",
+  "hallazgo_fuera_de_la_imagen": "Producción rechaza el origen https://warehouse-rush-psi.vercel.app (preflight 400 «Disallowed CORS origin»): la variable CORS_ORIGINS de Render no lo incluye. Con https://warehouse-rush-experiment-001.vercel.app el preflight con X-Sesion da 200. Es configuración de Render, no de la imagen.",
+  "nota": "La sesión perdida se probó con un id que el servidor no conoce (equivale a caducada o tras un reinicio); no se esperó a que caducara una real.",
+  "comprobaciones": {
+    "/version": {
+      "ok": true,
+      "detalle": "m1b-i1-seed1-best commit 8b49d63 al día True precarga ok (311 ms)"
+    },
+    "GET /api/layout": {
+      "ok": true,
+      "detalle": "2 modelos, catálogo trendy-27-v1 (27), mapa 0.4.0, sin sesión creada (350 ms, 11 KB)"
+    },
+    "CORS expone X-Sesion y X-Modelo-Servido": {
+      "ok": true,
+      "detalle": "X-Modelo-Servido, X-Git-Commit, X-Sesion"
+    },
+    "preflight con X-Sesion": {
+      "ok": true,
+      "detalle": "permitidas: Accept, Accept-Language, Content-Language, Content-Type, X-Sesion"
+    },
+    "GET /api/state sin cabecera crea sesión": {
+      "ok": true,
+      "detalle": "sesión l3jP… (529 ms)"
+    },
+    "GET /api/state con la sesión": {
+      "ok": true,
+      "detalle": "(295 ms)"
+    },
+    "POST /api/reset con modelo": {
+      "ok": true,
+      "detalle": "modelo m1b-i1-seed1-best nivel «N3 · paso (6,14) cerrado», misma sesión (407 ms), X-Modelo-Servido m1b-i1-seed1-best@46984e97b032"
+    },
+    "POST /api/step hasta el final (modelo, paso cerrado)": {
+      "ok": true,
+      "detalle": "111 pasos, éxito True, p50 305 ms, p95 489 ms"
+    },
+    "visor libre: «Generar pedido» con inventario compartido": {
+      "ok": true,
+      "detalle": "stock tras el 1.º pedido 202 → al empezar el 2.º 200 (baja y no se repone)"
+    },
+    "modo antiguo sin maquillaje": {
+      "ok": true,
+      "detalle": "makeup False, orders 2"
+    },
+    "POST /api/evaluate (10 ep, producción, paso cerrado)": {
+      "ok": true,
+      "detalle": "certificado False, catálogo trendy-27-v1, éxito 1.0, 6.5 s"
+    },
+    "POST /api/evaluate (10 ep, rollback m1-c3-seed0 cerrado)": {
+      "ok": true,
+      "detalle": "éxito 0.0, causas {'time_limit': 6, 'battery_depleted': 4}, 16.4 s"
+    },
+    "evaluate valida episodes": {
+      "ok": true,
+      "detalle": "400 parametro_invalido"
+    },
+    "sesión perdida: state → 404 sesion_no_encontrada (formato Vercel)": {
+      "ok": true,
+      "detalle": "404 codigo=sesion_no_encontrada | «La sesión no existe o caducó (30 min sin uso, o el servidor …»"
+    },
+    "sesión perdida: step → 404": {
+      "ok": true,
+      "detalle": "404"
+    },
+    "step sin X-Sesion → 400 falta_sesion": {
+      "ok": true,
+      "detalle": "400"
+    },
+    "reset recupera la sesión perdida": {
+      "ok": true,
+      "detalle": "sesión nueva DNv4… (la misma semilla da el mismo pedido) (708 ms)"
+    },
+    "la sesión nueva avanza": {
+      "ok": true,
+      "detalle": "tiempo 1"
+    },
+    "ruta /api desconocida": {
+      "ok": true,
+      "detalle": "404"
+    },
+    "GET /api/health": {
+      "ok": true,
+      "detalle": "commit 8b49d63, sesiones 4"
+    },
+    "/monitoreo con sesiones y diagnósticos": {
+      "ok": true,
+      "detalle": "sesiones {'sesiones': 4, 'activas': 4, 'maximo': 100, 'ttl_s': 1800}, casi empates 0"
+    },
+    "portada y /health siguen": {
+      "ok": true,
+      "detalle": ""
+    }
+  }
+}

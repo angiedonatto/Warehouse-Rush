@@ -48,13 +48,13 @@ body,.masthead{background:#fff5f9}.toolbar,.panel,.mission-bar,.workspace-footer
 .makeup-control,.switch-label{color:#80546f}
 /* Catálogo de modelos (R4) sobre el diálogo de Naomi */
 /* mismas reglas que .catalog-dialog (Naomi), sin compartir la clase */
-.models-dialog{width:min(1160px,94vw);max-height:90vh;border:1px solid #e8bcd1;border-radius:24px;padding:26px;background:#fff8fc;color:#553748;box-shadow:0 24px 100px #6b214d40}
-.models-dialog::backdrop{background:#47223e80;backdrop-filter:blur(5px)}
-.models-dialog header{display:flex;justify-content:space-between;gap:20px;align-items:center}
-.models-dialog h2{font-size:30px;letter-spacing:-1px;margin:8px 0 20px}
-.models-dialog .button{background:#ad366f;border:0;border-radius:18px;color:white;padding:10px 16px;height:auto}
+.models-dialog,.monitor-dialog{width:min(1160px,94vw);max-height:90vh;border:1px solid #e8bcd1;border-radius:24px;padding:26px;background:#fff8fc;color:#553748;box-shadow:0 24px 100px #6b214d40}
+.models-dialog::backdrop,.monitor-dialog::backdrop{background:#47223e80;backdrop-filter:blur(5px)}
+.models-dialog header,.monitor-dialog header{display:flex;justify-content:space-between;gap:20px;align-items:center}
+.models-dialog h2,.monitor-dialog h2{font-size:30px;letter-spacing:-1px;margin:8px 0 20px}
+.models-dialog .button,.monitor-dialog .button{background:#ad366f;border:0;border-radius:18px;color:white;padding:10px 16px;height:auto}
 .models-dialog #models-grid{scrollbar-color:#d196b6 #fff4fa}
-@media(max-width:760px){.models-dialog{padding:16px}.models-dialog h2{font-size:23px}.models-dialog .eyebrow{font-size:8px}}
+@media(max-width:760px){.models-dialog,.monitor-dialog{padding:16px}.models-dialog h2,.monitor-dialog h2{font-size:23px}.models-dialog .eyebrow,.monitor-dialog .eyebrow{font-size:8px}}
 
 .models-dialog .catalog-body{grid-template-columns:1fr 460px}.model-detail{text-align:left;max-height:62vh;overflow:auto}.model-detail h3{margin:8px 0 4px}.model-detail h4{margin:16px 0 6px;font-size:13px}
 .model-card{min-height:118px}.model-card strong{word-break:break-all}.model-check{display:flex;align-items:center;gap:6px;font-size:12px}

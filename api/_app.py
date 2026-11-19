@@ -131,12 +131,8 @@ def create_app(raiz: Path = registry.RAIZ, *, almacen: AlmacenModelos | None = N
 
     @asynccontextmanager
     async def lifespan(_app):
-        try:
-            from dotenv import load_dotenv
-
-            load_dotenv(raiz / ".env", override=False)  # local; en el Space las variables son secrets
-        except ImportError:
-            pass
+        # Sin load_dotenv: la API no usa MLflow y no debe copiar credenciales de .env al proceso. DVC lee las suyas
+        # de .dvc/config.local en local y de los secrets AWS_* en el Space.
         if precargar:  # en segundo plano: el puerto abre ya y /health informa el progreso
             almacen.precarga = {"estado": "en curso"}
             threading.Thread(target=almacen.precargar_produccion, name="precarga", daemon=True).start()

@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "version": 3,
+  "actualizado_en": "2026-11-19T05:12:23.714605+00:00",
+  "ranuras": {
+    "m1": {
+      "actual": "m1-c3-seed0",
+      "anterior": null
+    },
+    "m1b": {
+      "actual": "m1b-i1-seed1-best",
+      "anterior": null
+    },
+    "produccion": {
+      "actual": "m1b-i1-seed1-best",
+      "anterior": "m1-c3-seed0"
+    }
+  },
+  "historial": [
+    {
+      "version": 1,
+      "fecha": "2026-11-18T20:33:27.419874+00:00",
+      "autor": "miguel",
+      "accion": "inicializar",
+      "ranuras": {
+        "m1": {
+          "actual": "m1-c3-seed0",
+          "anterior": null
+        },
+        "m1b": {
+          "actual": "m1b-i1-seed1-best",
+          "anterior": null
+        },
+        "produccion": {
+          "actual": "m1b-i1-seed1-best",
+          "anterior": "m1-c3-seed0"
+        }
+      },
+      "motivo": "Estado inicial tomado de los manifiestos (2026-11-15): m1-c3-seed0 recomendado para m1 (test-final-m1-v1 100/100) y m1b-i1-seed1-best recomendado para m1b (test-final-m1b-v1 100/100 abierto y cerrado), modelo de producción según docs/modelo-actual.md; m1-c3-seed0 es su rollback."
+    },
+    {
+      "version": 2,
+      "fecha": "2026-11-19T05:08:30.574865+00:00",
+      "autor": "miguel",
+      "accion": "rollback",
+      "ranura": "produccion",
+      "de": "m1b-i1-seed1-best",
+      "a": "m1-c3-seed0",
+      "model_sha256": "b6034b3396a676d8d9edd27c4229be239f8d0cf9b3ccd712bb0437c67d76b9a7",
+      "motivo": "prueba de rollback real en Render: producción a m1-c3-seed0 (2026-11-19)"
+    },
+    {
+      "version": 3,
+      "fecha": "2026-11-19T05:12:23.714605+00:00",
+      "autor": "miguel",
+      "accion": "rollback",
+      "ranura": "produccion",
+      "de": "m1-c3-seed0",
+      "a": "m1b-i1-seed1-best",
+      "model_sha256": "46984e97b032920cd8e041e44b4f5d27751235cb7f4e04c634f523c2c41fdbb7",
+      "motivo": "vuelta a producción tras la prueba de rollback real en Render (2026-11-19)"
+    }
+  ]
+}

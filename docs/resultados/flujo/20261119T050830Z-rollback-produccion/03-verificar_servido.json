@@ -1,0 +1,19 @@
+{
+  "etapa": "verificar_servido",
+  "numero": 3,
+  "inicio": "2026-11-19T05:08:37.412684+00:00",
+  "entradas": {
+    "api_url": null
+  },
+  "estado": "pendiente",
+  "salidas": {
+    "motivo": "sin --api-url (la API aún no está desplegada)",
+    "esperado": {
+      "run_id": "m1-c3-seed0",
+      "model_sha256": "b6034b3396a676d8d9edd27c4229be239f8d0cf9b3ccd712bb0437c67d76b9a7",
+      "environment_version": "warehouse-v10"
+    }
+  },
+  "fin": "2026-11-19T05:08:37.413156+00:00",
+  "duracion_s": 0.0
+}

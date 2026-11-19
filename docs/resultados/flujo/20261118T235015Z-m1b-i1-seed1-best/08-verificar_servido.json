@@ -1,0 +1,19 @@
+{
+  "etapa": "verificar_servido",
+  "numero": 8,
+  "inicio": "2026-11-18T23:51:06.299525+00:00",
+  "entradas": {
+    "api_url": null
+  },
+  "estado": "pendiente",
+  "salidas": {
+    "motivo": "sin --api-url (la API aún no está desplegada)",
+    "esperado": {
+      "run_id": "m1b-i1-seed1-best",
+      "model_sha256": "46984e97b032920cd8e041e44b4f5d27751235cb7f4e04c634f523c2c41fdbb7",
+      "environment_version": "warehouse-v10"
+    }
+  },
+  "fin": "2026-11-18T23:51:06.301209+00:00",
+  "duracion_s": 0.002
+}

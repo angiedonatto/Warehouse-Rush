@@ -1,0 +1,23 @@
+{
+  "etapa": "decidir",
+  "numero": 6,
+  "inicio": "2026-11-18T23:51:05.503795+00:00",
+  "entradas": {
+    "run_id": "m1b-i1-seed1-best",
+    "referencia": null,
+    "criterios": "configs/criterios.yaml"
+  },
+  "estado": "ok",
+  "salidas": {
+    "estado_propuesto": "recomendado",
+    "motivo": "es el recomendado vigente del nivel; no se compara consigo mismo",
+    "criterios_version": 1,
+    "referencia": null,
+    "comparacion": {},
+    "manifiesto_creado": null,
+    "estado_manifiesto": "recomendado",
+    "coincide_con_manifiesto": true
+  },
+  "fin": "2026-11-18T23:51:05.506063+00:00",
+  "duracion_s": 0.002
+}

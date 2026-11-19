@@ -38,3 +38,11 @@ web/playwright-report/
 .vercel/
 .vercel
 .env*
+# .env.example es la plantilla sin secretos y sí va a Git; debe ir después de «.env*» para que la excepción gane
+!.env.example
+
+# Configuración local del editor (hace que git_dirty salga true en runs, fichas y catálogo)
+.vscode/
+
+# Políticas PPO exportadas a NumPy para la API (≈ 27 KB c/u, verificadas contra SB3; pipelines/exportar_numpy.py)
+!/models/numpy/

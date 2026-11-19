@@ -1,0 +1,57 @@
+{
+  "carpeta": "docs/resultados/flujo/20261118T235015Z-m1b-i1-seed1-best",
+  "etapas": [
+    {
+      "numero": 1,
+      "etapa": "validar",
+      "estado": "ok",
+      "duracion_s": 0.287
+    },
+    {
+      "numero": 2,
+      "etapa": "probar",
+      "estado": "ok",
+      "duracion_s": 19.342
+    },
+    {
+      "numero": 3,
+      "etapa": "entrenar_o_cargar",
+      "estado": "reutilizado",
+      "duracion_s": 0.046
+    },
+    {
+      "numero": 4,
+      "etapa": "evaluar",
+      "estado": "ok",
+      "duracion_s": 10.522
+    },
+    {
+      "numero": 5,
+      "etapa": "registrar",
+      "estado": "ok",
+      "duracion_s": 19.975
+    },
+    {
+      "numero": 6,
+      "etapa": "decidir",
+      "estado": "ok",
+      "duracion_s": 0.002
+    },
+    {
+      "numero": 7,
+      "etapa": "publicar_catalogo",
+      "estado": "reutilizado",
+      "duracion_s": 0.782
+    },
+    {
+      "numero": 8,
+      "etapa": "verificar_servido",
+      "estado": "pendiente",
+      "duracion_s": 0.002
+    }
+  ],
+  "flujo": "warehouse-pipeline",
+  "run_id": "m1b-i1-seed1-best",
+  "fin": "2026-11-18T23:51:06.306232+00:00",
+  "prefect_flow_run_id": "98a6aab9-cc7d-4af2-94ad-1722eb3c8f13"
+}

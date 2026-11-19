@@ -1,0 +1,65 @@
+{
+  "etapa": "evaluar",
+  "numero": 4,
+  "inicio": "2026-11-18T23:50:34.995979+00:00",
+  "entradas": {
+    "run_id": "m1b-i1-seed1-best",
+    "model_sha256": "46984e97b032920cd8e041e44b4f5d27751235cb7f4e04c634f523c2c41fdbb7",
+    "suites": [
+      "suite-m1-v1",
+      "suite-m1b-v1"
+    ]
+  },
+  "estado": "ok",
+  "salidas": {
+    "referencia": null,
+    "por_suite": {
+      "suite-m1-v1": {
+        "modelo": {
+          "run_id": "m1b-i1-seed1-best",
+          "suite": "suite-m1-v1",
+          "escenario": "abierto",
+          "evaluation_json": "docs/resultados/flujo/eval/m1b-i1-seed1-best/suite-m1-v1-46984e97b032/evaluation.json",
+          "evaluation_sha256": "9f806f5a5c3b04cdaec923f4e5efd15cef9a5e378f97027ddb1b84ea2ad9f638",
+          "reutilizada": false,
+          "metricas": {
+            "episodios": 50,
+            "exito": 1.0,
+            "choques": 0.0,
+            "invalidas": 0.0,
+            "entregas": 3.0,
+            "pasos": 82.32,
+            "end_reasons": {
+              "success": 50
+            }
+          }
+        },
+        "referencia": null
+      },
+      "suite-m1b-v1": {
+        "modelo": {
+          "run_id": "m1b-i1-seed1-best",
+          "suite": "suite-m1b-v1",
+          "escenario": "bloqueado",
+          "evaluation_json": "docs/resultados/flujo/eval/m1b-i1-seed1-best/suite-m1b-v1-46984e97b032/evaluation.json",
+          "evaluation_sha256": "a91bca5f78b42e235f3644438f0b46c96768ad18a2f435339bef51467df72087",
+          "reutilizada": false,
+          "metricas": {
+            "episodios": 50,
+            "exito": 1.0,
+            "choques": 0.0,
+            "invalidas": 0.0,
+            "entregas": 3.0,
+            "pasos": 106.92,
+            "end_reasons": {
+              "success": 50
+            }
+          }
+        },
+        "referencia": null
+      }
+    }
+  },
+  "fin": "2026-11-18T23:50:45.517522+00:00",
+  "duracion_s": 10.522
+}

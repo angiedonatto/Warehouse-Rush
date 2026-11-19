@@ -1,21 +1,24 @@
 # Relevo R3 · Versionado, pipeline y API
 
-Estado al **2026-11-18** (noche, hora de Colombia; verificado contra Render y GitHub el 2026-11-19 03:50 UTC).
-Responsable: miguel (R3). Rama `dev/miguel` en `d8338bd` (`origin/dev/miguel` en `87669b2`: faltan 3 commits por
-subir), **30 commits por delante de `main`** (`b57fa77`), sin commits de `main` pendientes de integrar.
+Estado al **2026-11-19 05:00 UTC** (verificado contra Render y GitHub tras el primer despliegue real).
+Responsable: miguel (R3). Rama `dev/miguel` en `661fe5a`, igual que `origin/dev/miguel`; **más de 30 commits por delante
+de `main`** (`b57fa77`), sin commits de `main` pendientes de integrar.
+
+**Render sirve hoy el commit `661fe5a`** (la versión real, imagen `ghcr.io/mamezquita/warehouse-rush-api:661fe5a`),
+desplegado el 2026-11-19 05:00 UTC con `api/publicar.sh`. Evidencia: `docs/resultados/despliegues/20261119T050007Z-661fe5a.json`.
 
 ## En una frase
 
-La API nueva (FastAPI, sin torch) está terminada y probada en local y en una simulación de Render, pero **Render
-todavía sirve el prototipo de prueba (`6083735`)**: falta construir y desplegar la imagen real, probar el rollback en
-producción, migrar la web a la API e integrar todo a `main`.
+La API nueva (FastAPI, sin torch) **ya corre en Render (`661fe5a`)** y está verificada en producción (portada,
+`/version` con catálogo al día, evaluación certificada asíncrona y episodios). Falta probar el rollback real,
+medir el despertar, migrar la web a la API (capa `/api/*`) e integrar todo a `main`.
 
 ## Arquitectura acordada
 
 | Capa | Dónde | Estado |
 |---|---|---|
 | Web (interfaz, Three.js) | Vercel (`warehouse-rush-psi.vercel.app`, lis/Naomi) | En producción; episodios y «Evaluar» todavía por el `/api` de Vercel |
-| API única de modelos, evaluaciones y episodios | Render Free (`https://warehouse-rush-api.onrender.com`), FastAPI | **Sirve el prototipo `6083735`**; la versión real está lista para desplegar |
+| API única de modelos, evaluaciones y episodios | Render Free (`https://warehouse-rush-api.onrender.com`), FastAPI | **Sirve la versión real `661fe5a`** (desde 2026-11-19 05:00 UTC) |
 | Registro de experimentos y modelos | MLflow en DagsHub (`mamezquita/Warehouse-Rush.mlflow`) | 94 runs migrados (lis) + run del flujo |
 | Pesos | DVC en Cloudflare R2 (entrenamiento) y `models/numpy/` en Git (API) | Hecho |
 | Orquestación | Prefect (`pipelines/flow.py`) | Hecho; ejecutado contra DagsHub |
@@ -27,10 +30,10 @@ probado, 2) PR de `dev/miguel` a `main`, 3) validar todo junto, 4) una sola arqu
 
 | Pregunta | Respuesta |
 |---|---|
-| ¿Render ya funciona públicamente? | Sí responde (`/health`, `/version`, modelos cargados), pero con el **prototipo** `6083735`. La versión real (portada en `/`, evaluaciones asíncronas, inferencia NumPy verificada) está en `dev/miguel` y falta desplegarla. |
+| ¿Render ya funciona públicamente? | **Sí, con la versión real `661fe5a`**: portada en `/`, `/version` con el commit y el catálogo al día, modelos de producción cargados con inferencia NumPy, evaluaciones asíncronas y episodios (medidas abajo). |
 | ¿Se migró toda la simulación? | **No.** La API ya ejecuta episodios con los modelos del catálogo («Cargar en la bodega»). Falta la capa `/api/*` con `ViewerSession` (visor libre de maquillaje, «Generar pedido», mismas rutas que usa la web), que espera la confirmación de Angie y lis para adaptar `api/_viewer.py`. |
-| ¿Evaluar ya funciona con suites oficiales? | Sí en local y en la simulación de Render: `POST /evaluaciones` asíncrona, suites fijas, catálogo `legacy-18`, reproduce las evaluaciones congeladas **episodio a episodio**. En producción, después del despliegue. El «Evaluar» rápido de la web (`/api/evaluate`, `trendy-27`, 10 episodios) se mantendrá como diagnóstico **no certificado** en la capa `/api/*`. |
-| ¿Se probó el rollback real y la recuperación de episodios? | **No todavía.** El rollback está probado en local (flujo y registro, ida y vuelta) y documentado con su efecto medido; falta en Render con el tiempo real de redeploy. Los episodios se recuperan con `GET /episodios/{id}` mientras el proceso siga vivo; **se pierden si Render se duerme (15 min) o se redespliega** (ver `docs/rollback.md`). |
+| ¿Evaluar ya funciona con suites oficiales? | **Sí, también en producción**: `POST /evaluaciones` asíncrona, suite `suite-m1b-v1`, catálogo `legacy-18`, 100% y 106.92 pasos, 0 choques (igual que la evaluación congelada), 26.7 s en el servidor. El «Evaluar» rápido de la web (`/api/evaluate`, `trendy-27`, 10 episodios) se mantendrá como diagnóstico **no certificado** en la capa `/api/*`. |
+| ¿Se probó el rollback real y la recuperación de episodios? | **No todavía** (es lo siguiente, con aviso previo). El rollback está probado en local (flujo y registro, ida y vuelta) y documentado con su efecto medido; falta en Render con el tiempo real de redeploy. Los episodios se recuperan con `GET /episodios/{id}` mientras el proceso siga vivo; **se pierden si Render se duerme (15 min) o se redespliega** (ver `docs/rollback.md`). |
 
 ## Qué está hecho (con commit)
 
@@ -49,19 +52,25 @@ probado, 2) PR de `dev/miguel` a `main`, 3) validar todo junto, 4) una sola arqu
 | Dependencias de la API | `requirements-api.txt` (24, mismas versiones) | `tests/test_requirements_api.py`; venv limpio sin torch |
 | Documentación | `docs/decisiones.md`, `docs/rollback.md` | degradación de `m1-c3-seed0` medida en `legacy-18` y `trendy-27` |
 
-**Sin commit todavía:** `api/Dockerfile` y `.dockerignore` (paso 8, esperando aprobación). Probados: imagen de
-348 MB sin torch, DVC ni secretos (comprobado aun construyendo desde un árbol con `.env` y credenciales), arranque en
-frío en 15 s con 0.1 CPU y 512 MB, evaluación de 50 episodios en 23 s, RAM 70 MiB, y reconstrucción en 2.6 s cuando
-solo cambian los manifiestos (rollback).
+**Despliegue:** `api/Dockerfile`, `.dockerignore` y `api/publicar.sh` (en `dev/miguel`). Imagen de 348 MB sin torch,
+DVC ni secretos (comprobado aun construyendo desde un árbol con `.env` y credenciales); reconstrucción en 2.6 s cuando
+solo cambian los manifiestos. `publicar.sh` nunca imprime el deploy hook ni los tokens.
+
+**Primer despliegue real (2026-11-19, commit `661fe5a`)**, verificado en producción:
+
+| Comprobación | Resultado |
+|---|---|
+| `GET /` | portada con la API, el modelo servido (`m1b-i1-seed1-best`), el commit y los 5 enlaces |
+| `/version` | commit `661fe5a`, `warehouse-v10`, catálogo **al día**, aliases v1, precarga ok, 2 modelos cargados (NumPy); cabeceras `X-Git-Commit` y `X-Modelo-Servido` correctas |
+| Evaluación certificada asíncrona | `suite-m1b-v1`: 202 → progreso 1, 8, 14 … 50 → terminada; **100%, 106.92 pasos, 0 choques**, 26.7 s en el servidor (29.1 s desde el POST) |
+| Episodio (`trendy-27-v1`, paso cerrado, semilla 10000) | `correr` en 1.3 s (8.5 KB con gzip); completa en 111 pasos, 0 choques |
+| `/monitoreo` | 5 457 decisiones, 0 casi empates, p95 0.14 ms por decisión |
 
 ## Qué falta, en orden
 
-1. **Commit del Dockerfile** (paso 8) y **`api/publicar.sh`** (paso 9): construye desde `git archive` del commit,
-   escribe `VERSION.json`, etiqueta con el sha, sube a GHCR (`ghcr.io/mamezquita/warehouse-rush-api`, privado),
-   dispara el *deploy hook* y espera a que `/version` muestre el commit (mide el redeploy).
-2. **Desplegar la imagen real en Render** (lo hace miguel en el panel: cambiar la imagen del servicio y guardar el
-   *deploy hook* en `.env`) y **verificar en producción**: `/`, `/health`, `/version` con el commit real, una
-   evaluación certificada asíncrona y episodios.
+1. ~~Dockerfile, `publicar.sh` y despliegue de la imagen real~~: **hecho** (`661fe5a`). Pendiente menor: en Render,
+   *Settings → Image*, cambiar la etiqueta por defecto a la nueva para que un reinicio manual no vuelva al prototipo.
+2. **Commit de la evidencia del despliegue** (`docs/resultados/despliegues/`).
 3. **Rollback real en Render**: producción (`m1b-i1-seed1-best`) → `m1-c3-seed0` → producción, con el flujo
    (`python -m pipelines.flow rollback ...`), midiendo el redeploy; actualizar `docs/rollback.md`.
 4. **Medir el despertar de Render** tras 15 min sin tráfico (la web de lis consulta `/version` y lo mantiene
@@ -99,8 +108,11 @@ solo cambian los manifiestos (rollback).
 |---|---|
 | RAM de la API con torch / con NumPy | 368 MiB / 70 MiB |
 | Arranque en frío del contenedor (0.1 CPU, simulado) | 15 s; Render añade su propio despertar (~1 min según su documentación, por medir) |
-| Evaluación de 50 episodios | 23 s (simulación de Render) / 26 s (prototipo en Render) |
-| Episodio completo (`correr`) | ~1 s, 7–8 KB con gzip |
+| **Redeploy real en Render** (deploy hook → `/version` con el commit nuevo / → precarga ok) | **3.6 s / 21.5 s** (las capas pesadas ya estaban en caché de Render por el prototipo; con una imagen sin capas previas será mayor) |
+| Build de la imagen / push a GHCR (capas en caché) | 3.1 s / 20.3 s |
+| Evaluación de 50 episodios | 26.7 s en Render (producción), 27 s en la simulación con 0.1 CPU |
+| Episodio completo (`correr`) | 1.3 s en Render, 8.5 KB con gzip |
+| `/version` con una evaluación en curso (simulación 0.1 CPU) | 7.4 s antes de calcular una vez al arrancar → 0.5 s después |
 | Rollback de `m1b-i1-seed1-best` a `m1-c3-seed0` | recupera el servicio con el paso abierto (98–100%), pierde el incidente: 0% con el paso cerrado (21.6 choques/ep en `legacy-18`, 85 en `trendy-27`) |
 
 ## Riesgos y limitaciones abiertas

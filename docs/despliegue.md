@@ -133,3 +133,18 @@ El sitio anterior (`warehouse-rush-experiment-001.vercel.app`, cuenta de Angie) 
   web que usaba el `/api` de Vercel; solo sirve mientras ese deployment exista). Rollback del modelo servido: `docs/rollback.md`.
 - Retiro de la función de Vercel: en `dev/lis-cierre` (se aplica en el siguiente despliegue). `api/_viewer.py` se conserva:
   es el motor de sesiones de la capa `/api/*` de Render (`api/_visor.py`) y de `python -m pipelines.cli view`.
+
+## Release v1.0: una sola arquitectura en producción (2026-11-19)
+- Commit desplegado en producción: `f72f0a2` (`main`, merge del PR #8; etiqueta `v1.0`), deployment
+  `dpl_AKyYGiC6AuZ7XoPjgVPSDeiqrF1c` (`warehouse-rush-eipbt7pw6-lis-team2.vercel.app`), alias `warehouse-rush-psi.vercel.app`.
+  Anterior (para rollback): `7af0570`, `dpl_HQf84Do7RC3bBDKsSHodzfow7M7q` (`warehouse-rush-2cf8pgnz8-lis-team2.vercel.app`).
+- Incluye el PR #7 (función de Vercel retirada, modelos históricos en la web) y el PR #8 (evaluación oficial con progreso).
+  Verificado en producción: `/api/health` y `/api/state` de Vercel responden 404 (Vercel solo sirve la web) y la página
+  publicada llama a `https://warehouse-rush-api.onrender.com`.
+- Pruebas en producción (Playwright, Chromium sin cambios, CORS real contra Render `8b49d63`): 5 de 5. Catálogo y carga
+  de `m1b-i1-seed1-best` hasta completar el pedido, modelo histórico `m1-c3-seed1` (carga, diagnóstico, recarga, enlace
+  directo), evaluación oficial en `suite-m1b-v1` (100 %, 106.92 pasos, igual a la registrada), sesión sin cookies con el
+  rótulo «EN LÍNEA», y pasos/play/pausa/reset.
+- Release: https://github.com/angiedonatto/Warehouse-Rush/releases/tag/v1.0
+- Rollback de la web: `vercel promote https://warehouse-rush-2cf8pgnz8-lis-team2.vercel.app --scope lis-team2`.
+

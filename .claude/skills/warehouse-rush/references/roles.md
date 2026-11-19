@@ -1,5 +1,7 @@
 # Roles and cross-role requirements
 
+Who is who (confirmed by the user 2026-11-19): **R1 Angie Donato** (`angiedonatto`, repo owner), **R2 Lis Sánchez** (`Lis-Sanchez-DS`, the user), **R3 Miguel Amézquita** (`mamezquita`), **R4 Naomi Mosquera** (`naomiv2910-cell`). In practice Lis also did the R4 integration and the web migration to Render; Miguel built the API, registry, Prefect flow and the Render deploy.
+
 Team agreements (fixed day 1, from the team guide):
 1. Branches: each member works on `dev/<name>`; `main` only via pull request with one approved review and a working test.
 2. Env contract frozen in `envs/CONTRATO.md` (R1). Changes bump version, new model family.

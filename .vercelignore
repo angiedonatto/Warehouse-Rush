@@ -15,3 +15,5 @@ build
 dist
 .env*
 .superdesign
+# La API vive en Render (docs/api-contrato.md); Vercel solo sirve la web estática.
+api

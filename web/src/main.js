@@ -1,6 +1,7 @@
 import { setupCatalog } from './catalog.js';
 import { setupModelCatalog } from './models-catalog.js';
 import { setupServiceStatus } from './service-status.js';
+import { api as viewerApi, onWait } from './viewer-api.js';
 import './style.css';
 import { renderOrderSheet, renderRack } from './order-sheet.js';
 import { WarehouseScene } from './warehouse.js';
@@ -44,13 +45,16 @@ function toast(message) {
   toastTimer = setTimeout(() => { $('#toast').hidden = true; }, 6500);
 }
 
+// /api/* en la API de Render (VITE_API_BASE_URL) con la sesión en X-Sesion: ver viewer-api.js.
 async function api(path, body) {
-  const response = await fetch(`/api/${path}`, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
+  const result = await viewerApi(path, body);
   $('#connection-label').textContent = 'Simulador conectado';$('#connection-dot').style.background = '#5ae879';
   return result;
 }
+// «Despertando el servidor…» mientras una petición tarda más de unos 3 s (Render Free se duerme).
+const waitNotice = document.createElement('div');waitNotice.id = 'server-wait';waitNotice.className = 'server-wait';
+waitNotice.setAttribute('role', 'status');waitNotice.setAttribute('aria-live', 'polite');waitNotice.hidden = true;document.body.append(waitNotice);
+onWait(message => { waitNotice.hidden = !message;waitNotice.textContent = message || ''; });
 
 // Modelos recomendados que sirve la API (configs/modelos_servidos.json): cada uno corre en el ambiente
 // exacto de su evaluación (mapa, pedidos y recompensa), con identidad verificable.
@@ -171,9 +175,16 @@ function pause() {
 async function executeStep(action) {
   if (busy || changing || !current || current.done) return;
   busy = true;controls();
+  let lost = false;
   try { renderState(await api('step', action === undefined ? {} : { action })); }
-  catch (error) { pause();toast(error.message);$('#connection-label').textContent = 'Revisa la conexión'; }
+  catch (error) {
+    pause();toast(error.message);
+    // Sesión perdida (servidor reiniciado o dormido): reiniciar con los controles actuales (contrato 9.6).
+    if (error.codigo === 'sesion_no_encontrada') lost = true;
+    else $('#connection-label').textContent = 'Revisa la conexión';
+  }
   finally { busy = false;controls(); }
+  if (lost) await reset();
 }
 
 function schedule() {
@@ -251,7 +262,9 @@ window.addEventListener('pagehide', () => { pause();scene?.dispose(); });
 
 async function start() {
   try {
-    [layoutInfo, current] = await Promise.all([api('layout'), api('state')]);
+    // Una sesión guardada que ya no existe: avisar y pedir una nueva (contrato 9.6).
+    const state = () => api('state').catch(error => { if (error.codigo !== 'sesion_no_encontrada') throw error;toast(error.message);return api('state'); });
+    [layoutInfo, current] = await Promise.all([api('layout'), state()]);
     populateModels();
     $('#policy').value = policyValue(current);$('#orders').value = Math.min(2, current.orders);$('#blocked').checked = current.state.pasillo_bloqueado;$('#makeup').checked = current.makeup;seedInput.value = current.seed;
     mountScene();

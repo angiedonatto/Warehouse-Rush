@@ -1,7 +1,7 @@
 # Rollback del modelo servido
 
-Estado: **en preparación** (2026-11-18, miguel). La prueba de rollback con evidencia y el tiempo real de redeploy
-de la API en Render se anotan aquí cuando la API esté desplegada (Hugging Face quedó descartado: Spaces Docker exige PRO).
+Estado: **rollback real probado en Render** (2026-11-19, miguel). El despertar tras 15 min sin tráfico sigue por medir.
+(Hugging Face quedó descartado: Spaces Docker exige PRO.)
 
 ## Qué significa rollback en este proyecto
 
@@ -74,11 +74,47 @@ redeploy (también en un rollback). Lo que vive en memoria de ese proceso se pie
 Por eso la prueba de rollback verifica el modelo servido con `/version` (estado de la imagen) y no espera conservar
 episodios abiertos a través del redeploy.
 
+## Prueba de rollback real en Render (2026-11-19)
+
+Producción (`m1b-i1-seed1-best`) → `m1-c3-seed0` → producción, en el servicio real
+`https://warehouse-rush-api.onrender.com`, con el flujo (`pipelines.flow rollback`) y `api/publicar.sh`. Evidencia:
+`docs/resultados/flujo/20261119T050830Z-rollback-produccion/` (ida), `…/20261119T051223Z-rollback-produccion/`
+(vuelta), `docs/resultados/despliegues/20261119T051036Z-20deead.json` (ida) y
+`…20261119T051327Z-e51f075.json` (vuelta).
+
+| Paso | Ida (a `m1-c3-seed0`) | Vuelta (a `m1b-i1-seed1-best`) |
+|---|---|---|
+| `pipelines.flow rollback` (alias + catálogo, sha256 verificado) | 0.5 s + 6.8 s | 0.5 s + 2.9 s |
+| Commit | `781abd5` (alias) y `20deead` (arreglo de una prueba, ver abajo) | `e51f075` |
+| `publicar.sh`: build / push a GHCR | 3.7 s / 6.0 s | 2.7 s / 6.2 s |
+| **Deploy hook → `/version` muestra el commit nuevo (tiempo de redeploy)** | **25.8 s** | **25.1 s** |
+| Deploy hook → precarga de producción lista | 26.6 s | 25.8 s |
+| `/version` tras el cambio | `m1-c3-seed0`, sha `b6034b33…`, catálogo al día, aliases v2 | `m1b-i1-seed1-best`, sha `46984e97…`, catálogo al día, aliases v3 |
+| `X-Modelo-Servido` | `m1-c3-seed0@b6034b3396a6` (antes `m1b-i1-seed1-best@46984e97b032`) | `m1b-i1-seed1-best@46984e97b032` |
+
+**El tiempo de rollback que se reporta es ~25 s** (deploy hook → `/version`); con el flujo, el build y el push, de
+la orden al servicio cambiado pasan unos 40 a 45 s (sin contar el commit y el push manuales). Es corto porque solo
+cambian los manifiestos: las capas de dependencias y código salen de caché (reconstrucción de 2.7 a 3.7 s). Una
+imagen sin capas previas en Render tardaría más.
+
+**Qué se observó en producción con cada modelo** (`suite-m1b-v1`, certificada, `legacy-18`, paso cerrado):
+
+| Modelo servido | Éxito | Choques/ep | Tiempo de la evaluación en Render |
+|---|---:|---:|---:|
+| `m1-c3-seed0` (rollback) | **0%** (45 límite de tiempo, 5 batería agotada) | 21.62 | 75.3 s |
+| `m1b-i1-seed1-best` (producción) | **100%**, 106.92 pasos | 0.0 | 25.2 s |
+
+Con el rollback, un episodio con el paso cerrado (`trendy-27-v1`, semilla 10000) termina por límite de tiempo y
+`correr` tarda 4.0 s (frente a 1.3 s con el modelo de producción). Es lo anotado como antecedente: el rollback
+recupera el servicio pero **pierde el escenario del incidente N3**; las cifras en producción coinciden con la
+evaluación congelada (0% y 21.62 choques/ep).
+
+**Hallazgo de la prueba:** `test_rollback_pierde_el_escenario_del_incidente` suponía que el modelo servido (sin
+`run_id`) era `m1b-i1-seed1-best`, así que con el rollback real fallaba y `publicar.sh` (que corre las pruebas antes
+de construir) se detuvo, como debe. La prueba usa ahora `run_id` explícito y comprueba aparte que sin `run_id` se
+usa el modelo servido (`20deead`).
+
 ## Pendiente
 
-- Prueba de rollback con la API desplegada: `m1b-i1-seed1-best` → `m1-c3-seed0` → `m1b-i1-seed1-best`, con la
-  evidencia del flujo (`docs/resultados/flujo/<ejecución>-rollback-produccion/`) y la respuesta de `/version` antes y
-  después de cada cambio.
-- Tiempo real del redeploy en Render (commit → imagen → `/version` muestra el modelo nuevo), medido, no estimado.
 - Tiempo de despertar de Render Free tras 15 min sin tráfico: la primera medición (2026-11-18) no sirvió porque el
   servicio no llegó a dormirse (mismo proceso antes y después); repetirla sin tráfico de nadie.

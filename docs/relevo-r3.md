@@ -1,11 +1,12 @@
 # Relevo R3 · Versionado, pipeline y API
 
-Estado al **2026-11-19 05:00 UTC** (verificado contra Render y GitHub tras el primer despliegue real).
-Responsable: miguel (R3). Rama `dev/miguel` en `661fe5a`, igual que `origin/dev/miguel`; **más de 30 commits por delante
-de `main`** (`b57fa77`), sin commits de `main` pendientes de integrar.
+Estado al **2026-11-19 05:15 UTC** (verificado contra Render y GitHub tras el rollback real).
+Responsable: miguel (R3). Rama `dev/miguel` igual que `origin/dev/miguel`; **más de 30 commits por delante de `main`**
+(`b57fa77`), sin commits de `main` pendientes de integrar.
 
-**Render sirve hoy el commit `661fe5a`** (la versión real, imagen `ghcr.io/mamezquita/warehouse-rush-api:661fe5a`),
-desplegado el 2026-11-19 05:00 UTC con `api/publicar.sh`. Evidencia: `docs/resultados/despliegues/20261119T050007Z-661fe5a.json`.
+**Render sirve hoy el commit `e51f075`** (imagen `ghcr.io/mamezquita/warehouse-rush-api:e51f075`) con producción =
+`m1b-i1-seed1-best`, tras la prueba de rollback real (ver `docs/rollback.md`). Primer despliegue real: `661fe5a`
+(2026-11-19 05:00 UTC). Evidencia en `docs/resultados/despliegues/`.
 
 ## En una frase
 
@@ -18,7 +19,7 @@ medir el despertar, migrar la web a la API (capa `/api/*`) e integrar todo a `ma
 | Capa | Dónde | Estado |
 |---|---|---|
 | Web (interfaz, Three.js) | Vercel (`warehouse-rush-psi.vercel.app`, lis/Naomi) | En producción; episodios y «Evaluar» todavía por el `/api` de Vercel |
-| API única de modelos, evaluaciones y episodios | Render Free (`https://warehouse-rush-api.onrender.com`), FastAPI | **Sirve la versión real `661fe5a`** (desde 2026-11-19 05:00 UTC) |
+| API única de modelos, evaluaciones y episodios | Render Free (`https://warehouse-rush-api.onrender.com`), FastAPI | **Sirve la versión real `e51f075`** (producción `m1b-i1-seed1-best`) |
 | Registro de experimentos y modelos | MLflow en DagsHub (`mamezquita/Warehouse-Rush.mlflow`) | 94 runs migrados (lis) + run del flujo |
 | Pesos | DVC en Cloudflare R2 (entrenamiento) y `models/numpy/` en Git (API) | Hecho |
 | Orquestación | Prefect (`pipelines/flow.py`) | Hecho; ejecutado contra DagsHub |
@@ -33,7 +34,7 @@ probado, 2) PR de `dev/miguel` a `main`, 3) validar todo junto, 4) una sola arqu
 | ¿Render ya funciona públicamente? | **Sí, con la versión real `661fe5a`**: portada en `/`, `/version` con el commit y el catálogo al día, modelos de producción cargados con inferencia NumPy, evaluaciones asíncronas y episodios (medidas abajo). |
 | ¿Se migró toda la simulación? | **No.** La API ya ejecuta episodios con los modelos del catálogo («Cargar en la bodega»). Falta la capa `/api/*` con `ViewerSession` (visor libre de maquillaje, «Generar pedido», mismas rutas que usa la web), que espera la confirmación de Angie y lis para adaptar `api/_viewer.py`. |
 | ¿Evaluar ya funciona con suites oficiales? | **Sí, también en producción**: `POST /evaluaciones` asíncrona, suite `suite-m1b-v1`, catálogo `legacy-18`, 100% y 106.92 pasos, 0 choques (igual que la evaluación congelada), 26.7 s en el servidor. El «Evaluar» rápido de la web (`/api/evaluate`, `trendy-27`, 10 episodios) se mantendrá como diagnóstico **no certificado** en la capa `/api/*`. |
-| ¿Se probó el rollback real y la recuperación de episodios? | **No todavía** (es lo siguiente, con aviso previo). El rollback está probado en local (flujo y registro, ida y vuelta) y documentado con su efecto medido; falta en Render con el tiempo real de redeploy. Los episodios se recuperan con `GET /episodios/{id}` mientras el proceso siga vivo; **se pierden si Render se duerme (15 min) o se redespliega** (ver `docs/rollback.md`). |
+| ¿Se probó el rollback real y la recuperación de episodios? | **Rollback real: sí** (2026-11-19): producción → `m1-c3-seed0` → producción en Render, **~25 s** del deploy hook a `/version`; con `m1-c3-seed0` el paso cerrado da 0% en producción (21.62 choques/ep) y al volver, 100%. **Episodios:** se recuperan con `GET /episodios/{id}` mientras el proceso siga vivo; se pierden al redesplegar o dormirse. El rollback está probado en local (flujo y registro, ida y vuelta) y documentado con su efecto medido; falta en Render con el tiempo real de redeploy. Los episodios se recuperan con `GET /episodios/{id}` mientras el proceso siga vivo; **se pierden si Render se duerme (15 min) o se redespliega** (ver `docs/rollback.md`). |
 
 ## Qué está hecho (con commit)
 
@@ -71,8 +72,7 @@ solo cambian los manifiestos. `publicar.sh` nunca imprime el deploy hook ni los 
 1. ~~Dockerfile, `publicar.sh` y despliegue de la imagen real~~: **hecho** (`661fe5a`). Pendiente menor: en Render,
    *Settings → Image*, cambiar la etiqueta por defecto a la nueva para que un reinicio manual no vuelva al prototipo.
 2. **Commit de la evidencia del despliegue** (`docs/resultados/despliegues/`).
-3. **Rollback real en Render**: producción (`m1b-i1-seed1-best`) → `m1-c3-seed0` → producción, con el flujo
-   (`python -m pipelines.flow rollback ...`), midiendo el redeploy; actualizar `docs/rollback.md`.
+3. ~~Rollback real en Render~~: **hecho** (2026-11-19, tiempos en `docs/rollback.md`).
 4. **Medir el despertar de Render** tras 15 min sin tráfico (la web de lis consulta `/version` y lo mantiene
    despierto: hacerlo cuando nadie la tenga abierta).
 5. **Capa `/api/*` con `ViewerSession`** (mismas rutas y formatos que usa la web; sesión en la cabecera `X-Sesion`;
@@ -110,6 +110,8 @@ solo cambian los manifiestos. `publicar.sh` nunca imprime el deploy hook ni los 
 | Arranque en frío del contenedor (0.1 CPU, simulado) | 15 s; Render añade su propio despertar (~1 min según su documentación, por medir) |
 | **Redeploy real en Render** (deploy hook → `/version` con el commit nuevo / → precarga ok) | **3.6 s / 21.5 s** (las capas pesadas ya estaban en caché de Render por el prototipo; con una imagen sin capas previas será mayor) |
 | Build de la imagen / push a GHCR (capas en caché) | 3.1 s / 20.3 s |
+| **Rollback real** (deploy hook → `/version` con el commit nuevo): ida / vuelta | **25.8 s / 25.1 s** (precarga lista a los 26.6 s / 25.8 s) |
+| Evaluación certificada de 50 episodios con `m1-c3-seed0` (paso cerrado, falla) / con `m1b-i1-seed1-best` | 75.3 s / 25.2 s en Render |
 | Evaluación de 50 episodios | 26.7 s en Render (producción), 27 s en la simulación con 0.1 CPU |
 | Episodio completo (`correr`) | 1.3 s en Render, 8.5 KB con gzip |
 | `/version` con una evaluación en curso (simulación 0.1 CPU) | 7.4 s antes de calcular una vez al arrancar → 0.5 s después |

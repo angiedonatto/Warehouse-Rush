@@ -162,6 +162,19 @@ def test_health_version_y_cabeceras(cliente):
     assert respuesta.headers["x-git-commit"]
 
 
+def test_portada_con_modelo_servido_y_enlaces(cliente):
+    respuesta = cliente.get("/")
+    assert respuesta.status_code == 200
+    portada, version = respuesta.json(), cliente.get("/version").json()
+    assert portada["api"] == "Warehouse Rush API" and portada["environment_version"] == "warehouse-v10"
+    assert portada["modelo_servido"]["run_id"] == version["run_id"]
+    assert portada["modelo_servido"]["model_sha256"] == version["model_sha256"]
+    assert portada["git_commit"] == version["git_commit"] == respuesta.headers["x-git-commit"]
+    assert set(portada["enlaces"]) == {"docs", "health", "version", "catalogo", "monitoreo"}
+    for ruta in portada["enlaces"].values():
+        assert cliente.get(ruta).status_code == 200, ruta
+
+
 def test_catalogo_filtra_y_ficha(cliente):
     recomendados = cliente.get("/catalogo", params={"estado": "recomendado"}).json()["modelos"]
     assert {m["run_id"] for m in recomendados} == {"m1-c3-seed0", "m1b-i1-seed1-best"}

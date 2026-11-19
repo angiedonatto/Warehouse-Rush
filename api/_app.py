@@ -307,6 +307,22 @@ def create_app(raiz: Path = registry.RAIZ, *, almacen: AlmacenModelos | None = N
     def catalogo_publicado() -> dict:
         return json.loads((raiz / "manifests/catalog.json").read_text())
 
+    @app.get("/")
+    def portada():
+        """Portada para quien abre la URL sin ruta: qué API es, qué modelo sirve, de qué commit y por dónde seguir.
+        Enlaces relativos (detrás del proxy de Render una URL absoluta podría salir con http://)."""
+        from envs import ENV_VERSION
+
+        servido = almacen.servido()
+        return {"api": "Warehouse Rush API",
+                "descripcion": "Único servidor de modelos, evaluaciones y episodios de Warehouse Rush "
+                               "(la web en Vercel solo dibuja; la simulación Python es la autoridad).",
+                "environment_version": ENV_VERSION,
+                "modelo_servido": {k: servido[k] for k in ("run_id", "model_sha256", "level_id", "anterior")},
+                "git_commit": commit,
+                "enlaces": {"docs": "/docs", "health": "/health", "version": "/version", "catalogo": "/catalogo",
+                            "monitoreo": "/monitoreo"}}
+
     @app.get("/health")
     def health():
         """Viva siempre que el proceso responda; `degradado` si los modelos de producción no cargaron."""

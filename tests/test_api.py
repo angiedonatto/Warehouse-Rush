@@ -4,7 +4,8 @@
   falsa; la app usa el repositorio real (catálogo, suites, mapas) con la heurística y sin precargar modelos.
 - Con pesos (se saltan si no están en disco; `dvc pull models/m1-c3-seed0.dvc models/m1b-i1-seed1.dvc`):
   reproducen por la API las evaluaciones congeladas de los dos modelos de producción y la degradación de
-  m1-c3-seed0 con el paso cerrado (antecedente de docs/rollback.md).
+  m1-c3-seed0 con el paso cerrado (antecedente de docs/rollback.md). Los episodios usan el catálogo de la web
+  (trendy-27-v1) y las evaluaciones en suites el certificado (legacy-18).
 """
 import json
 import shutil
@@ -211,8 +212,18 @@ def test_episodio_de_referencia_y_manual_por_http(cliente):
 def test_layout_del_nivel(cliente):
     layout = cliente.get("/layout", params={"nivel": "m1b"}).json()
     assert layout["layout_path"] == "configs/layout_v0.4.json" and layout["bloqueado_por_defecto"] is True
-    assert len(layout["catalog"]) == 18
+    # el catálogo del ambiente de los episodios (web: trendy-27-v1), no el de las suites certificadas (legacy-18)
+    assert (layout["catalog_version"], len(layout["catalog"])) == ("trendy-27-v1", 27)
+    assert layout["catalogo_evaluaciones"] == "legacy-18"
     assert cliente.get("/layout", params={"nivel": "n1"}).status_code == 422
+
+
+def test_episodios_usan_el_catalogo_de_la_web(cliente):
+    from envs.inventory import CATALOGS
+
+    episodio = cliente.post("/episodios", json={"politica": "heuristic", "seed": 10_000}).json()
+    assert episodio["catalog_version"] == "trendy-27-v1"
+    assert all(linea["sku"] in CATALOGS["trendy-27-v1"] for linea in episodio["state"]["order"]["lines"])
 
 
 # --- Con los pesos de producción -------------------------------------------------------------------
@@ -225,6 +236,7 @@ def test_evaluacion_por_api_reproduce_las_congeladas(cliente):
     assert produccion["resumen"]["success_rate"] == esperado["success_rate"] == 1.0
     assert produccion["resumen"]["mean_steps"] == pytest.approx(esperado["mean_steps"])
 
+    assert produccion["catalog_version"] == "legacy-18"  # las suites siguen con el catálogo certificado
     rollback = cliente.post("/evaluaciones", json={"suite_id": "suite-m1b-v1", "run_id": "m1-c3-seed0"}).json()
     congelada = json.loads((REPO / "docs/resultados/eval/incidente-m1-c3-seed0/evaluation.json").read_text())
     congelada = next(s for s in congelada["summary"] if s["policy"] == "ppo" and s["scenario"] == "blocked")
@@ -235,15 +247,20 @@ def test_evaluacion_por_api_reproduce_las_congeladas(cliente):
 
 @con_pesos
 def test_rollback_pierde_el_escenario_del_incidente(cliente):
-    """docs/rollback.md: m1-c3-seed0 completa con el paso abierto y falla con el paso cerrado (semilla 10000)."""
+    """docs/rollback.md («Con el catálogo de la web»): con trendy-27-v1, m1-c3-seed0 completa con el paso abierto y no
+    completa con el paso cerrado (semilla 10000; medir_rollback.py da lo mismo); el modelo de producción sí."""
     def jugar(**cuerpo):
         episodio = cliente.post("/episodios", json={"seed": 10_000, **cuerpo}).json()
-        assert episodio["modo"] == "evaluacion"
+        assert episodio["modo"] == "evaluacion" and episodio["catalog_version"] == "trendy-27-v1"
         return cliente.post(f"/episodios/{episodio['episodio_id']}/correr").json()["final"]["info"]
 
     abierto = jugar(run_id="m1-c3-seed0", nivel="m1", bloqueado=False)
     cerrado = jugar(run_id="m1-c3-seed0", nivel="m1b", bloqueado=True)
     produccion = jugar(bloqueado=True)  # sin run_id: el modelo de producción
-    assert abierto["success"] and abierto["steps"] == 82
-    assert not cerrado["success"] and cerrado["end_reason"] == "battery_depleted" and cerrado["collisions"] == 210
+    medido = json.loads((REPO / "docs/resultados/eval/catalogo-trendy-27/rollback_m1-c3-seed0.json").read_text())["casos"]
+    for info, caso in ((abierto, "trendy-27-v1 | abierto"), (cerrado, "trendy-27-v1 | cerrado")):
+        esperado = medido[caso]["episodios"][0]  # semilla 10000
+        assert (info["success"], info["end_reason"], info["steps"], info["collisions"]) == \
+            (esperado["success"], esperado["end_reason"], esperado["steps"], esperado["collisions"])
+    assert abierto["success"] and not cerrado["success"]
     assert produccion["success"] and produccion["collisions"] == 0

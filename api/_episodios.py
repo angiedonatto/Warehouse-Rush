@@ -38,6 +38,11 @@ NIVELES = {
     "m1o": {"layout": "configs/layout_v0.5.json", "bloqueado": False, "cerrable": False},
 }
 MODOS = {"ppo": "evaluacion", "heuristic": "referencia", "random": "aleatoria", "manual": "manual"}
+# Catálogo de productos (decisión de lis, 2026-11-18, docs/decisiones.md): los episodios para la web usan el catálogo
+# operativo trendy-27-v1; las evaluaciones en suites (POST /evaluaciones → pipelines.evaluate → make_env) siguen con
+# legacy-18, con el que se entrenaron y certificaron los modelos. No cambia observación, acciones ni recompensa.
+CATALOGO_EPISODIOS = "trendy-27-v1"
+CATALOGO_SUITES = "legacy-18"
 SEMILLA_MAX = 2**32 - 1
 EVENTOS = (("pickup", "Producto cargado"), ("delivery", "Entrega en la cinta"),
            ("collision", "Colisión detectada"), ("invalid_interaction", "Interacción inválida"))
@@ -173,7 +178,7 @@ class GestorEpisodios:
             raise ErrorEpisodio("parametro_invalido", f"el mapa del nivel {nivel} no tiene paso cerrable", 400)
 
         raiz = self.almacen.raiz
-        env = make_env(bloqueado, str(raiz / layout), _orders(nivel, raiz), recompensa)
+        env = make_env(bloqueado, str(raiz / layout), _orders(nivel, raiz), recompensa, catalog=CATALOGO_EPISODIOS)
         observation, info = env.reset(seed=seed)
         episodio = Episodio(id=secrets.token_urlsafe(12), politica=politica, run_id=run_id if politica == "ppo" else None,
                             model_sha256=sha, nivel=nivel, bloqueado=bloqueado, seed=seed, layout_path=layout,
@@ -293,7 +298,8 @@ class GestorEpisodios:
         return {"episodio_id": episodio.id, "modo": MODOS[episodio.politica], "politica": episodio.politica,
                 "run_id": episodio.run_id, "model_sha256": episodio.model_sha256, "nivel": episodio.nivel,
                 "bloqueado": episodio.bloqueado, "escenario": episodio.escenario, "seed": episodio.seed,
-                "environment_version": ENV_VERSION, "layout_path": episodio.layout_path,
+                "environment_version": ENV_VERSION, "catalog_version": episodio.env.inventory.catalog_version,
+                "layout_path": episodio.layout_path,
                 "done": episodio.done, "terminated": episodio.terminated, "truncated": episodio.truncated,
                 "last_action": episodio.last_action, "last_reward": episodio.last_reward,
                 "observation": [float(x) for x in episodio.observation], "state": episodio.env.snapshot(),

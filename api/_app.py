@@ -36,7 +36,7 @@ from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt
 from starlette.exceptions import HTTPException as StarletteHTTPException
 import yaml
 
-from api._episodios import NIVELES, GestorEpisodios, Metricas, _orders
+from api._episodios import CATALOGO_EPISODIOS, CATALOGO_SUITES, NIVELES, GestorEpisodios, Metricas, _orders
 from api._modelos import AlmacenModelos, ErrorModelo
 from pipelines import registry
 
@@ -311,7 +311,8 @@ def create_app(raiz: Path = registry.RAIZ, *, almacen: AlmacenModelos | None = N
         for fila in resultado["episodes"]:
             metricas.registrar_fin(quien, escenario, fila["success"], fila["end_reason"], origen="evaluacion")
         return {"suite_id": cuerpo.suite_id, "politica": cuerpo.politica, "run_id": run_id, "model_sha256": sha,
-                "escenario": escenario, "episodios": datos["episodios"], "semillas": [datos["semillas"][0], datos["semillas"][-1]],
+                "escenario": escenario, "catalog_version": CATALOGO_SUITES,
+                "episodios": datos["episodios"], "semillas": [datos["semillas"][0], datos["semillas"][-1]],
                 "determinista": True, "segundos": round(segundos, 2), "resumen": resultado["summary"][0],
                 "por_episodio": resultado["episodes"]}
 
@@ -341,14 +342,16 @@ def create_app(raiz: Path = registry.RAIZ, *, almacen: AlmacenModelos | None = N
 
     @app.get("/layout")
     def layout(nivel: Literal["m1", "m1b", "m1o"] = Query("m1")):
+        """Mapa y catálogo de productos del mismo ambiente que usan los episodios (no el de las suites)."""
         from envs import ENV_VERSION, make_env
-        from envs.inventory import CATALOG
 
-        env = make_env(NIVELES[nivel]["bloqueado"], str(raiz / NIVELES[nivel]["layout"]), _orders(nivel, raiz))
+        env = make_env(NIVELES[nivel]["bloqueado"], str(raiz / NIVELES[nivel]["layout"]), _orders(nivel, raiz),
+                       catalog=CATALOGO_EPISODIOS)
         try:
             return {"nivel": nivel, "layout_path": NIVELES[nivel]["layout"], "layout": env.layout.data,
                     "layout_sha256": env.layout.digest, "bloqueado_por_defecto": NIVELES[nivel]["bloqueado"],
-                    "catalog": list(CATALOG.values()), "environment_version": ENV_VERSION}
+                    "catalog": list(env.inventory.catalog.values()), "catalog_version": env.inventory.catalog_version,
+                    "catalogo_evaluaciones": CATALOGO_SUITES, "environment_version": ENV_VERSION}
         finally:
             env.close()
 

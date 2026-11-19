@@ -329,7 +329,9 @@ def test_rollback_pierde_el_escenario_del_incidente(cliente):
 
     abierto = jugar(run_id="m1-c3-seed0", nivel="m1", bloqueado=False)
     cerrado = jugar(run_id="m1-c3-seed0", nivel="m1b", bloqueado=True)
-    produccion = jugar(bloqueado=True)  # sin run_id: el modelo de producción
+    produccion = jugar(run_id="m1b-i1-seed1-best", bloqueado=True)  # explícito: el resultado no depende del alias vigente
+    sin_run_id = cliente.post("/episodios", json={"seed": 10_000, "bloqueado": True}).json()
+    assert sin_run_id["run_id"] == cliente.get("/version").json()["run_id"]  # sin run_id: el modelo servido, cualquiera sea
     medido = json.loads((REPO / "docs/resultados/eval/catalogo-trendy-27/rollback_m1-c3-seed0.json").read_text())["casos"]
     for info, caso in ((abierto, "trendy-27-v1 | abierto"), (cerrado, "trendy-27-v1 | cerrado")):
         esperado = medido[caso]["episodios"][0]  # semilla 10000

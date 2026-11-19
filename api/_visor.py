@@ -16,10 +16,15 @@ crea una sesión; `layout.models` lista solo los modelos recomendados; «Evaluar
 from __future__ import annotations
 
 import json
+import logging
 import threading
 import time
 import secrets
 from pathlib import Path
+
+from fastapi import APIRouter, Request
+from fastapi.responses import JSONResponse
+from starlette.concurrency import run_in_threadpool
 
 from api._episodios import CATALOGO_EPISODIOS, CATALOGO_SUITES, Metricas, _orders
 from api._modelos import AlmacenModelos, ErrorModelo
@@ -29,7 +34,9 @@ from envs.inventory import Inventory
 from envs.missions import MakeupMissionEnv
 from pipelines.baselines import make_policy
 
+log = logging.getLogger("warehouse.visor")
 SEMILLA_MAX = 2**32 - 1
+CUERPO_MAX = 4096  # igual que el /api de Vercel
 NIVELES_ROTULO = {"m1": "N2 · mapa con muro", "m1b": "N3 · paso (6,14) cerrado", "m1o": "N1 · mapa abierto"}
 SESION_DEFECTO = {"makeup": True, "orders": 1}  # lo mismo que crea el /api de Vercel sin cookie
 NOTA_DIAGNOSTICO = ("Diagnóstico rápido NO certificado: pocas semillas consecutivas y el catálogo de la web "
@@ -354,3 +361,144 @@ def evaluar_diagnostico(ctx: Contexto, model_id, blocked=False, episodes=10, see
                            "inference_ms_p95": round(latencias[int(0.95 * (len(latencias) - 1))], 3) if latencias else None,
                            "steps": len(latencias), "errors": errores, "served_sha256": cargado.model_sha256,
                            "inferencia": "numpy"}}
+
+
+# --- Router /api/* (mismas rutas y formatos que usa la web) ---------------------------------------------
+
+class ErrorPeticion(Exception):
+    """Petición mal formada (415 u otro): se responde en el formato de error de /api/*."""
+
+    def __init__(self, estado: int, texto: str, codigo: str):
+        super().__init__(texto)
+        self.estado, self.texto, self.codigo = estado, texto, codigo
+
+
+def _error(estado: int, texto: str, codigo: str, detalle: dict | None = None) -> JSONResponse:
+    """Formato de error del /api de Vercel: {"error": "texto"} (la web hace `new Error(result.error)`), más un
+    `codigo` estable. Los demás endpoints de la API usan {"error": {"codigo", "mensaje", "detalle"}}."""
+    cuerpo = {"error": texto, "codigo": codigo}
+    if detalle:
+        cuerpo["detalle"] = detalle
+    return JSONResponse(cuerpo, estado)
+
+
+async def _leer_cuerpo(request: Request) -> dict:
+    if request.headers.get("content-type", "").split(";")[0].strip() != "application/json":
+        raise ErrorPeticion(415, "Se requiere application/json", "tipo_no_soportado")
+    crudo = await request.body()
+    if not 0 < len(crudo) <= CUERPO_MAX:
+        raise ValueError("Cuerpo JSON inválido")
+    cuerpo = json.loads(crudo)
+    if not isinstance(cuerpo, dict):
+        raise ValueError("Se requiere un objeto JSON")
+    return cuerpo
+
+
+class Visor:
+    """Contexto, sesiones y operaciones de /api/*; `montar_visor` las expone como rutas."""
+
+    def __init__(self, almacen: AlmacenModelos, raiz: Path, metricas: Metricas, commit: str, servido_fijo):
+        self.ctx = Contexto(almacen, raiz, metricas)
+        self.sesiones = AlmacenSesiones(self.ctx)
+        self.commit, self.servido_fijo = commit, servido_fijo
+        self._diagnostico = threading.Semaphore(1)  # «Evaluar» rápido: uno a la vez (0.1 CPU en Render Free)
+
+    def health(self, _cuerpo, _id) -> dict:
+        servido = self.servido_fijo()
+        return {"status": "ok", "environment_version": ENV_VERSION,
+                "served_models": [{"id": m["id"], "estado": m["estado"], "model_sha256": m["model_sha256"]}
+                                  for m in self.ctx.catalogo.recomendados()],
+                "servido": servido["run_id"], "session_mode": "id en la cabecera X-Sesion (memoria del servidor)",
+                "commit": self.commit, **self.sesiones.estado()}
+
+    def layout(self, _cuerpo, id_) -> dict:
+        if id_:
+            try:
+                return self.sesiones.obtener(id_).layout_payload()
+            except ErrorSesion:
+                pass  # como en Vercel: sin sesión válida se muestra el mapa por defecto
+        return self.sesiones.layout_defecto()
+
+    def state(self, _cuerpo, id_) -> dict:
+        sesion = self.sesiones.obtener(id_) if id_ else self.sesiones.crear()  # decisión: sin id crea una sesión
+        return sesion.payload()
+
+    def reset(self, cuerpo, id_) -> dict:
+        try:
+            sesion = self.sesiones.obtener(id_) if id_ else None
+        except ErrorSesion:
+            sesion = None  # id desconocido o caducado: reset es la forma de recuperarse; se crea una sesión nueva
+        if sesion is None:
+            return self.sesiones.crear(cuerpo).payload()
+        return sesion.reset(cuerpo)
+
+    def step(self, cuerpo, id_) -> dict:
+        if not id_:
+            raise ErrorPeticion(400, "Falta la cabecera X-Sesion: llama primero a /api/state o /api/reset", "falta_sesion")
+        return self.sesiones.obtener(id_).step(cuerpo.get("action"))
+
+    def evaluate(self, cuerpo, _id) -> dict:
+        if not self._diagnostico.acquire(blocking=False):
+            raise ErrorSesion("diagnostico_en_curso", "Ya hay un diagnóstico en curso; reintenta en unos segundos", 429)
+        try:
+            return evaluar_diagnostico(self.ctx, cuerpo.get("model"), cuerpo.get("blocked", False),
+                                       cuerpo.get("episodes", 10), cuerpo.get("seed", 10_000))
+        finally:
+            self._diagnostico.release()
+
+
+async def _servir(request: Request, operacion, con_cuerpo: bool = False) -> JSONResponse:
+    """Ejecuta una operación del visor (en un hilo: es CPU) y traduce sus errores al formato de /api/*."""
+    try:
+        cuerpo = await _leer_cuerpo(request) if con_cuerpo else None
+        resultado = await run_in_threadpool(operacion, cuerpo, request.headers.get("x-sesion") or None)
+    except ErrorPeticion as exc:
+        return _error(exc.estado, exc.texto, exc.codigo)
+    except ErrorModelo as exc:  # también ErrorSesion
+        return _error(exc.estado_http, exc.mensaje, exc.codigo, exc.detalle)
+    except (ValueError, FileNotFoundError) as exc:
+        return _error(400, str(exc), "parametro_invalido")
+    except LookupError as exc:
+        return _error(404, str(exc), "no_encontrado")
+    except Exception as exc:
+        log.exception("Error en /api/*")
+        return _error(500, f"{type(exc).__name__}: {exc}"[:300], "error_interno")
+    id_sesion = resultado.get("sesion_id") if isinstance(resultado, dict) else None
+    return JSONResponse(resultado, headers={"X-Sesion": id_sesion} if id_sesion else None)
+
+
+def montar_visor(app, *, almacen: AlmacenModelos, raiz: Path, metricas: Metricas, commit: str, servido_fijo) -> Visor:
+    """Agrega las rutas /api/health, /layout, /state, /reset, /step y /evaluate a `app` y devuelve el `Visor`."""
+    visor = Visor(almacen, Path(raiz), metricas, commit, servido_fijo)
+    router = APIRouter(prefix="/api", tags=["visor (compatibilidad con la web actual)"])
+
+    @router.get("/health")
+    async def health(request: Request):
+        return await _servir(request, visor.health)
+
+    @router.get("/layout")
+    async def layout(request: Request):
+        return await _servir(request, visor.layout)
+
+    @router.get("/state")
+    async def state(request: Request):
+        return await _servir(request, visor.state)
+
+    @router.post("/reset")
+    async def reset(request: Request):
+        return await _servir(request, visor.reset, con_cuerpo=True)
+
+    @router.post("/step")
+    async def step(request: Request):
+        return await _servir(request, visor.step, con_cuerpo=True)
+
+    @router.post("/evaluate")
+    async def evaluate(request: Request):
+        return await _servir(request, visor.evaluate, con_cuerpo=True)
+
+    @router.api_route("/{ruta:path}", methods=["GET", "POST"], include_in_schema=False)
+    async def desconocida(ruta: str):
+        return _error(404, "Ruta desconocida", "ruta_no_encontrada")
+
+    app.include_router(router)
+    return visor

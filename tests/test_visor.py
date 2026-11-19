@@ -256,3 +256,171 @@ def test_diagnostico_alimenta_el_monitoreo_como_diagnostico():
     evaluar_diagnostico(Contexto(AlmacenModelos(REPO), REPO, metricas), "m1b-i1-seed1-best", False, 2, 10_000)
     fila = next(f for f in metricas.resumen()["exito_por_escenario"] if f["quien"] == "m1b-i1-seed1-best")
     assert fila["origen"] == {"diagnostico": 2} and fila["escenario"] == "m1b/abierto"
+
+
+# --- Rutas /api/* por HTTP (mismas rutas y formatos que usa la web) -------------------------------------
+
+from fastapi.testclient import TestClient  # noqa: E402
+
+from api._app import create_app  # noqa: E402
+
+ORIGEN = "https://warehouse-rush-psi.vercel.app"
+
+
+@pytest.fixture
+def cliente(monkeypatch):
+    monkeypatch.setenv("CORS_ORIGINS", ORIGEN)
+    monkeypatch.delenv("CORS_ORIGIN_REGEX", raising=False)
+    with TestClient(create_app(REPO, precargar=False)) as c:
+        yield c
+
+
+def con_id(sesion_id):
+    return {"X-Sesion": sesion_id}
+
+
+def test_layout_sin_sesion_no_crea_ninguna_y_lista_los_dos_recomendados(cliente):
+    r = cliente.get("/api/layout")
+    assert r.status_code == 200 and "x-sesion" not in r.headers
+    d = r.json()
+    assert [m["id"] for m in d["models"]] == ["m1b-i1-seed1-best", "m1-c3-seed0"]
+    assert d["available_ppo"] == {"1": False, "2": False} and (d["catalog_version"], len(d["catalog"])) == ("trendy-27-v1", 27)
+    assert cliente.get("/monitoreo").json()["sesiones"]["sesiones"] == 0
+
+
+def test_state_sin_cabecera_crea_una_sesion_y_con_ella_devuelve_la_misma(cliente):
+    r = cliente.get("/api/state")
+    assert r.status_code == 200
+    sesion = r.json()["sesion_id"]
+    assert sesion and r.headers["x-sesion"] == sesion
+    assert (r.json()["policy"], r.json()["makeup"]) == ("heuristic", True)
+    de_nuevo = cliente.get("/api/state", headers=con_id(sesion)).json()
+    assert de_nuevo["sesion_id"] == sesion and de_nuevo["seed"] == r.json()["seed"]
+    assert cliente.get("/monitoreo").json()["sesiones"]["sesiones"] == 1
+
+
+def test_state_con_id_desconocido_responde_404_en_formato_vercel_con_codigo(cliente):
+    r = cliente.get("/api/state", headers=con_id("no-existe"))
+    assert r.status_code == 404
+    cuerpo = r.json()
+    assert isinstance(cuerpo["error"], str) and "reinicia la misión" in cuerpo["error"]  # la web hace new Error(result.error)
+    assert cuerpo["codigo"] == "sesion_no_encontrada"
+
+
+def test_reset_mantiene_el_id_y_sin_id_o_con_id_caducado_crea_una_sesion_nueva(cliente):
+    cuerpo = {"orders": 1, "policy": "heuristic", "blocked": False, "seed": 7, "makeup": True}
+    primera = cliente.post("/api/reset", json=cuerpo).json()
+    assert primera["sesion_id"] and primera["seed"] == 7
+    misma = cliente.post("/api/reset", json={**cuerpo, "seed": 8}, headers=con_id(primera["sesion_id"])).json()
+    assert misma["sesion_id"] == primera["sesion_id"] and misma["seed"] == 8
+    nueva = cliente.post("/api/reset", json=cuerpo, headers=con_id("caducada")).json()
+    assert nueva["sesion_id"] not in (None, primera["sesion_id"])
+    assert cliente.get("/monitoreo").json()["sesiones"]["sesiones"] == 2
+
+
+def test_sesiones_aisladas_y_mision_completa_por_http(cliente):
+    ajustes = {"orders": 1, "policy": "heuristic", "blocked": False, "seed": 11, "makeup": True}
+    a = cliente.post("/api/reset", json=ajustes).json()["sesion_id"]
+    b = cliente.post("/api/reset", json=ajustes).json()["sesion_id"]
+    for _ in range(6):
+        cliente.post("/api/step", json={}, headers=con_id(a))
+    assert cliente.get("/api/state", headers=con_id(a)).json()["state"]["tiempo"] == 6
+    assert cliente.get("/api/state", headers=con_id(b)).json()["state"]["tiempo"] == 0
+    p = cliente.get("/api/state", headers=con_id(b)).json()
+    while not p["done"]:
+        p = cliente.post("/api/step", json={}, headers=con_id(b)).json()
+    assert p["info"]["success"] and p["events"][-1]["kind"] == "end"
+    assert cliente.post("/api/step", json={}, headers=con_id(b)).json()["error"].startswith("El episodio terminó")
+
+
+def test_step_manual_sin_cabecera_y_con_acciones_invalidas(cliente):
+    sin = cliente.post("/api/step", json={})
+    assert (sin.status_code, sin.json()["codigo"]) == (400, "falta_sesion")
+    s = cliente.post("/api/reset", json={"orders": 1, "policy": "manual", "makeup": True}).json()["sesion_id"]
+    ok = cliente.post("/api/step", json={"action": 1}, headers=con_id(s))
+    assert ok.status_code == 200 and ok.json()["last_action"]["name"] == "GIRAR_IZQUIERDA"
+    mala = cliente.post("/api/step", json={"action": 99}, headers=con_id(s))
+    assert mala.status_code == 400 and isinstance(mala.json()["error"], str)
+    assert cliente.post("/api/step", json={"action": 1}, headers=con_id("x")).status_code == 404
+
+
+def test_reset_con_modelo_trae_la_ficha_y_las_cabeceras_de_version(cliente):
+    r = cliente.post("/api/reset", json={"policy": "ppo", "model": "m1b-i1-seed1-best", "blocked": True, "seed": 10_000})
+    d = r.json()
+    assert r.status_code == 200 and d["model"]["id"] == "m1b-i1-seed1-best" and d["orders"] == 3
+    assert r.headers["x-modelo-servido"].startswith("m1b-i1-seed1-best@") and r.headers["x-git-commit"]
+    assert r.headers["x-sesion"] == d["sesion_id"]
+    desconocido = cliente.post("/api/reset", json={"policy": "ppo", "model": "no-existe"}, headers=con_id(d["sesion_id"]))
+    assert (desconocido.status_code, desconocido.json()["codigo"]) == (404, "modelo_no_encontrado")
+    assert isinstance(desconocido.json()["error"], str)
+    incompatible = cliente.post("/api/reset", json={"policy": "ppo", "model": "m1o-e4l-seed0"})
+    assert (incompatible.status_code, incompatible.json()["codigo"]) == (409, "modelo_incompatible")
+    generico = cliente.post("/api/reset", json={"policy": "ppo", "orders": 1, "makeup": True})
+    assert generico.status_code == 400 and "catálogo" in generico.json()["error"]
+    assert cliente.get("/api/state", headers=con_id(d["sesion_id"])).json()["model"]["id"] == "m1b-i1-seed1-best"  # intacta
+
+
+def test_modo_antiguo_sin_maquillaje_por_http(cliente):
+    d = cliente.post("/api/reset", json={"orders": 2, "policy": "heuristic", "blocked": False, "seed": 10_000, "makeup": False}).json()
+    assert d["makeup"] is False and d["orders"] == 2 and d["model"] is None
+
+
+def test_errores_de_formato_siguen_el_estilo_de_vercel(cliente):
+    cruda = cliente.post("/api/reset", content=b"no es json", headers={"Content-Type": "application/json"})
+    assert cruda.status_code == 400 and isinstance(cruda.json()["error"], str)
+    lista = cliente.post("/api/reset", content=b"[1]", headers={"Content-Type": "application/json"})
+    assert lista.status_code == 400 and "objeto JSON" in lista.json()["error"]
+    vacio = cliente.post("/api/reset", content=b"", headers={"Content-Type": "application/json"})
+    assert vacio.status_code == 400
+    grande = cliente.post("/api/reset", content=json.dumps({"x": "a" * 5000}).encode(), headers={"Content-Type": "application/json"})
+    assert grande.status_code == 400
+    texto = cliente.post("/api/reset", content=b"{}", headers={"Content-Type": "text/plain"})
+    assert (texto.status_code, texto.json()["codigo"]) == (415, "tipo_no_soportado")
+    desconocida = cliente.get("/api/nada")
+    assert desconocida.status_code == 404 and desconocida.json() == {"error": "Ruta desconocida", "codigo": "ruta_no_encontrada"}
+    # fuera de /api/* sigue el formato uniforme de la API nueva
+    assert set(cliente.get("/nada").json()["error"]) == {"codigo", "mensaje", "detalle"}
+
+
+def test_evaluate_declara_que_no_es_certificado(cliente):
+    r = cliente.post("/api/evaluate", json={"model": "m1b-i1-seed1-best", "blocked": True, "episodes": 2})
+    d = r.json()
+    assert r.status_code == 200 and d["certificado"] is False and d["catalog"] == "trendy-27-v1"
+    assert d["seeds"] == [10_000, 10_001] and d["summary"]["success_rate"] == 1.0 and d["scenario"] == "cerrado"
+    assert d["monitoring"]["served_sha256"] == d["model"]["model_sha256"]
+    for cuerpo in ({"model": "m1b-i1-seed1-best", "episodes": 21}, {"episodes": 3}, {"model": "m1b-i1-seed1-best", "blocked": "si"}):
+        malo = cliente.post("/api/evaluate", json=cuerpo)
+        assert malo.status_code == 400 and isinstance(malo.json()["error"], str)
+    assert cliente.post("/api/evaluate", json={"model": "nada"}).status_code == 404
+
+
+def test_evaluate_rapido_corre_de_a_uno(cliente):
+    visor = cliente.app.state.visor
+    assert visor._diagnostico.acquire(blocking=False)
+    try:
+        r = cliente.post("/api/evaluate", json={"model": "m1b-i1-seed1-best", "episodes": 1})
+        assert (r.status_code, r.json()["codigo"]) == (429, "diagnostico_en_curso") and isinstance(r.json()["error"], str)
+    finally:
+        visor._diagnostico.release()
+    assert cliente.post("/api/evaluate", json={"model": "m1b-i1-seed1-best", "episodes": 1}).status_code == 200
+
+
+def test_api_health_alias_con_modelos_servidos_y_commit(cliente):
+    d = cliente.get("/api/health").json()
+    assert d["status"] == "ok" and d["environment_version"] == "warehouse-v10" and d["commit"]
+    assert [m["id"] for m in d["served_models"]] == ["m1b-i1-seed1-best", "m1-c3-seed0"]
+    assert d["servido"] == cliente.get("/version").json()["run_id"] and "X-Sesion" in d["session_mode"]
+
+
+def test_cors_permite_y_expone_x_sesion_solo_al_origen_configurado(cliente):
+    pre = cliente.options("/api/step", headers={"Origin": ORIGEN, "Access-Control-Request-Method": "POST",
+                                                 "Access-Control-Request-Headers": "content-type,x-sesion"})
+    assert pre.status_code == 200 and pre.headers["access-control-allow-origin"] == ORIGEN
+    assert "x-sesion" in pre.headers["access-control-allow-headers"].lower()
+    assert "access-control-allow-credentials" not in pre.headers
+    r = cliente.post("/api/reset", json={"orders": 1, "policy": "heuristic", "makeup": True}, headers={"Origin": ORIGEN})
+    expuestas = r.headers["access-control-expose-headers"]
+    assert "X-Sesion" in expuestas and "X-Modelo-Servido" in expuestas and "X-Git-Commit" in expuestas
+    otro = cliente.options("/api/step", headers={"Origin": "https://otro.example", "Access-Control-Request-Method": "POST",
+                                                  "Access-Control-Request-Headers": "x-sesion"})
+    assert "access-control-allow-origin" not in otro.headers

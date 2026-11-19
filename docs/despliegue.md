@@ -1,6 +1,7 @@
 # Despliegue del experimento 001
 
-Demo pública: https://warehouse-rush-experiment-001.vercel.app
+Demo pública actual (warehouse-v10): https://warehouse-rush-psi.vercel.app — ver «Despliegue de warehouse-v10» al final.
+Demo histórica del experimento 001: https://warehouse-rush-experiment-001.vercel.app
 
 Proyecto: `warehouse-rush-experiment-001`, cuenta de Angie, entorno Production.
 Rama versionada: `dev/angie`. La publicación inicial se realiza con Vercel CLI;
@@ -75,3 +76,33 @@ recarga y controles de la interfaz.
 
 Referencias: [Python en Vercel](https://vercel.com/docs/functions/runtimes/python),
 [funciones de gran tamaño](https://vercel.com/changelog/vercel-functions-can-now-be-up-to-5-gb-in-package-size).
+
+## Modelos servidos (desde 2026-11-18)
+La API ejecuta los modelos `recomendado` de `configs/modelos_servidos.json`; sus pesos están en `models/servidos/` (en Git: Vercel no accede a DVC).
+Al promover un modelo nuevo: `dvc pull models/<run>.dvc`, actualizar su manifiesto a `recomendado` y correr `python -m pipelines.servir`.
+El script comprueba el SHA-256 contra el manifiesto y nunca sobrescribe un peso servido con otro contenido. Prueba: `python -m pytest tests/test_served_models.py`.
+
+## Catálogo de modelos de la web (desde 2026-11-18)
+`python -m pipelines.catalogo` regenera `web/public/modelos/catalogo.json` y las curvas a partir de los manifiestos y de MLflow (lectura pública de DagsHub).
+Hay que correrlo cada vez que cambie un manifiesto, y antes de `npm run build`. Rutas de la API: `GET health|layout|state`, `POST reset|step|evaluate`.
+Pruebas de navegador: con el visor local (`python -m pipelines.cli view --no-open`) correr `npx playwright test` en `web/`. Para el modo nube, levantar `python -c "from api._cloud import preview; preview(8090)"` y correr con `WAREHOUSE_TEST_URL=http://127.0.0.1:8090`.
+
+## Despliegue de warehouse-v10 (2026-11-18)
+URL pública: **https://warehouse-rush-psi.vercel.app** (proyecto `warehouse-rush`, equipo Vercel de Lis `lis-team2`).
+El sitio anterior (`warehouse-rush-experiment-001.vercel.app`, cuenta de Angie) queda como historia del experimento 001.
+
+- Commit desplegado en producción: `920f028` (rama `dev/lis`, en GitHub), deployment `dpl_Hwt2SPGieA27WTL8jYgcu8SHDamQ`;
+  `/api/health` lo confirma. Deploys anteriores (para rollback): `49b8463` (`dpl_5DjgXk6Eh1SiMd6A6w1njNopoeFe`) y `1af8cf6` (`dpl_AUWE3KkZg24X6m6u3CiaCaiP6Bw7`).
+- `920f028` corrige el desfase de la escena 3D al hacer scroll (canvas dentro de `#stage`; miniaturas y retrato en canvas 2D propios).
+  Medido en producción con Playwright: 0 de 61 frames desfasados (antes 4 de 61, hasta 30 px).
+- Se despliega desde un clon limpio del commit (`git clone --branch dev/lis . <tmp>` y `vercel deploy` dentro), no desde la carpeta de trabajo:
+  con `.vercelignore` la CLI ignora `.gitignore` y subiría checkpoints locales y la suite reservada `configs/suites/test-final*`.
+- La función usa `api/requirements.txt` (solo inferencia, torch CPU); el `requirements.txt` de la raíz es el entorno de desarrollo completo.
+- Variables (Production y Preview): `WAREHOUSE_SESSION_SECRET` (aleatorio, 64 caracteres, sensible) y `VERCEL_SUPPORT_LARGE_FUNCTIONS=1`.
+- Verificación tras el deploy: `/api/health` → `warehouse-v10`; `/api/layout` sirve `m1b-i1-seed1-best` y `m1-c3-seed0` con el `model_sha256`
+  de sus manifiestos; `POST /api/evaluate` 20 episodios N3 cerrado en 4,1 s (100 %, 0 choques, inferencia 0,55 ms/paso, 0 errores);
+  sesión interactiva `reset`/`step` con cookie firmada OK.
+- Identidad del deploy: por CLI, Vercel deja `VERCEL_GIT_COMMIT_SHA` vacío, así que se despliega con
+  `vercel deploy --prod --env WAREHOUSE_DEPLOY_COMMIT=$(git rev-parse --short HEAD)` y `/api/health` devuelve ese `commit`
+  más `served_models` (id, estado y `model_sha256` de cada modelo servido). Solo se despliegan commits ya subidos a GitHub.
+- Rollback de la web: `vercel rollback <deployment anterior>` o `vercel promote <url>` en el proyecto `warehouse-rush`.

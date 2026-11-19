@@ -19,12 +19,13 @@ import time
 import zlib
 from urllib.parse import parse_qs, urlsplit
 
+from envs import ENV_VERSION
 from envs.env import WorldState
 from envs.layout import DEFAULT_LAYOUT, WIDE_LAYOUT, PACKING_LAYOUT
 from envs.missions import MakeupMissionEnv
-from envs.inventory import CATALOG, Inventory
+from envs.inventory import ALL_CATALOG, Inventory
 from pipelines.baselines import make_policy
-from api._viewer import ViewerSession, WEB_ROOT
+from api._viewer import ViewerSession, WEB_ROOT, evaluate_served, served_models
 
 COOKIE_NAME = "warehouse_session"
 MAX_AGE = 7200
@@ -63,6 +64,8 @@ class SignedSessions:
             record['order_id'] = session.env.order_id
             record['mechanism'] = session.env.mechanism_snapshot()
             record['orders'] = 1  # Parámetro legacy constructor; líneas se restauran aparte.
+        if session.model_id is not None:
+            record['model'] = session.model_id  # se reconstruye con su mapa, pedidos y recompensa
         raw = json.dumps(record, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode()
         encoded = urlsafe_b64encode(zlib.compress(raw) if record.get("makeup") else raw).decode().rstrip("=")
         signature = hmac.new(self.key, encoded.encode(), sha256).hexdigest()
@@ -91,17 +94,19 @@ class SignedSessions:
             layouts = {'0.1.0': DEFAULT_LAYOUT, '0.3.0': WIDE_LAYOUT, '0.4.0': PACKING_LAYOUT}
             if version not in layouts:
                 raise ValueError('Versión de mapa no compatible')
-            session = ViewerSession(layout_path=layouts[version],
+            saved_inventory = Inventory(record['inventory']['initial']) if record.get('makeup') else None
+            session = ViewerSession(layout_path=layouts[version], inventory=saved_inventory,
                                     policy_factory=cloud_policy,
                                     settings={"orders": record["orders"], "blocked": record["state"]["pasillo_bloqueado"],
-                                              "policy": record["policy"], "seed": record["seed"], "makeup": record.get("makeup", False)})
+                                              "policy": record["policy"], "seed": record["seed"], "makeup": record.get("makeup", False),
+                                              **({"model": record["model"]} if record.get("model") else {})})
             if record.get('makeup'):
                 saved = record['inventory']
-                inventory = Inventory(saved['initial'])
+                inventory = saved_inventory
                 inventory.total, inventory.orders = saved['total'], saved['orders']
                 for order in inventory.orders.values():
                     for line in order['lines']:
-                        line.setdefault('height_m', CATALOG[line['sku']]['height_m'])
+                        line.setdefault('height_m', ALL_CATALOG[line['sku']]['height_m'])
                 inventory.check()
                 session.inventory = session.env.inventory = inventory
                 session.env.order_id = record['order_id']
@@ -135,9 +140,12 @@ class CloudAPI:
 
     def handle(self, method, endpoint, body=None, token=None):
         if method == "GET" and endpoint == "health":
-            return {"status": "ok", "experiment": "001", "environment_version": "0.1.0",
-                    "session_mode": "signed-per-visitor",
-                    "commit": os.getenv("VERCEL_GIT_COMMIT_SHA", "local")}, None
+            # Deploy por CLI: Vercel deja VERCEL_GIT_COMMIT_SHA vacío; el commit llega en WAREHOUSE_DEPLOY_COMMIT.
+            commit = os.getenv("VERCEL_GIT_COMMIT_SHA") or os.getenv("WAREHOUSE_DEPLOY_COMMIT") or "local"
+            served = [{"id": model_id, "estado": spec.get("estado"), "model_sha256": spec.get("model_sha256")}
+                      for model_id, spec in served_models().items()]
+            return {"status": "ok", "environment_version": ENV_VERSION, "served_models": served,
+                    "session_mode": "signed-per-visitor", "commit": commit}, None
         if method == "GET" and endpoint == "layout":
             try:
                 session = self.sessions.load(token)
@@ -162,6 +170,11 @@ class CloudAPI:
                 session.reset(body or {})
             else:
                 session = ViewerSession(policy_factory=cloud_policy, settings=body or {})
+        elif method == "POST" and endpoint == "evaluate":
+            # Sin estado: no toca la sesión del visitante.
+            body = body or {}
+            return evaluate_served(body.get("model"), body.get("blocked", False), body.get("episodes", 10),
+                                   body.get("seed", 10000)), None
         elif method == "POST" and endpoint == "step":
             session = self.sessions.load(token)
             session.step((body or {}).get("action"))
@@ -187,7 +200,7 @@ class CloudHandler(BaseHTTPRequestHandler):
     def _dispatch(self):
         parsed = urlsplit(self.path)
         endpoint = parse_qs(parsed.query).get("route", [parsed.path.removeprefix("/api/")])[0]
-        if endpoint not in ("health", "layout", "state", "reset", "step"):
+        if endpoint not in ("health", "layout", "state", "reset", "step", "evaluate"):
             return self._respond({"error": "Ruta desconocida"}, 404)
         try:
             body = None

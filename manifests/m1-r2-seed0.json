@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 204800,
   "budget_minutes": 10.06,
-  "mlflow_run_id": "d404e3d191f742849ac95d2974e4023b",
+  "mlflow_run_id": "c73b9bf076794cfe9b002f51d51246cd",
   "mlflow_experiment": "warehouse-m1",
   "config_uri": "configs/experiments/m1_r2_invalida_02.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v3 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -100,5 +100,7 @@
   },
   "decision": "rechazado",
   "decision_reason": "No supera al control en >=5 pp de éxito (0 pp). La política colapsa a FRENAR (99.2%). Se conserva la evidencia.",
-  "weights_dvc": "models/m1-r2-seed0.dvc"
+  "weights_dvc": "models/m1-r2-seed0.dvc",
+  "mlflow_run_id_local": "d404e3d191f742849ac95d2974e4023b",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

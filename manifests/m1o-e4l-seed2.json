@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 606208,
   "budget_minutes": 26.04,
-  "mlflow_run_id": "2bd965545bc545e2be8bd6d84834cbc0",
+  "mlflow_run_id": "420654ad86fb4f46bf87ec765f6012ef",
   "mlflow_experiment": "warehouse-m1o",
   "config_uri": "configs/experiments/m1o_e4l_seed2.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v5 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -108,5 +108,7 @@
   },
   "decision": "candidato",
   "decision_reason": "0% de éxito, pero llega al estante en 50/50 y recoge 2.42 productos por episodio (mediana del primer pickup: paso 16); queda cargando (49/50 episodios terminan con carga, 38 con la bandeja arriba) sin entregar. 2 episodios de entrenamiento con éxito de 1 515.",
-  "weights_dvc": "models/m1o-e4l-seed2.dvc"
+  "weights_dvc": "models/m1o-e4l-seed2.dvc",
+  "mlflow_run_id_local": "2bd965545bc545e2be8bd6d84834cbc0",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

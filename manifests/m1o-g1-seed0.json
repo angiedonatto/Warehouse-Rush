@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 606208,
   "budget_minutes": 30.79,
-  "mlflow_run_id": "f918d3c39a764b4cac4065d591912afe",
+  "mlflow_run_id": "e3f181bfb2c7448a9c5bf3fd7dba170c",
   "mlflow_experiment": "warehouse-m1o",
   "config_uri": "configs/experiments/m1o_g1_hito_seed0.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v7 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -111,5 +111,7 @@
   },
   "decision": "rechazado",
   "decision_reason": "94% de éxito (e4l-seed0: 92%, +2 pp con 50 episodios; no es una diferencia distinguible de la variación). Sus 47 éxitos duran 72.4 pasos (e4l: 71.8). Rechazado porque el criterio es sobre la media de 3 semillas: 31.3% frente a 30.7% (+0.7 pp < 5 pp). Se conserva como evidencia.",
-  "weights_dvc": "models/m1o-g1-seed0.dvc"
+  "weights_dvc": "models/m1o-g1-seed0.dvc",
+  "mlflow_run_id_local": "f918d3c39a764b4cac4065d591912afe",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

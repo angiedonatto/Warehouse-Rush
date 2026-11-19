@@ -1,11 +1,13 @@
-"""Catálogo provisional y libro de inventario local, independiente de Three.js."""
+"""Catálogo operativo, compatibilidad anterior e inventario local independiente de Three.js."""
 from copy import deepcopy
 from random import Random
 from threading import RLock
 from uuid import uuid4
+import json
+from pathlib import Path
 from envs.handling import LEVEL_HEIGHTS
 
-CATEGORIES = [
+LEGACY_CATEGORIES = [
     ('Maquillaje', ['Ojos', 'Rostro', 'Labios']),
     ('Cuidado de la piel', ['Corporal', 'Cuidado facial', 'Facial hombres']),
     ('Brochas y esponjas', ['Brochas individuales', 'Esponjas', 'Kits de brochas']),
@@ -13,16 +15,35 @@ CATEGORIES = [
     ('Capilar', ['Accesorios para cabello', 'Peines', 'Mascarillas capilares']),
     ('Disney', ['Princesas', 'Villanos', 'Toy Story']),
 ]
-CATALOG = {f'TMP-E{i:02d}-L{j}': dict(sku=f'TMP-E{i:02d}-L{j}', rack=f'E{i:02d}',
+LEGACY_CATALOG = {f'TMP-E{i:02d}-L{j}': dict(sku=f'TMP-E{i:02d}-L{j}', rack=f'E{i:02d}',
            level=f'E{i:02d}-L{j}', height_m=LEVEL_HEIGHTS[j - 1], category=category, subcategory=sub, temporary=True)
-           for i, (category, subs) in enumerate(CATEGORIES, 1) for j, sub in enumerate(subs, 1)}
+           for i, (category, subs) in enumerate(LEGACY_CATEGORIES, 1) for j, sub in enumerate(subs, 1)}
+
+PRODUCTS = json.loads((Path(__file__).resolve().parents[1] / 'configs' / 'products.json').read_text())
+CATALOG = {p['sku']: p for p in PRODUCTS}
+CATEGORIES = [(category, list(dict.fromkeys(p['subcategory'] for p in PRODUCTS if p['category'] == category)))
+              for category in dict.fromkeys(p['category'] for p in PRODUCTS)]
+ALL_CATALOG = {**LEGACY_CATALOG, **CATALOG}
+# Versiones de catálogo (escenario de pedidos). warehouse-v10 se entrenó y evaluó con legacy-18
+# (1 producto por nivel de estante, 5 unidades); la web usa trendy-27-v1 (catálogo operativo).
+CATALOGS = {'legacy-18': LEGACY_CATALOG, 'trendy-27-v1': CATALOG}
+
+
+def initial_stock(version):
+    """Stock inicial de una versión de catálogo; Inventory(stock) deduce el catálogo de sus SKU."""
+    if version not in CATALOGS:
+        raise ValueError(f'Catálogo desconocido: {version}')
+    return {s: p.get('initial_stock', 5) for s, p in CATALOGS[version].items()}
 
 
 class Inventory:
     def __init__(self, stock=None):
         self.lock = RLock()
-        self.initial = dict(stock if stock is not None else {sku: 5 for sku in CATALOG})
-        if any(sku not in CATALOG or type(q) is not int or q < 0 for sku, q in self.initial.items()):
+        self.initial = dict(stock if stock is not None else {s: p['initial_stock'] for s, p in CATALOG.items()})
+        # Saved legacy books remain legacy; never relabel their products or replenish them.
+        self.catalog = LEGACY_CATALOG if self.initial and set(self.initial) <= LEGACY_CATALOG.keys() else CATALOG
+        self.catalog_version = 'legacy-18' if self.catalog is LEGACY_CATALOG else 'trendy-27-v1'
+        if any(sku not in self.catalog or type(q) is not int or q < 0 for sku, q in self.initial.items()):
             raise ValueError('Inventario inicial inválido')
         self.total = self.initial.copy()
         self.orders = {}
@@ -45,9 +66,9 @@ class Inventory:
                 if sorted((l['sku'], l['quantity']) for l in order['lines']) != requested:
                     raise ValueError('ID reutilizado con otras líneas')
                 return deepcopy(order)
-            if not requested or any(s not in CATALOG or type(q) is not int or q <= 0 for s, q in requested):
+            if not requested or any(s not in self.catalog or type(q) is not int or q <= 0 for s, q in requested):
                 raise ValueError('Líneas inválidas')
-            order = dict(id=identity, state='GENERATED', lines=[dict(**CATALOG[s], quantity=q,
+            order = dict(id=identity, state='GENERATED', lines=[dict(**self.catalog[s], quantity=q,
                          reserved=0, picked=0, delivered=0, pending_return=0) for s, q in requested], events=[])
             self.orders[identity] = order
             self.event(order, 'GENERATED', time)
@@ -131,5 +152,5 @@ class Inventory:
 
     def snapshot(self):
         with self.lock:
-            return dict(products=[dict(**CATALOG[s], stock_total=q, stock_reserved=self.reserved(s),
+            return dict(catalog_version=self.catalog_version, products=[dict(self.catalog[s], initial_stock=self.initial[s], stock_total=q, stock_reserved=self.reserved(s),
                         stock_available=self.available(s)) for s, q in self.total.items()], orders=deepcopy(list(self.orders.values())))

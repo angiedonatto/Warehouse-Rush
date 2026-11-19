@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 204800,
   "budget_minutes": 9.96,
-  "mlflow_run_id": "211241c829294bdeb4cdf7e28ab7a224",
+  "mlflow_run_id": "7ca91570c8b04bd495c3a41ee1004475",
   "mlflow_experiment": "warehouse-m1",
   "config_uri": "configs/experiments/m1_c0b_control_v3.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v3 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -97,5 +97,7 @@
   },
   "decision": "candidato",
   "decision_reason": "Control del barrido en warehouse-v3 con la recompensa por defecto. Reproduce m1-c0 (v2) exactamente (retorno -41.0, FRENAR 93.4%), lo que confirma el determinismo. 0% de éxito: no es un modelo útil.",
-  "weights_dvc": "models/m1-c0b-seed0.dvc"
+  "weights_dvc": "models/m1-c0b-seed0.dvc",
+  "mlflow_run_id_local": "211241c829294bdeb4cdf7e28ab7a224",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

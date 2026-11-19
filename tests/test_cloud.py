@@ -84,3 +84,22 @@ def test_read_only_state_does_not_overwrite_newer_browser_cookie():
     assert replacement is None  # Sin Set-Cookie que pueda revertir el POST.
     current, replacement = api.handle("GET", "state", token=updated)
     assert current["state"]["pasillo_bloqueado"] is False and replacement is None
+
+
+def test_health_identifies_commit_and_served_models(monkeypatch):
+    """El enunciado pide que el despliegue identifique su commit y la versión servida."""
+    import json
+    from pathlib import Path
+
+    from envs import ENV_VERSION
+
+    monkeypatch.setenv("VERCEL_GIT_COMMIT_SHA", "")            # deploy por CLI: Vercel lo deja vacío
+    monkeypatch.setenv("WAREHOUSE_DEPLOY_COMMIT", "abc1234")
+    health, _ = CloudAPI(TEST_SECRET).handle("GET", "health")
+    assert health["commit"] == "abc1234"
+    assert health["environment_version"] == ENV_VERSION
+    servidos = json.loads(Path("configs/modelos_servidos.json").read_text())["modelos"]
+    esperados = {m["id"]: m["model_sha256"] for m in servidos if m["environment_version"] == ENV_VERSION}
+    assert {m["id"]: m["model_sha256"] for m in health["served_models"]} == esperados
+    monkeypatch.setenv("VERCEL_GIT_COMMIT_SHA", "def5678")     # deploy desde Git: manda Vercel
+    assert CloudAPI(TEST_SECRET).handle("GET", "health")[0]["commit"] == "def5678"

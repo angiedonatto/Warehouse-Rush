@@ -36,9 +36,9 @@ export class WarehouseScene {
     this.renderer.toneMappingExposure = 1.18;
     this.renderer.autoClear = false;
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x132534);
-    this.scene.fog = new THREE.FogExp2(0x132534, 0.015);
-    this.scene.add(new THREE.HemisphereLight(0xaecfe7, 0x655647, 2.1));
+    this.scene.background = new THREE.Color(0xf8e7ef);
+    this.scene.fog = new THREE.FogExp2(0xf8e7ef, 0.015);
+    this.scene.add(new THREE.HemisphereLight(0xfff3fa, 0xb689a1, 2.1));
     this.sun = new THREE.DirectionalLight(0xffe1b4, 3.8);
     this.sun.position.set(-8, 17, 7);
     this.sun.castShadow = true;
@@ -48,7 +48,7 @@ export class WarehouseScene {
     this.sun.shadow.normalBias = 0.035;
     this.sun.shadow.radius = 3;
     this.scene.add(this.sun);
-    const fill = new THREE.DirectionalLight(0x79b7ec, 1.5);
+    const fill = new THREE.DirectionalLight(0xe9c9f6, 1.5);
     fill.position.set(10, 10, -8);
     this.scene.add(fill);
     this.camera = new THREE.PerspectiveCamera(34, 1, 0.08, 110);
@@ -85,15 +85,16 @@ export class WarehouseScene {
       else if (hit) this.onRackSelect?.(hit.object.userData.rackId);
     };
     stage.addEventListener('pointerdown', this.pointerDown);stage.addEventListener('pointerup', this.pointerUp);
+    // El canvas WebGL vive dentro de #stage y se desplaza con la página: el scroll no espera a un
+    // redibujado. Antes era un canvas fijo a pantalla completa y la escena quedaba frames atrás del DOM.
     this.resize = () => {
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
+      this.renderer.setSize(Math.max(1, stage.clientWidth), Math.max(1, stage.clientHeight), false);
       if (this.view === 'iso') this.resetCamera();
       this.lastPreview = 0;
       this.dirty = true;
     };
-    this.scroll = () => { this.dirty = true; };
     window.addEventListener('resize', this.resize);
-    window.addEventListener('scroll', this.scroll, { passive: true });
+    this.resizeObserver = new ResizeObserver(this.resize);this.resizeObserver.observe(stage);
     this.resize();
     this.clock = new THREE.Clock();
     this.minimap = document.querySelector('#minimap');
@@ -140,7 +141,7 @@ export class WarehouseScene {
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = 512;
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#6a6d6b';
+    ctx.fillStyle = '#f3e4e9';
     ctx.fillRect(0, 0, 512, 512);
     let seed = 173;
     const rand = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
@@ -149,7 +150,7 @@ export class WarehouseScene {
       ctx.fillStyle = `rgba(${value},${value},${value},.13)`;
       ctx.fillRect(rand() * 512, rand() * 512, rand() * 2 + .5, rand() * 2 + .5);
     }
-    ctx.strokeStyle = '#3f484966';
+    ctx.strokeStyle = '#c89cad33';
     ctx.lineWidth = 2;
     ctx.strokeRect(1, 1, 510, 510);
     ctx.strokeStyle = '#989c9328';
@@ -184,17 +185,17 @@ export class WarehouseScene {
     floor.position.y = -.12;
     floor.receiveShadow = true;
     this.scene.add(floor);
-    const pedestal = new THREE.Mesh(new THREE.BoxGeometry(W + .5, .28, H + .5), this.material('base-edge', 0x1a2731, { metalness: .3 }));
+    const pedestal = new THREE.Mesh(new THREE.BoxGeometry(W + .5, .28, H + .5), this.material('base-edge', 0xc783a2, { metalness: .3 }));
     pedestal.position.y = -.36;
     this.scene.add(pedestal);
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(150, 150), this.material('outside', 0x10212f, { roughness: 1 }));
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(150, 150), this.material('outside', 0xf9e6ef, { roughness: 1 }));
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -.52;
     ground.receiveShadow = true;
     this.scene.add(ground);
-    const wall = this.material('wall', 0x68717a, { metalness: .25 });
-    const wallEdge = this.material('wall-edge', 0x3c4952, { metalness: .6 });
-    const wallLine = this.material('wall-line', 0x303e48, { metalness: .55 });
+    const wall = this.material('wall', 0xfff0f6, { metalness: .25 });
+    const wallEdge = this.material('wall-edge', 0xd59bb6, { metalness: .6 });
+    const wallLine = this.material('wall-line', 0xe5b4cb, { metalness: .55 });
     const yellow = this.material('safety-yellow', 0xbca47c, { roughness: .8 });
     for (let x = 0; x < W; x++) {
       for (const y of [0, H - 1]) {
@@ -256,10 +257,10 @@ export class WarehouseScene {
     const [x0, y0, x1, y1] = rack.bounds;
     const center = this.world((x0 + x1) / 2, (y0 + y1) / 2);
     const width = x1 - x0 + .8, depth = y1 - y0 + .8;
-    const steel = this.material('steel', 0x939ca4, { metalness: .72, roughness: .43 });
-    const beam = this.material('beam', 0xd2a2b8, { metalness: .45, roughness: .58 });
-    const shelf = this.material('shelf', 0xc7ced1, { metalness: .55, roughness: .65 });
-    this.outline(center, width + .32, depth + .32, 0xc8b3bc, .025);
+    const steel = this.material('steel', 0xc68aa5, { metalness: .72, roughness: .43 });
+    const beam = this.material('beam', 0xe16ca7, { metalness: .45, roughness: .58 });
+    const shelf = this.material('shelf', 0xffeef5, { metalness: .55, roughness: .65 });
+    this.outline(center, width + .32, depth + .32, 0xe1a3bd, .025);
     for (const dx of [-width / 2, width / 2]) for (const dz of [-depth / 2, depth / 2]) {
       this.box([.065, 2.65, .065], center.clone().add(new THREE.Vector3(dx, 1.325, dz)), steel);
       this.box([.14, .065, .14], center.clone().add(new THREE.Vector3(dx, .04, dz)), steel);
@@ -386,7 +387,7 @@ export class WarehouseScene {
     this.robot.position.copy(this.targetPosition);
     this.targetYaw = 0;
     this.avatarScene = new THREE.Scene();
-    this.avatarScene.background = new THREE.Color(0x102534);
+    this.avatarScene.background = new THREE.Color(0xf8e7ef);
     this.avatarScene.add(new THREE.HemisphereLight(0xd9efff, 0x2f4355, 3));
     const light = new THREE.DirectionalLight(0xffe9c6, 3);light.position.set(-2, 4, 3);this.avatarScene.add(light);
     this.avatar = this.robot.clone(true);this.avatar.position.set(0, -.05, 0);this.avatar.rotation.y = -.4;this.avatarScene.add(this.avatar);
@@ -489,18 +490,39 @@ export class WarehouseScene {
     }
   }
 
-  renderIn(element, camera, scene = this.scene) {
+  renderStage() {
+    const w = this.stage.clientWidth, h = this.stage.clientHeight;
+    if (!w || !h) return;
+    this.camera.aspect = w / h;this.camera.updateProjectionMatrix();
+    this.renderer.setViewport(0, 0, w, h);
+    this.renderer.setScissorTest(false);
+    this.renderer.setClearColor(this.scene.background, 1);
+    this.renderer.clear(true, true, true);
+    this.renderer.render(this.scene, this.camera);
+  }
+
+  // Miniaturas y retrato: se dibujan en una esquina del canvas WebGL y se copian a un canvas 2D propio
+  // dentro de su tarjeta, que se desplaza con la página como cualquier elemento del DOM.
+  renderView(element, camera, scene = this.scene) {
     const rect = element.getBoundingClientRect();
-    if (rect.bottom < 0 || rect.top > window.innerHeight || rect.width === 0) return;
-    const left = Math.max(0, rect.left), bottom = window.innerHeight - rect.bottom;
-    const clipBottom = Math.max(0, bottom), clipTop = Math.min(window.innerHeight, window.innerHeight - rect.top);
+    if (!rect.width || !rect.height) return;
+    if (rect.bottom < -window.innerHeight || rect.top > 2 * window.innerHeight) return;   // lejos de la vista: conserva la última imagen
+    let target = element.querySelector(':scope > canvas.view-canvas');
+    if (!target) { target = document.createElement('canvas');target.className = 'view-canvas';target.setAttribute('aria-hidden', 'true');element.prepend(target); }
+    const gl = this.renderer.domElement, ratio = this.renderer.getPixelRatio();
+    const w = Math.min(rect.width, this.stage.clientWidth), h = Math.min(rect.height, this.stage.clientHeight);
+    if (!w || !h) return;
     camera.aspect = rect.width / rect.height;camera.updateProjectionMatrix();
-    this.renderer.setViewport(rect.left, bottom, rect.width, rect.height);
-    this.renderer.setScissor(left, clipBottom, Math.min(rect.right, window.innerWidth) - left, clipTop - clipBottom);
-    this.renderer.setScissorTest(true);
+    this.renderer.setViewport(0, 0, w, h);this.renderer.setScissor(0, 0, w, h);this.renderer.setScissorTest(true);
     this.renderer.setClearColor(scene.background || 0x0b1b28, scene.background ? 1 : 0);
     this.renderer.clear(true, true, true);
     this.renderer.render(scene, camera);
+    this.renderer.shadowMap.needsUpdate = false;
+    const tw = Math.round(rect.width * ratio), th = Math.round(rect.height * ratio);
+    if (target.width !== tw || target.height !== th) { target.width = tw;target.height = th; }
+    const sw = Math.round(w * ratio), sh = Math.round(h * ratio), ctx = target.getContext('2d');
+    ctx.clearRect(0, 0, tw, th);
+    ctx.drawImage(gl, 0, gl.height - sh, sw, sh, 0, 0, tw, th);
   }
 
   updateLabels() {
@@ -589,22 +611,20 @@ export class WarehouseScene {
     if (!this.dirty && !moving && this.elapsed - this.lastDraw < .25) return;
     this.lastDraw = this.elapsed;this.dirty = false;
     this.cameraPositions();
-    this.renderer.setScissorTest(false);
-    this.renderer.setClearColor(0x000000, 0);
-    this.renderer.clear(true, true, true);
     this.renderer.shadowMap.needsUpdate = this.shadowDirty || moving;
     this.shadowDirty = false;
-    this.renderIn(this.stage, this.camera);
+    // Primero las vistas pequeñas (se copian al instante) y al final la escena principal, que queda en el canvas.
+    for (const name of ['iso', 'fpv', 'side', 'station']) this.renderView(document.querySelector(`#preview-${name}`), this.cameras[name]);
+    this.renderView(document.querySelector('#robot-portrait'), this.avatarCamera, this.avatarScene);
+    this.renderStage();
     this.renderer.shadowMap.needsUpdate = false;
     this.updateLabels();
-    for (const name of ['iso', 'fpv', 'side', 'station']) this.renderIn(document.querySelector(`#preview-${name}`), this.cameras[name]);
-    this.renderIn(document.querySelector('#robot-portrait'), this.avatarCamera, this.avatarScene);
     this.drawMinimap();
   }
 
   dispose() {
     this.stage.removeEventListener('pointerdown', this.pointerDown);this.stage.removeEventListener('pointerup', this.pointerUp);
-    cancelAnimationFrame(this.frame);window.removeEventListener('resize', this.resize);window.removeEventListener('scroll', this.scroll);this.controls.dispose();
+    cancelAnimationFrame(this.frame);this.resizeObserver.disconnect();window.removeEventListener('resize', this.resize);this.controls.dispose();
     const geometries = new Set(), materials = new Set();
     for (const scene of [this.scene, this.avatarScene]) scene.traverse(obj => { if (obj.geometry) geometries.add(obj.geometry);if (obj.material) for (const material of Array.isArray(obj.material) ? obj.material : [obj.material]) materials.add(material); });
     geometries.forEach(g => g.dispose());materials.forEach(m => { m.map?.dispose();m.dispose(); });this.renderer.dispose();

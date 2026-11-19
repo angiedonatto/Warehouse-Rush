@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 606208,
   "budget_minutes": 25.4,
-  "mlflow_run_id": "4726de11273f43d397700df049acc9ee",
+  "mlflow_run_id": "187e4b5441b241778e891224da84adb1",
   "mlflow_experiment": "warehouse-m1",
   "config_uri": "configs/experiments/m1_c2_repro_v9_seed0.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v9 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -109,5 +109,7 @@
   "decision": "candidato",
   "decision_reason": "Reproducción exacta de m1-c0l-seed0 con el código v9 sin parada: pesos IDÉNTICOS (comparados tensor a tensor), 0% de éxito, 29/50 llegan a la celda. Confirma que el código v9 con potential = 0 no cambia el entrenamiento.",
   "stagnation_window": null,
-  "weights_dvc": "models/m1-c2-seed0.dvc"
+  "weights_dvc": "models/m1-c2-seed0.dvc",
+  "mlflow_run_id_local": "4726de11273f43d397700df049acc9ee",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

@@ -6,6 +6,7 @@ mlruns/
 __pycache__/
 /models/*
 !/models/experiment-001/
+!/models/servidos/
 !/models/*.dvc
 
 # --- Warehouse Rush (Enunciado sec. 09 / guía de arranque) ---
@@ -16,6 +17,7 @@ dist/
 tmp/
 # pesos grandes: van por DVC o almacenamiento de MLflow
 *.zip
+!/models/servidos/*.zip
 *.pt
 *.pth
 # test final reservado: fuera del repo público

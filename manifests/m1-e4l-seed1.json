@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 606208,
   "budget_minutes": 34.48,
-  "mlflow_run_id": "8aa562204d894baa888d9ad7263dd54f",
+  "mlflow_run_id": "05a03e9d888f43a7aa8d8d630fbfc923",
   "mlflow_experiment": "warehouse-m1",
   "config_uri": "configs/experiments/m1_e4l_seed1.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v7 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -107,5 +107,7 @@
   },
   "decision": "rechazado",
   "decision_reason": "0% de éxito. 29/50 episodios llegan a una celda de interacción, ninguno mira al estante ni carga; 0 inválidas, 0 choques y 0 recogidas (se queda quieto o gira). 0 episodios de entrenamiento con éxito. Rechazado por el criterio de la familia: media de 3 semillas 0% < m1-r5 (0%) + 5 pp.",
-  "weights_dvc": "models/m1-e4l-seed1.dvc"
+  "weights_dvc": "models/m1-e4l-seed1.dvc",
+  "mlflow_run_id_local": "8aa562204d894baa888d9ad7263dd54f",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

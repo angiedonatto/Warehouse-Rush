@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 606208,
   "budget_minutes": 30.43,
-  "mlflow_run_id": "2cae6042bf78475cbbb018c80f46bb9f",
+  "mlflow_run_id": "e7d4a038307049ecbd3061e4e01c86c6",
   "mlflow_experiment": "warehouse-m1",
   "config_uri": "configs/experiments/m1_c0l_seed1.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v7 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -107,5 +107,7 @@
   },
   "decision": "candidato",
   "decision_reason": "Control sin términos e4 (600 000 pasos). 0% de éxito; ningún episodio llega a una celda de interacción; 0 inválidas y 0 choques (idle).",
-  "weights_dvc": "models/m1-c0l-seed1.dvc"
+  "weights_dvc": "models/m1-c0l-seed1.dvc",
+  "mlflow_run_id_local": "2cae6042bf78475cbbb018c80f46bb9f",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

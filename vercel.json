@@ -11,6 +11,14 @@
     }
   },
   "rewrites": [
-    { "source": "/api/:path*", "destination": "/api?route=:path*" }
-  ]
+    {
+      "source": "/api/:path*",
+      "destination": "/api?route=:path*"
+    }
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "dev/naomi": false
+    }
+  }
 }

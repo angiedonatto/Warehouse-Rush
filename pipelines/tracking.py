@@ -2,7 +2,9 @@
 
 Cada run registra params, tags (git_commit, environment_version, config_sha256, nivel,
 hipótesis, parent_run_id, tipo, estado) y artefactos (config.json, modelo, métricas).
-URI: variable MLFLOW_TRACKING_URI (por defecto sqlite local, que NO va a Git).
+URI: variable MLFLOW_TRACKING_URI = servidor persistente del equipo (DagsHub, ver .env.example).
+Sin ella el run falla en vez de quedar en un sqlite local que nadie más ve; para pruebas sueltas
+MLFLOW_PERMITIR_LOCAL=1 usa sqlite:///mlflow.db (que NO va a Git).
 """
 
 from contextlib import contextmanager
@@ -68,12 +70,25 @@ def experiment_id(name: str) -> str:
         return found.experiment_id
 
 
+def tracking_uri() -> str:
+    """URI del servidor MLflow. Falla claro si falta, para que ningún entrenamiento quede solo en local."""
+    uri = os.environ.get("MLFLOW_TRACKING_URI")
+    if uri:
+        return uri
+    if os.environ.get("MLFLOW_PERMITIR_LOCAL") == "1":
+        return "sqlite:///mlflow.db"
+    raise RuntimeError(
+        "MLFLOW_TRACKING_URI no está definida: el run quedaría solo en este equipo. "
+        "Carga las variables del servidor (`set -a; source .env; set +a`, ver .env.example) "
+        "o, para una prueba local deliberada, exporta MLFLOW_PERMITIR_LOCAL=1.")
+
+
 @contextmanager
 def mlflow_run(*, experiment: str, run_name: str, config: dict, tags: dict):
     """Abre un run con params y tags; al salir marca estado y conserva el error si falla."""
     import mlflow
 
-    mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db"))
+    mlflow.set_tracking_uri(tracking_uri())
     with mlflow.start_run(run_name=run_name, experiment_id=experiment_id(experiment)) as run:
         mlflow.log_params({k: str(v)[:500] for k, v in flatten(config).items()})
         mlflow.log_dict(config, "config.json")

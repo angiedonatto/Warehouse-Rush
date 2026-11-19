@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 204800,
   "budget_minutes": 10.2,
-  "mlflow_run_id": "ec06df6b914e492f8e8ff758c42aa246",
+  "mlflow_run_id": "62b81e05889e41b79b6dad83b5a06c78",
   "mlflow_experiment": "warehouse-m1o",
   "config_uri": "configs/experiments/m1o_e2_altura_01.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v5 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -107,5 +107,7 @@
   },
   "decision": "rechazado",
   "decision_reason": "No supera al control (0 pp), 0 recogidas. Ningún episodio llega a una celda de interacción: gira cerca de la base (GIRAR_DERECHA 97.7%).",
-  "weights_dvc": "models/m1o-e2-seed0.dvc"
+  "weights_dvc": "models/m1o-e2-seed0.dvc",
+  "mlflow_run_id_local": "ec06df6b914e492f8e8ff758c42aa246",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

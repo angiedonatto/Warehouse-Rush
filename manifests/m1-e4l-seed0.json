@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 606208,
   "budget_minutes": 34.25,
-  "mlflow_run_id": "bf650dcc95fc4e2897ed4bf4e21b7bad",
+  "mlflow_run_id": "0fe5c548f255447192982f1d8717361d",
   "mlflow_experiment": "warehouse-m1",
   "config_uri": "configs/experiments/m1_e4l_seed0.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v7 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -107,5 +107,7 @@
   },
   "decision": "rechazado",
   "decision_reason": "0% de éxito. 21/50 episodios llegan a una celda de interacción del primer objetivo, ninguno mira al estante, sube la bandeja ni carga; 63 inválidas por episodio y 0 recogidas. 0 episodios de entrenamiento con éxito. Rechazado por el criterio de la familia: media de 3 semillas 0% < m1-r5 (0%) + 5 pp.",
-  "weights_dvc": "models/m1-e4l-seed0.dvc"
+  "weights_dvc": "models/m1-e4l-seed0.dvc",
+  "mlflow_run_id_local": "bf650dcc95fc4e2897ed4bf4e21b7bad",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

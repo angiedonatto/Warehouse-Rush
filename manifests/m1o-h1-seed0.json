@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 606208,
   "budget_minutes": 34.88,
-  "mlflow_run_id": "4195114f2bd445049733868f8c5a90c6",
+  "mlflow_run_id": "854e052610e440ba9336f7297e8713a4",
   "mlflow_experiment": "warehouse-m1o",
   "config_uri": "configs/experiments/m1o_h1_bcppo_seed0.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v7 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -110,5 +110,7 @@
   },
   "decision": "rechazado",
   "decision_reason": "88% de éxito (e4l-seed0: 92%; h0-seed0 sin ajuste fino: 100%). Rechazado por el criterio del grupo: éxito medio de las 3 semillas 93.3% (+62.7 pp frente a e4l) pero choques 2.25/ep de media frente a 0 (límite +0.1); todos vienen de esta semilla (6.74 choques/ep, 30 inválidas/ep, CARGAR repetido en el estado de carga). El ajuste fino con PPO degradó al imitador: el retorno de la evaluación periódica cae de 127 (h0) a 6 en el primer punto (20 000 pasos).",
-  "weights_dvc": "models/m1o-h1-seed0.dvc"
+  "weights_dvc": "models/m1o-h1-seed0.dvc",
+  "mlflow_run_id_local": "4195114f2bd445049733868f8c5a90c6",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

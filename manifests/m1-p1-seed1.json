@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 606208,
   "budget_minutes": 27.98,
-  "mlflow_run_id": "31c5823917324b699aab69448b81ee9a",
+  "mlflow_run_id": "98876c133ce24a319ef0a7e755f4f61e",
   "mlflow_experiment": "warehouse-m1",
   "config_uri": "configs/experiments/m1_p1_potencial_seed1.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v9 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -111,5 +111,7 @@
   "decision": "rechazado",
   "decision_reason": "Rechazado por el criterio fijado antes (éxito < 5% frente a m1-e4l 0%). Solo potencial (30.0) + parada de estancamiento (100): 0% de éxito; 0/50 llegan a una celda; 100% FRENAR (idle puro), distancia BFS final = inicial (13.3). 5 633 episodios de entrenamiento, 0 con éxito.",
   "stagnation_window": 100,
-  "weights_dvc": "models/m1-p1-seed1.dvc"
+  "weights_dvc": "models/m1-p1-seed1.dvc",
+  "mlflow_run_id_local": "31c5823917324b699aab69448b81ee9a",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 1802240,
   "budget_minutes": 80.07,
-  "mlflow_run_id": "670295ed7d8b464ea168a531d570c802",
+  "mlflow_run_id": "76a4031dae4f4d089a8fed0d7d2d9e1d",
   "mlflow_experiment": "warehouse-m1",
   "config_uri": "configs/experiments/m1_e4x_seed2.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v7 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -109,5 +109,7 @@
   },
   "decision": "candidato",
   "decision_reason": "e4 con 1 802 240 pasos. 80% de éxito (40/50), 2.40 entregas y 2.68 recogidas por episodio, 91.8 pasos en los éxitos, 0 choques, 63.8 inválidas por episodio; 8322 episodios de entrenamiento con éxito. Fallos: 8 por límite de tiempo (7 con la bandeja arriba y carga) y 2 por batería. Primer modelo que completa la misión en el mapa con muro; no recomendado (una semilla de tres, sin finalistas ni test final).",
-  "weights_dvc": "models/m1-e4x-seed2.dvc"
+  "weights_dvc": "models/m1-e4x-seed2.dvc",
+  "mlflow_run_id_local": "670295ed7d8b464ea168a531d570c802",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

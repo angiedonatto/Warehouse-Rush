@@ -1,6 +1,6 @@
 # Experiment log (R2) and what we learned
 
-Status: 2026-11-15. Full evidence, per-episode CSV/JSON and manifests are in the repo: `docs/experimentos.md` (Spanish, hypotheses written **before** training), `docs/resultados/eval/<run>/`, `docs/resultados/training/<run>/`, `manifests/<run>.json`, MLflow (`warehouse-n1`, `warehouse-m1`, `warehouse-m1o`; local `mlflow.db`, not committed). Run names: `<nivel>-<id>-seed<seed>`.
+Status: 2026-11-15. Full evidence, per-episode CSV/JSON and manifests are in the repo: `docs/experimentos.md` (Spanish, hypotheses written **before** training), `docs/resultados/eval/<run>/`, `docs/resultados/training/<run>/`, `manifests/<run>.json`, MLflow (`warehouse-n1`, `warehouse-m1`, `warehouse-m1o`; DagsHub since 2026-11-18, ids changed: see `docs/resultados/mlflow-migracion.json`). Run names: `<nivel>-<id>-seed<seed>`.
 
 Everything uses PPO `MlpPolicy` [64,64], lr 3e-4, `n_steps` 2048 x `n_envs` 4, batch 64, 10 epochs, gamma 0.99, gae_lambda 0.95, clip 0.2, `ent_coef` 0.0 (the C0 config) unless stated. Budget 200 000 requested (204 800 effective = 25 x 8 192) unless stated; 600 000 requested = 606 208 effective. Evaluation: frozen model, deterministic actions, 50 episodes, seeds 10000-10049 (`suite-n1-v1`, `suite-m1-v1`, `suite-m1o-v1`), 1 training seed unless stated.
 
@@ -140,6 +140,17 @@ Everything below: PPO C0 block ([64,64], lr 3e-4, n_steps 2048 x 4 envs, batch 6
 28. **Parallel launches that create a new MLflow experiment race**: 2 of 3 runs fell into `Default`. Resolve the experiment id explicitly (`pipelines/tracking.py::experiment_id`); manifests record the real experiment.
 29. **A rejected recipe can still yield a certified artifact** if selection is pre-registered separately: `m1b-i1` failed on the 3-seed mean, but its seed-1 best checkpoint, chosen by a declared rule among 6 artifacts, scored 100/100 in both scenarios on a fresh reserved test. Report both facts; never let the artifact stand in for the recipe.
 23. Four parallel 1 802 240-step runs take ~105 min even on an idle machine (~270 steps/s each); 606 208-step runs ~27 min. Tests/profiling during training slow it by 10-20%.
+
+## 2026-11-18: product catalog diagnostic (Naomi's `trendy-27-v1` vs `legacy-18`), not pre-registered
+Question: do the two recommended models (trained and certified with the 18-product `legacy-18` catalog: 1 product per shelf level, 5 units) keep their performance with Naomi's 27-product catalog (E01 holds 12 products, one level holds 6, stock 5-10)? Same suites, seeds 10000-10049, deterministic. Script: `docs/resultados/eval/catalogo-trendy-27/medir_catalogo.py` (uses `make_env(..., catalog=...)`); results `resultados.json` there.
+
+| Model, scenario | legacy-18 (control) | trendy-27-v1 |
+|---|---|---|
+| `m1-c3-seed0`, gap open | 98%, 86.8 steps | 100%, 82.3 |
+| `m1b-i1-seed1-best`, gap open | 100%, 82.3 | 100%, 79.6 |
+| `m1b-i1-seed1-best`, gap closed | 100%, 106.9 | 100%, 105.2 |
+
+0 collisions everywhere; control reproduces the manifests. Decision: the web runs the models with `trendy-27-v1` (documented as a diagnostic, not a certification); training and evaluation keep `legacy-18` so v10 suites and test-finals stay reproducible. Lesson 30: the policies depend on rack/level targets, not on SKU identity or how many products share a level, so a catalog that redistributes products over the same 18 slots did not hurt them.
 
 ## Open items / next candidates (none started unless marked)
 1. **The delivery leg** (the bottleneck after c4): continue `m1-c4-seed2` from `models/m1-c4-seed2/model.zip` via `parent_run_id` with 1-2M more steps (it loads everything, dev return turned positive at 1.46M); a delivery-leg signal that pays before the tray is down (e.g. a one-off bonus for reaching the dispatch approach cell, or `progress` weighted higher only with target DELIVERY) as a new env version; `ent_coef` 0.01 on seed 0 to check it does not hurt a working seed; curriculum (1-line orders first).

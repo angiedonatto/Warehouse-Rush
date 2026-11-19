@@ -1,4 +1,4 @@
-# Environment versions (warehouse-v1 to warehouse-v7)
+# Environment versions (warehouse-v1 to warehouse-v10)
 
 Everything below is true at 2026-11-14 on branch `dev/lis` (last env tag `env/warehouse-v7` at `c152c42`; behaviour cloning and its results came after, no env change). The authoritative documents live in the repo; read them before changing anything:
 `envs/CONTRATO.md` (frozen contract), `docs/ambiente-v0.1.md` ... `docs/ambiente-v0.7.md` (one sheet per version), `docs/decisiones.md` (dated decision log, Spanish).
@@ -22,7 +22,10 @@ Everything below is true at 2026-11-14 on branch `dev/lis` (last env tag `env/wa
 
 v2 models share observation and actions with v3-v7 and load there (trained without the new terms). **v1 models are incompatible** (22 inputs, 5 outputs); keep them as history only.
 
-## Current contract (v7), summary
+## Product catalog = scenario parameter (2026-11-18, no version bump)
+`envs/inventory.py` (Naomi): `LEGACY_CATALOG` (18 SKUs `TMP-E##-L#`, one per rack level, 5 units) and `CATALOG` (27 SKUs `TRD-##-##` from `configs/products.json`, stock 5-10); `Inventory(stock)` infers the catalog from the SKUs it is given; `Inventory()` defaults to `trendy-27-v1`. Added: `CATALOGS`, `initial_stock(version)`, `MakeupMissionEnv(catalog=...)` (also used when `restock` rebuilds the inventory each episode), and `make_env(..., catalog="legacy-18")` by default. So every training/evaluation path still uses the catalog all v10 runs used (no bump: obs/actions/reward unchanged, scenario pinned). The web viewer mission and the served models use `trendy-27-v1` (diagnostic in experiment-log.md). If a future version should train on `trendy-27-v1`, that is a scenario change: new suites (or explicit catalog in the suite) and a decision row.
+
+## Current contract (v10), summary (unchanged since v7 apart from the v8-v10 reward terms in the timeline)
 
 - **Code:** `envs/` (`env.py` base, `missions.py` = `MakeupMissionEnv`, `inventory.py`, `handling.py` tray config, `layout.py`, `rewards.py`). Factory: `envs.make_env(blocked, layout_path, orders, reward_overrides, **kw)`. With `orders=N`: each episode draws N distinct SKUs of 1 unit and restocks the inventory on reset. `reset(seed=s)` reproduces the order; `reset()` draws it from the env RNG.
 - **Observation `Box(27)`, all in [0,1]:** 0-7 rays (8 m range), 8-9 own (x,y), 10-11 target (x,y) (station cell of the rack E01-E06 or `DELIVERY`), 12-15 orientation one-hot, 16 moving, 17 battery, 18 carried/capacity, 19-21 stage one-hot (recoger/entregar/completada), 22 time left, 23 order progress, 24 facing an interactable, 25 tray elevation, 26 target elevation. **Not given:** map, SKU/level/quantity, inventory, tray phase, action mask, reward.

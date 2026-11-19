@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 606208,
   "budget_minutes": 28.0,
-  "mlflow_run_id": "c722bc96c22645069532518abb5cc23f",
+  "mlflow_run_id": "12a81916cfaa4eaab24bd1d65e595c9a",
   "mlflow_experiment": "warehouse-m1o",
   "config_uri": "configs/experiments/m1o_g1_hito_seed1.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v7 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -109,5 +109,7 @@
   },
   "decision": "rechazado",
   "decision_reason": "0% de éxito, resultado idéntico bit a bit al de e4l-seed1 (retorno -88.8, 258.3 inválidas): el agente nunca carga (0/50 miran al estante), así que el hito, que solo existe tras la última recogida, no se llegó a pagar. Rechazado por el criterio (media de 3 semillas +0.7 pp).",
-  "weights_dvc": "models/m1o-g1-seed1.dvc"
+  "weights_dvc": "models/m1o-g1-seed1.dvc",
+  "mlflow_run_id_local": "c722bc96c22645069532518abb5cc23f",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

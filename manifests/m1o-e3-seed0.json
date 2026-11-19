@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 204800,
   "budget_minutes": 10.27,
-  "mlflow_run_id": "d3ede7b8de3c417798b7da40e318b95f",
+  "mlflow_run_id": "e14b651f8a2d4386be1225b045782dd6",
   "mlflow_experiment": "warehouse-m1o",
   "config_uri": "configs/experiments/m1o_e3_ambos_01.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v5 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -106,5 +106,7 @@
   },
   "decision": "rechazado",
   "decision_reason": "No supera al control (0 pp), 0 recogidas. Evita la celda de interacción: termina a ~3 celdas del estante y en 0/50 episodios llega a una celda de interacción (la penalización de altura la convierte en zona a evitar).",
-  "weights_dvc": "models/m1o-e3-seed0.dvc"
+  "weights_dvc": "models/m1o-e3-seed0.dvc",
+  "mlflow_run_id_local": "d3ede7b8de3c417798b7da40e318b95f",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

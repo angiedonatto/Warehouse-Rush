@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 1802240,
   "budget_minutes": 94.13,
-  "mlflow_run_id": "d089fc199c8c4e709a120b8c27b8e32c",
+  "mlflow_run_id": "04a0b7168b0c4ae781cd2e5edd590269",
   "mlflow_experiment": "warehouse-m1",
   "config_uri": "configs/experiments/m1_e4y_seed4.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v10 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -112,5 +112,7 @@
   "decision": "candidato",
   "decision_reason": "Receta e4 con 1 802 240 pasos y parada 100 (semilla nueva 4): 0% de éxito; 22/50 episodios llegan a una celda de interacción, 0 miran al estante ni cargan; 0 inválidas y 0 choques (quieto o girando). 13 814 episodios de entrenamiento, 0 con éxito. Evidencia de variación entre semillas.",
   "stagnation_window": 100,
-  "weights_dvc": "models/m1-e4y-seed4.dvc"
+  "weights_dvc": "models/m1-e4y-seed4.dvc",
+  "mlflow_run_id_local": "d089fc199c8c4e709a120b8c27b8e32c",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

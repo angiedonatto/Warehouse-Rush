@@ -39,7 +39,8 @@ def sha256(path):
 
 def main(decisions_path):
     decisions = json.loads(Path(decisions_path).read_text())
-    mlflow.set_tracking_uri("sqlite:///mlflow.db")
+    from pipelines.tracking import tracking_uri
+    mlflow.set_tracking_uri(tracking_uri())
     client = MlflowClient()
     schema = json.loads(Path("manifests/schema.json").read_text())
     template = json.loads(Path(TEMPLATE).read_text())

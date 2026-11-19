@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 606208,
   "budget_minutes": 25.76,
-  "mlflow_run_id": "dc37b2079acb4f02a0440a3f4e4e9f4c",
+  "mlflow_run_id": "e2e3b8714093475ebba14e48e6bbabc7",
   "mlflow_experiment": "warehouse-m1o",
   "config_uri": "configs/experiments/m1o_e4l_seed0.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v5 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -108,5 +108,7 @@
   },
   "decision": "candidato",
   "decision_reason": "Primer modelo que completa la misión: 92% de éxito (46/50) en suite-m1o-v1, 2.76 entregas y 2.92 recogidas por episodio, 95 pasos (heurística: 71), 0 choques; 73% de éxito en entrenamiento (2395/3278). Los 4 fallos terminan con 2 productos cargados y la bandeja arriba. Supera al control del mismo presupuesto (m1o-c0l, 0%). Solo 1 de 3 semillas lo logra: candidato pendiente de replicación; no se promueve a recomendado.",
-  "weights_dvc": "models/m1o-e4l-seed0.dvc"
+  "weights_dvc": "models/m1o-e4l-seed0.dvc",
+  "mlflow_run_id_local": "dc37b2079acb4f02a0440a3f4e4e9f4c",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

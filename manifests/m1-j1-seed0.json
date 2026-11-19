@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 606208,
   "budget_minutes": 28.67,
-  "mlflow_run_id": "3449e177dc8e4b8cbd5c03c7c8cbf409",
+  "mlflow_run_id": "f1c71213ad4a4d428d5c1de7112ef96a",
   "mlflow_experiment": "warehouse-m1",
   "config_uri": "configs/experiments/m1_j1_cara_seed0.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v8 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -110,5 +110,7 @@
   },
   "decision": "rechazado",
   "decision_reason": "Rechazado por el criterio fijado antes (éxito < 5% frente a m1-e4l-seed0 0%); con una semilla no descarta la idea. face_bonus 10: 0% de éxito. Cambia la conducta: 40/50 episodios llegan a la celda de interacción y miran al estante (e4l-seed0: 0/50 miran), pero ninguno sube la bandeja ni carga y se quedan quietos mirando (consistente con la medición guionizada: ir y mirar y quedarse −37.8 > quieto −40.8). Choques 2.56/ep (e4l: 0), no cumple la condición de choques.",
-  "weights_dvc": "models/m1-j1-seed0.dvc"
+  "weights_dvc": "models/m1-j1-seed0.dvc",
+  "mlflow_run_id_local": "3449e177dc8e4b8cbd5c03c7c8cbf409",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

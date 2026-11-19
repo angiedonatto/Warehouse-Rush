@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 606208,
   "budget_minutes": 28.12,
-  "mlflow_run_id": "737be4304f0c4068aab52826f7d2e18b",
+  "mlflow_run_id": "af21c0a61ec647a38ca50f6277c041c3",
   "mlflow_experiment": "warehouse-m1",
   "config_uri": "configs/experiments/m1_j2_hito_seed0.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v8 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -110,5 +110,7 @@
   },
   "decision": "rechazado",
   "decision_reason": "Rechazado por el criterio fijado antes (éxito < 5% frente a m1-e4l-seed0 0%); con una semilla no descarta la idea. carry_milestone 5: 0% de éxito; política idéntica a m1-e4l-seed0 (mismos pesos): nunca carga, así que el hito no se cobra jamás (mismo fenómeno que g1-seed1 en el mapa abierto). 21/50 llegan a una celda, 0 miran al estante, 63 inválidas/ep.",
-  "weights_dvc": "models/m1-j2-seed0.dvc"
+  "weights_dvc": "models/m1-j2-seed0.dvc",
+  "mlflow_run_id_local": "737be4304f0c4068aab52826f7d2e18b",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

@@ -19,7 +19,7 @@
   "policy": "MlpPolicy",
   "budget_steps": 204800,
   "budget_minutes": 7.91,
-  "mlflow_run_id": "f494073adf3d4b95ab512a81efe8e46a",
+  "mlflow_run_id": "bd4fc44c54cb433992b3a583556c1cbc",
   "mlflow_experiment": "warehouse-m1",
   "config_uri": "configs/experiments/m1_c0_makeup3.yaml",
   "obs_spec": "envs/CONTRATO.md@env/warehouse-v2 (Box(27), todo en [0,1], sin VecNormalize)",
@@ -109,5 +109,7 @@
   },
   "decision": "candidato",
   "decision_reason": "Primer run de la familia warehouse-v2 (baseline). 0% de éxito: la política elige FRENAR en 93% de los pasos; no es un modelo útil. Se conserva como evidencia; la heurística BFS logra 100% y la aleatoria 0%.",
-  "weights_dvc": "models/m1-c0-seed0.dvc"
+  "weights_dvc": "models/m1-c0-seed0.dvc",
+  "mlflow_run_id_local": "f494073adf3d4b95ab512a81efe8e46a",
+  "mlflow_tracking_uri": "https://dagshub.com/mamezquita/Warehouse-Rush.mlflow"
 }

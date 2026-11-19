@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
+import { viewerSession } from './api-session.js';
 
 test('PDF catalogue, GLB downloads, real stock meshes and responsive viewer', async ({page,request})=>{
-  await request.post('/api/reset',{data:{makeup:true,seed:42,orders:1,policy:'heuristic',blocked:false}});
+  const api=viewerSession(request);
+  await api.post('reset',{makeup:true,seed:42,orders:1,policy:'heuristic',blocked:false});
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
-  await page.goto('/');await expect(page.locator('#scene-loading')).toBeHidden();
+  await api.attach(page);await page.goto('/');await expect(page.locator('#scene-loading')).toBeHidden();
   expect(await page.evaluate(()=>window.warehouseViewer.scene.stockVisuals.products.size)).toBe(27);
   const appearances=await page.evaluate(()=>[...window.warehouseViewer.scene.stockVisuals.products.values()].map(p=>({
     shelf:p.shelf.count,asset:p.shelf.userData.assetSku,

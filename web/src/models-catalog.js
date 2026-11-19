@@ -4,6 +4,7 @@
 // suite: la API manda) + /modelos/catalogo.json estático (`python -m pipelines.catalogo`), que solo aporta
 // hipótesis, cambios, curva, enlace a MLflow y causas de fin. Se unen por run_id; lo que la API no lista no se muestra.
 import { apiClient } from './api-client.js';
+import { api as viewerApi } from './viewer-api.js';
 
 const ESTADOS = { recomendado: 'Recomendado', candidato: 'Candidato', rechazado: 'Rechazado', fallido: 'Fallido', interrumpido: 'Interrumpido' };
 const POLITICAS = { ppo: 'PPO', heuristic: 'Referencia (regla)', random: 'Aleatoria' };
@@ -40,7 +41,7 @@ function merge(api, estatico) {
     // Solo del estático: descripción del experimento y detalle numérico del test final.
     hipotesis: estatico?.hipotesis, cambios: estatico?.cambios, curva: estatico?.curva, mlflow: estatico?.mlflow,
     test_final: estatico?.test_final, estatico,
-    // Temporal: «Cargar» y «Evaluar 10 episodios» siguen en la API del visor hasta migrar episodios y evaluaciones.
+    // «Cargar en la bodega» y el diagnóstico rápido van a la capa /api/* de la API (los 2 modelos recomendados que ejecuta).
     servido: Boolean(estatico?.servido),
   };
 }
@@ -90,20 +91,22 @@ export function setupModelCatalog({ load, initial }) {
     return el('div', {}, el('h4', { textContent: title }), table(['Escenario', 'Política', 'Éxito', 'Pasos', 'Choques/ep', 'Causas de fin'], rows));
   }
 
+  // Diagnóstico rápido de la API (POST /api/evaluate): pocas semillas, catálogo de la web, certificado: false.
+  // La evaluación oficial es POST /evaluaciones (suites fijas); este botón no la reemplaza.
   async function evaluate(model, blocked, out, button) {
-    button.disabled = true;out.replaceChildren(el('p', { className: 'preview-help', textContent: 'Evaluando en el servidor… (modelo congelado, determinista)' }));
+    button.disabled = true;out.replaceChildren(el('p', { className: 'preview-help', textContent: 'Diagnóstico en curso en el servidor… (modelo congelado, determinista; unos 5 s, hasta ~15 s si el modelo falla)' }));
     try {
-      const response = await fetch('/api/evaluate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: model.id, blocked, episodes: 10 }) });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Error al evaluar');
+      const result = await viewerApi('evaluate', { model: model.id, blocked, episodes: 10 }, { waitMessage: 'Diagnóstico en curso… si el servidor estaba dormido, primero tiene que despertar (~20 s).' });
       const s = result.summary, mon = result.monitoring;
       out.replaceChildren(
-        el('span', { className: 'mode-badge evaluation', textContent: 'MODO · EVALUACIÓN' }),
+        el('span', { className: 'mode-badge evaluation', textContent: result.certificado === false ? 'DIAGNÓSTICO · NO CERTIFICADO' : 'MODO · EVALUACIÓN' }),
+        result.nota ? el('p', { className: 'preview-help', textContent: result.nota }) : null,
         el('p', { textContent: `${result.episodes.length} episodios · semillas ${result.seeds.join('–')} · paso ${result.scenario} · catálogo ${result.catalog} · ${result.environment_version}` }),
         el('p', { className: 'model-kpis', textContent: `Éxito ${pct(s.success_rate)} · pasos (éxitos) ${num(s.mean_steps_success)} · choques/ep ${num(s.mean_collisions, 2)} · causas: ${reasons(s.end_reasons)}` }),
         el('p', { className: 'preview-help', textContent: `Monitoreo: inferencia ${num(mon.inference_ms_mean, 2)} ms/paso (p95 ${num(mon.inference_ms_p95, 2)}) · ${mon.steps} pasos · errores ${mon.errors} · sha256 servido ${mon.served_sha256.slice(0, 12)}` }),
         table(['Semilla', 'Éxito', 'Pasos', 'Choques', 'Fin'], result.episodes.map(e => [e.seed, e.success ? 'sí' : 'no', e.steps ?? '—', e.collisions ?? '—', e.end_reason || e.error])));
     } catch (error) {
+      // 429 diagnostico_en_curso / demasiadas_sesiones llegan ya con un mensaje para el usuario (viewer-api.js).
       out.replaceChildren(el('p', { className: 'model-error', textContent: error.message }));
     } finally { button.disabled = false; }
   }
@@ -124,7 +127,7 @@ export function setupModelCatalog({ load, initial }) {
     const actions = model.servido ? el('div', { className: 'model-actions' },
       el('label', { className: 'model-check' }, blockedInput, ' Paso (6,14) cerrado'),
       el('button', { className: 'button', textContent: 'Cargar en la bodega', onclick: () => { dialog.close();load(model.id, blockedInput.checked); } }),
-      el('button', { className: 'button', textContent: 'Evaluar 10 episodios', onclick: event => evaluate(model, blockedInput.checked, evalOut, event.currentTarget) }))
+      el('button', { className: 'button', textContent: 'Diagnóstico rápido · 10 episodios (no certificado)', title: 'Diagnóstico no certificado: 10 semillas con el catálogo de la web. La evaluación oficial usa las suites fijas.', onclick: event => evaluate(model, blockedInput.checked, evalOut, event.currentTarget) }))
       : el('p', { className: 'preview-help', textContent: 'Modelo histórico: identidad, evaluación y curva disponibles; la API ejecuta en vivo los modelos recomendados (pesos de los demás en DVC).' });
     detail.replaceChildren(
       el('span', { className: `state-badge ${model.estado}`, textContent: ESTADOS[model.estado] || model.estado }),

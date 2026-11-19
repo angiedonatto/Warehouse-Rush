@@ -1,11 +1,14 @@
 import { test, expect } from '@playwright/test';
+import { viewerSession } from './api-session.js';
 
 test('order checklist follows real pickup, delivery and stock; rack details and mobile', async ({ page, request }) => {
-  const response = await request.post('/api/reset', { data: { makeup: true, seed: 24, orders: 1, policy: 'heuristic', blocked: true } });
+  const api = viewerSession(request);
+  const response = await api.post('reset',{ makeup: true, seed: 24, orders: 1, policy: 'heuristic', blocked: true });
   expect(response.ok()).toBeTruthy();
   const initial = await response.json();
   const initialUnits = initial.state.inventory.products.reduce((n, p) => n + p.stock_total, 0);
   const errors = [];page.on('pageerror', e => errors.push(e.message));
+  await api.attach(page);
   await page.goto('/');
   await expect(page.locator('#scene-loading')).toBeHidden();
   await expect(page.locator('#order-sheet li')).toHaveCount(3);

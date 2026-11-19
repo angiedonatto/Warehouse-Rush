@@ -1,0 +1,249 @@
+"""API FastAPI (api/_app.py, api/_modelos.py, api/_episodios.py).
+
+- Sin pesos ni red: el almacén de modelos usa copias de manifiestos reales con pesos falsos y una política
+  falsa; la app usa el repositorio real (catálogo, suites, mapas) con la heurística y sin precargar modelos.
+- Con pesos (se saltan si no están en disco; `dvc pull models/m1-c3-seed0.dvc models/m1b-i1-seed1.dvc`):
+  reproducen por la API las evaluaciones congeladas de los dos modelos de producción y la degradación de
+  m1-c3-seed0 con el paso cerrado (antecedente de docs/rollback.md).
+"""
+import json
+import shutil
+from pathlib import Path
+
+import pytest
+
+pytest.importorskip("fastapi")
+from fastapi.testclient import TestClient  # noqa: E402
+
+from api._app import create_app  # noqa: E402
+from api._episodios import GestorEpisodios  # noqa: E402
+from api._modelos import AlmacenModelos, ErrorModelo  # noqa: E402
+from pipelines import registry as R  # noqa: E402
+from pipelines.tracking import sha256_file  # noqa: E402
+
+REPO = Path(__file__).resolve().parents[1]
+ORIGEN = "https://warehouse-rush-experiment-001.vercel.app"
+PESOS = {run: REPO / json.loads((REPO / f"manifests/{run}.json").read_text())["model_uri"]
+         for run in ("m1b-i1-seed1-best", "m1-c3-seed0")}
+con_pesos = pytest.mark.skipif(not all(p.is_file() for p in PESOS.values()),
+                               reason="pesos de producción no descargados (dvc pull)")
+
+
+# --- Almacén de modelos (sin pesos reales) ---------------------------------------------------------
+
+class PoliticaFalsa:
+    def __init__(self, path):
+        self.path = path
+
+    def action(self, observation, env):
+        return 3  # FRENAR
+
+
+@pytest.fixture
+def raiz_falsa(tmp_path, monkeypatch):
+    """Manifiestos reales con pesos falsos (sha256 recalculado) y alias de producción inicializados."""
+    monkeypatch.setattr("pipelines.baselines.PPOPolicy", PoliticaFalsa)
+    (tmp_path / "manifests").mkdir()
+    shutil.copy(REPO / "manifests/schema.json", tmp_path / "manifests/schema.json")
+    for run in ("m1b-i1-seed1-best", "m1-c3-seed0", "m1-c3-seed1", "m1-c4-seed1", "m1o-e4l-seed0"):
+        manifest = json.loads((REPO / f"manifests/{run}.json").read_text())
+        pesos = tmp_path / manifest["model_uri"]
+        pesos.parent.mkdir(parents=True, exist_ok=True)
+        pesos.write_bytes(f"pesos falsos de {run}".encode())
+        manifest["model_sha256"] = sha256_file(pesos)
+        (tmp_path / f"manifests/{run}.json").write_text(json.dumps(manifest))
+    R.inicializar_aliases(produccion="m1b-i1-seed1-best", anterior_produccion="m1-c3-seed0",
+                          motivo="prueba", autor="test", raiz=tmp_path)
+    return tmp_path
+
+
+def codigo(fn, *args):
+    with pytest.raises(ErrorModelo) as exc:
+        fn(*args)
+    return exc.value.estado_http, exc.value.codigo
+
+
+def test_almacen_rechaza_inexistente_e_incompatible(raiz_falsa):
+    almacen = AlmacenModelos(raiz_falsa)
+    assert codigo(almacen.obtener, "no-existe") == (404, "modelo_no_encontrado")
+    assert codigo(almacen.obtener, "m1o-e4l-seed0") == (409, "modelo_incompatible")  # warehouse-v5
+
+
+def test_almacen_no_carga_un_hash_distinto(raiz_falsa):
+    (raiz_falsa / "models/m1-c3-seed1/model.zip").write_bytes(b"alterado")
+    assert codigo(AlmacenModelos(raiz_falsa).obtener, "m1-c3-seed1") == (500, "integridad")
+
+
+def test_almacen_sin_pesos_y_dvc_fallido_responde_503(raiz_falsa, monkeypatch):
+    """Simula el fallo de `dvc pull` (sin credenciales o sin red); el camino real se comprobó a mano en una copia
+    sin .git (docs/decisiones.md, 2026-11-18). Aquí importa que se clasifique como 503 y no se cargue nada."""
+    import subprocess
+
+    llamadas = []
+
+    def dvc_falla(cmd, **kwargs):
+        llamadas.append(cmd)
+        return subprocess.CompletedProcess(cmd, 1, "", "ERROR: Unable to locate credentials")
+
+    monkeypatch.setattr("pipelines.registry.subprocess.run", dvc_falla)
+    (raiz_falsa / "models/m1-c3-seed1/model.zip").unlink()
+    almacen = AlmacenModelos(raiz_falsa)
+    assert codigo(almacen.obtener, "m1-c3-seed1") == (503, "pesos_no_disponibles")
+    assert llamadas and llamadas[0][-2:] == ["pull", "models/m1-c3-seed1.dvc"]
+    assert almacen.estado()["cargados"] == []
+
+
+def test_almacen_fija_produccion_y_desaloja_el_resto(raiz_falsa):
+    almacen = AlmacenModelos(raiz_falsa, capacidad=1)
+    precarga = almacen.precargar_produccion()
+    assert precarga["estado"] == "ok"
+    assert almacen.obtener("m1-c3-seed0") is almacen.obtener("m1-c3-seed0")  # caché
+    almacen.obtener("m1-c3-seed1")
+    almacen.obtener("m1-c4-seed1")  # desaloja m1-c3-seed1, no los fijos
+    cargados = {m["run_id"]: m["fijo"] for m in almacen.estado()["cargados"]}
+    assert cargados == {"m1b-i1-seed1-best": True, "m1-c3-seed0": True, "m1-c4-seed1": False}
+    assert almacen.servido()["run_id"] == "m1b-i1-seed1-best"
+
+
+# --- Episodios (heurística, sin pesos) -------------------------------------------------------------
+
+def test_episodios_caducan_y_respetan_el_maximo():
+    reloj = [0.0]
+    gestor = GestorEpisodios(AlmacenModelos(REPO), ttl_s=1800, maximo=2, reloj=lambda: reloj[0])
+    primero = gestor.crear(politica="heuristic")
+    segundo = gestor.crear(politica="random")
+    assert codigo(lambda: gestor.crear(politica="heuristic")) == (429, "demasiados_episodios")
+    gestor.correr(primero["episodio_id"])  # terminado: es el que se descarta
+    gestor.crear(politica="heuristic")
+    assert codigo(gestor.obtener, primero["episodio_id"]) == (404, "episodio_no_encontrado")
+    reloj[0] += 1801
+    assert codigo(gestor.obtener, segundo["episodio_id"]) == (404, "episodio_no_encontrado")
+
+
+# --- App HTTP sobre el repositorio real (sin precargar modelos) ------------------------------------
+
+@pytest.fixture
+def cliente(monkeypatch):
+    monkeypatch.setenv("CORS_ORIGINS", ORIGEN)
+    monkeypatch.delenv("CORS_ORIGIN_REGEX", raising=False)
+    with TestClient(create_app(REPO, precargar=False)) as c:
+        yield c
+
+
+def test_health_version_y_cabeceras(cliente):
+    assert cliente.get("/health").json()["status"] == "ok"
+    respuesta = cliente.get("/version")
+    version = respuesta.json()
+    aliases = json.loads((REPO / "manifests/aliases.json").read_text())["ranuras"]["produccion"]
+    servido = json.loads((REPO / f"manifests/{aliases['actual']}.json").read_text())
+    assert (version["run_id"], version["model_sha256"]) == (servido["run_id"], servido["model_sha256"])
+    assert version["environment_version"] == "warehouse-v10"
+    assert version["catalogo"]["al_dia"] is True
+    assert respuesta.headers["x-modelo-servido"] == f"{servido['run_id']}@{servido['model_sha256'][:12]}"
+    assert respuesta.headers["x-git-commit"]
+
+
+def test_catalogo_filtra_y_ficha(cliente):
+    recomendados = cliente.get("/catalogo", params={"estado": "recomendado"}).json()["modelos"]
+    assert {m["run_id"] for m in recomendados} == {"m1-c3-seed0", "m1b-i1-seed1-best"}
+    ficha = cliente.get("/catalogo/m1-c3-seed0").json()
+    assert ficha["manifiesto"]["model_sha256"] == ficha["modelo"]["model_sha256"]
+    assert cliente.get("/catalogo/no-existe").status_code == 404
+
+
+def test_errores_tienen_una_sola_forma(cliente):
+    for respuesta, estado, cod in ((cliente.get("/no-existe"), 404, "ruta_no_encontrada"),
+                                   (cliente.put("/version"), 405, "metodo_no_permitido"),
+                                   (cliente.post("/episodios", json={"seed": "5"}), 422, "parametro_invalido"),
+                                   (cliente.post("/episodios", json={"extra": 1}), 422, "parametro_invalido"),
+                                   (cliente.post("/modelos/m1o-e4l-seed0/cargar"), 409, "modelo_incompatible")):
+        assert respuesta.status_code == estado
+        assert set(respuesta.json()["error"]) == {"codigo", "mensaje", "detalle"}
+        assert respuesta.json()["error"]["codigo"] == cod
+
+
+def test_cors_solo_para_el_origen_configurado(cliente):
+    permitido = cliente.options("/episodios", headers={"Origin": ORIGEN, "Access-Control-Request-Method": "POST",
+                                                       "Access-Control-Request-Headers": "content-type"})
+    assert permitido.status_code == 200
+    assert permitido.headers["access-control-allow-origin"] == ORIGEN
+    assert "access-control-allow-credentials" not in permitido.headers
+    otro = cliente.options("/episodios", headers={"Origin": "https://otro.example",
+                                                  "Access-Control-Request-Method": "POST"})
+    assert "access-control-allow-origin" not in otro.headers
+    assert "X-Modelo-Servido" in cliente.get("/version", headers={"Origin": ORIGEN}).headers["access-control-expose-headers"]
+
+
+def test_evaluaciones_rechazan_suites_reservadas_o_de_otra_familia(cliente):
+    for cuerpo, estado in (({"suite_id": "test-final-m1-v1"}, 404), ({"suite_id": "../manifests/schema"}, 404),
+                           ({"suite_id": "suite-n1-v1"}, 409),
+                           ({"suite_id": "suite-m1-v1", "politica": "heuristic", "run_id": "m1-c3-seed0"}, 400)):
+        assert cliente.post("/evaluaciones", json=cuerpo).status_code == estado, cuerpo
+
+
+def test_evaluacion_de_la_heuristica_en_suite_fija(cliente):
+    resultado = cliente.post("/evaluaciones", json={"suite_id": "dev-m1-v1", "politica": "heuristic"}).json()
+    assert resultado["episodios"] == 10 and resultado["semillas"] == [1000, 1009]
+    assert resultado["resumen"]["success_rate"] == 1.0
+    assert len(resultado["por_episodio"]) == 10
+    monitoreo = cliente.get("/monitoreo").json()
+    fila = next(f for f in monitoreo["exito_por_escenario"] if f["quien"] == "heuristic")
+    assert (fila["escenario"], fila["episodios"], fila["origen"]) == ("m1/abierto", 10, {"evaluacion": 10})
+
+
+def test_episodio_de_referencia_y_manual_por_http(cliente):
+    creado = cliente.post("/episodios", json={"politica": "heuristic", "nivel": "m1b"})
+    assert creado.status_code == 201 and creado.json()["modo"] == "referencia"
+    episodio = creado.json()["episodio_id"]
+    final = cliente.post(f"/episodios/{episodio}/correr").json()["final"]
+    assert final["done"] and final["info"]["success"] and final["bloqueado"]
+    assert cliente.post(f"/episodios/{episodio}/paso").json()["error"]["codigo"] == "episodio_terminado"
+
+    manual = cliente.post("/episodios", json={"politica": "manual"}).json()["episodio_id"]
+    assert cliente.post(f"/episodios/{manual}/paso", json={"accion": 1}).json()["last_action"]["name"] == "GIRAR_IZQUIERDA"
+    assert cliente.post(f"/episodios/{manual}/paso", json={"accion": "1"}).status_code == 422
+    assert cliente.post(f"/episodios/{manual}/paso").status_code == 400
+    assert cliente.post(f"/episodios/{manual}/correr").status_code == 400
+    assert cliente.delete(f"/episodios/{manual}").json()["cerrado"] is True
+    assert cliente.get(f"/episodios/{manual}").status_code == 404
+
+
+def test_layout_del_nivel(cliente):
+    layout = cliente.get("/layout", params={"nivel": "m1b"}).json()
+    assert layout["layout_path"] == "configs/layout_v0.4.json" and layout["bloqueado_por_defecto"] is True
+    assert len(layout["catalog"]) == 18
+    assert cliente.get("/layout", params={"nivel": "n1"}).status_code == 422
+
+
+# --- Con los pesos de producción -------------------------------------------------------------------
+
+@con_pesos
+def test_evaluacion_por_api_reproduce_las_congeladas(cliente):
+    produccion = cliente.post("/evaluaciones", json={"suite_id": "suite-m1b-v1", "run_id": "m1b-i1-seed1-best"}).json()
+    esperado = json.loads((REPO / "manifests/m1b-i1-seed1-best.json").read_text())
+    esperado = esperado["evaluation"]["by_scenario"]["suite-m1b-v1 (paso (6,14) cerrado)"]["ppo"]
+    assert produccion["resumen"]["success_rate"] == esperado["success_rate"] == 1.0
+    assert produccion["resumen"]["mean_steps"] == pytest.approx(esperado["mean_steps"])
+
+    rollback = cliente.post("/evaluaciones", json={"suite_id": "suite-m1b-v1", "run_id": "m1-c3-seed0"}).json()
+    congelada = json.loads((REPO / "docs/resultados/eval/incidente-m1-c3-seed0/evaluation.json").read_text())
+    congelada = next(s for s in congelada["summary"] if s["policy"] == "ppo" and s["scenario"] == "blocked")
+    assert rollback["resumen"]["success_rate"] == congelada["success_rate"] == 0.0
+    assert rollback["resumen"]["mean_collisions"] == pytest.approx(congelada["mean_collisions"])
+    assert rollback["resumen"]["end_reasons"] == congelada["end_reasons"]
+
+
+@con_pesos
+def test_rollback_pierde_el_escenario_del_incidente(cliente):
+    """docs/rollback.md: m1-c3-seed0 completa con el paso abierto y falla con el paso cerrado (semilla 10000)."""
+    def jugar(**cuerpo):
+        episodio = cliente.post("/episodios", json={"seed": 10_000, **cuerpo}).json()
+        assert episodio["modo"] == "evaluacion"
+        return cliente.post(f"/episodios/{episodio['episodio_id']}/correr").json()["final"]["info"]
+
+    abierto = jugar(run_id="m1-c3-seed0", nivel="m1", bloqueado=False)
+    cerrado = jugar(run_id="m1-c3-seed0", nivel="m1b", bloqueado=True)
+    produccion = jugar(bloqueado=True)  # sin run_id: el modelo de producción
+    assert abierto["success"] and abierto["steps"] == 82
+    assert not cerrado["success"] and cerrado["end_reason"] == "battery_depleted" and cerrado["collisions"] == 210
+    assert produccion["success"] and produccion["collisions"] == 0

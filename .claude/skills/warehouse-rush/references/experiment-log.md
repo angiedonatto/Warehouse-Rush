@@ -152,6 +152,11 @@ Question: do the two recommended models (trained and certified with the 18-produ
 
 0 collisions everywhere; control reproduces the manifests. Decision: the web runs the models with `trendy-27-v1` (documented as a diagnostic, not a certification); training and evaluation keep `legacy-18` so v10 suites and test-finals stay reproducible. Lesson 30: the policies depend on rack/level targets, not on SKU identity or how many products share a level, so a catalog that redistributes products over the same 18 slots did not hurt them.
 
+## 2026-11-19: reproduction checks after the move to Render (no new training)
+- Render's NumPy policies were verified against SB3 by Miguel (`pipelines/exportar_numpy.py`: 636 986 steps, 0 different actions).
+- Official evaluation launched **from the deployed web** (v1.0, real CORS): `m1b-i1-seed1-best` on `suite-m1b-v1` -> 100%, 106.92 steps, 50/50, identical to the manifest's registered evaluation (the web shows «la evaluación se reproduce igual»). Locally the same run matches too.
+- Uncertified diagnostic (`/api/evaluate`, `trendy-27-v1`, 2 episodes) of the historical candidate `m1-c3-seed1`: 0% (as registered: it never learned the delivery leg). Only a smoke check, not evidence.
+
 ## Open items / next candidates (none started unless marked)
 1. **The delivery leg** (the bottleneck after c4): continue `m1-c4-seed2` from `models/m1-c4-seed2/model.zip` via `parent_run_id` with 1-2M more steps (it loads everything, dev return turned positive at 1.46M); a delivery-leg signal that pays before the tray is down (e.g. a one-off bonus for reaching the dispatch approach cell, or `progress` weighted higher only with target DELIVERY) as a new env version; `ent_coef` 0.01 on seed 0 to check it does not hurt a working seed; curriculum (1-line orders first).
 2. **Declared seed selection: DONE 2026-11-15.** Rule pre-registered in `docs/experimentos.md`, `m1-c3-seed0` selected (98% vs e4y-seed3 100%, within 2 pp, fewer reward terms), `test-final-m1-v1` (100 episodes, seeds 30000-30099) run once: 100/100, 0 collisions, 0 invalid, 90.6 steps -> `recomendado`. `m1-c5-seed2` (continuation of c4-seed2): final model 2% (rechazado), best checkpoint 100% at 3.12M (diagnostic); see lesson 24.

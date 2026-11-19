@@ -83,8 +83,9 @@ Stages = course minimum sequence (see roles.md). Each stage writes status + evid
 
 ## 12. Deployment and rollback
 - **Serving (done 2026-11-18):** `python -m pipelines.servir` copies every `recomendado` manifest's weights compatible with `ENV_VERSION` to `models/servidos/<model>.zip` (sha256 checked; never overwrites different content) and writes `configs/modelos_servidos.json` (identity, exact eval config: layout, orders, reward overrides, `catalogo_evaluacion`/`catalogo_web` and the catalog diagnostic). The API verifies sha256, layout hash and env version at load. `python -m pipelines.catalogo` writes `web/public/modelos/catalogo.json` + reduced curves from manifests + configs + MLflow ids (public read). Rerun both whenever a manifest changes, then `npm run build`.
-- Vercel linked to GitHub, deploys tied to commits; record deploy commit and tag in the catalog; `/version` (or `/health`) endpoint on the API returns env version, model version, git commit.
-- Rollback = point catalog `recomendado` back to `anterior` (alias change + publish catalog) and redeploy previous Vercel deployment/tag if the web changed. Write `docs/rollback.md` and **test it** (course requires a rollback test, with evidence).
+- **Since 2026-11-19 the served model is Render's, not Vercel's.** Source of truth: `manifests/aliases.json` (slot `produccion`: `actual` = `m1b-i1-seed1-best`, `anterior` = `m1-c3-seed0`) and `manifests/catalog.json` (`pipelines/registry.py`). Render loads `models/numpy/<run>.npz` checked against the manifest sha256 and serves `/version` (run_id, model_sha256, environment_version, git_commit) and header `X-Modelo-Servido: <run_id>@<sha12>` on every response. `pipelines.servir` / `models/servidos/` only fed the retired Vercel function (dead code, R3 to remove).
+- Vercel is **not** linked for automatic deploys; deploys are manual from a clean clone (workflow.md, «Deploying the web») and recorded in `docs/despliegue.md`. Release tags go on the deployed commit (`v1.0` = `f72f0a2`).
+- Rollback of the model = `pipelines/registry.py` alias change + Render redeploy (Miguel tested production -> `m1-c3-seed0` -> production, ~25 s; `docs/rollback.md`). Rollback of the web = `vercel promote <previous deployment>`.
 - Monitoring minimum: success per scenario, failure causes, inference latency/errors, served version.
 
 ## 13. Decision log and docs

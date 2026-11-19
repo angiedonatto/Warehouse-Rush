@@ -59,8 +59,10 @@ test('cabecera X-Modelo-Servido: se guarda la última recibida', async () => {
   let n = 0;
   const api = createClient({ baseUrl: 'https://api.ejemplo.dev', fetchImpl: async () => new Response('{}', { status: 200, headers: ++n === 1 ? { 'X-Modelo-Servido': 'm1b-i1-seed1-best' } : {} }) });
   expect(api.modeloServido()).toBeNull();
+  const avisos = [];api.onModeloServido(v => avisos.push(v));
   await api.get('/version');
   expect(api.modeloServido()).toBe('m1b-i1-seed1-best');
   await api.get('/version');
   expect(api.modeloServido()).toBe('m1b-i1-seed1-best');
+  expect(avisos).toEqual(['m1b-i1-seed1-best']);
 });

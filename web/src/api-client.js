@@ -32,6 +32,7 @@ export function resolveBaseUrl(raw, { prod = false } = {}) {
 export function createClient({ baseUrl, prod = false, fetchImpl = globalThis.fetch } = {}) {
   const base = resolveBaseUrl(baseUrl, { prod });
   let modeloServido = null;
+  const oyentes = new Set();
 
   async function request(path, { method = 'GET', body, query } = {}) {
     const qs = query ? new URLSearchParams(Object.entries(query).filter(([, v]) => v !== undefined && v !== null && v !== '')).toString() : '';
@@ -43,7 +44,7 @@ export function createClient({ baseUrl, prod = false, fetchImpl = globalThis.fet
     catch (cause) { throw new ApiError(0, { codigo: 'sin_conexion', mensaje: 'No se pudo conectar con la API.', detalle: String(cause?.message || cause) }); }
     // Solo legible entre dominios si la API la expone (Access-Control-Expose-Headers).
     const header = response.headers.get('X-Modelo-Servido');
-    if (header) modeloServido = header;
+    if (header && header !== modeloServido) { modeloServido = header; for (const fn of oyentes) fn(header); }
     const text = await response.text();
     let data = null;
     if (text) { try { data = JSON.parse(text); } catch { data = null; } }
@@ -58,6 +59,8 @@ export function createClient({ baseUrl, prod = false, fetchImpl = globalThis.fet
     post: (path, body = {}) => request(path, { method: 'POST', body }),
     del: path => request(path, { method: 'DELETE' }),
     modeloServido: () => modeloServido,
+    // Avisa cuando cambia X-Modelo-Servido (formato de la API: <run_id>@<sha256 12>). Devuelve la baja.
+    onModeloServido: fn => { oyentes.add(fn); return () => oyentes.delete(fn); },
   };
 }
 

@@ -1,0 +1,22 @@
+{
+  "etapa": "rollback",
+  "numero": 1,
+  "inicio": "2026-11-19T05:08:30.041512+00:00",
+  "entradas": {
+    "ranura": "produccion",
+    "motivo": "prueba de rollback real en Render: producción a m1-c3-seed0 (2026-11-19)",
+    "antes": {
+      "actual": "m1b-i1-seed1-best",
+      "anterior": "m1-c3-seed0"
+    }
+  },
+  "estado": "ok",
+  "salidas": {
+    "despues": {
+      "actual": "m1-c3-seed0",
+      "anterior": "m1b-i1-seed1-best"
+    }
+  },
+  "fin": "2026-11-19T05:08:30.623065+00:00",
+  "duracion_s": 0.582
+}

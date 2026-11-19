@@ -1,0 +1,27 @@
+{
+  "carpeta": "docs/resultados/flujo/20261119T050830Z-rollback-produccion",
+  "etapas": [
+    {
+      "numero": 1,
+      "etapa": "rollback",
+      "estado": "ok",
+      "duracion_s": 0.582
+    },
+    {
+      "numero": 7,
+      "etapa": "publicar_catalogo",
+      "estado": "reutilizado",
+      "duracion_s": 6.768
+    },
+    {
+      "numero": 3,
+      "etapa": "verificar_servido",
+      "estado": "pendiente",
+      "duracion_s": 0.0
+    }
+  ],
+  "flujo": "warehouse-rollback",
+  "ranura": "produccion",
+  "fin": "2026-11-19T05:08:37.418815+00:00",
+  "prefect_flow_run_id": "af78b35d-002c-4d76-b045-095e0a889552"
+}

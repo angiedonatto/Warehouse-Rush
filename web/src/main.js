@@ -79,6 +79,15 @@ function populateModels() {
     anchor.after(option);
   }
 }
+// Un modelo del catálogo que no está entre los recomendados (layout.models) también se puede cargar si la API lo
+// ejecuta: se agrega su opción al selector, fuera de las que populateModels() reconstruye.
+function ensureModelOption(id) {
+  const select = $('#policy');
+  if ([...select.options].some(option => option.value === `model:${id}`)) return;
+  const option = document.createElement('option');
+  option.value = `model:${id}`;option.dataset.extra = '1';option.textContent = `PPO · ${id} · catálogo`;
+  select.querySelector('option[value="ppo"]').after(option);
+}
 function modelDetail(model) {
   const final = model.test_final?.ppo || {};
   const tests = Object.entries(final).map(([scenario, r]) => `${scenario} ${Math.round(r.success_rate * 100)}%`).join(' · ');
@@ -274,13 +283,14 @@ async function start() {
     const state = () => api('state').catch(error => { if (error.codigo !== 'sesion_no_encontrada') throw error;toast(error.message);return api('state'); });
     [layoutInfo, current] = await Promise.all([api('layout'), state()]);
     populateModels();
+    if (current.model) ensureModelOption(current.model.id);
     $('#policy').value = policyValue(current);$('#orders').value = Math.min(2, current.orders);$('#blocked').checked = current.state.pasillo_bloqueado;$('#makeup').checked = current.makeup;seedInput.value = current.seed;
     mountScene();
     renderState(current, true);
     $('#scene-loading').hidden = true;
     const linked = params.get('modelo');
-    if (linked && layoutInfo.models?.some(m => m.id === linked)) {
-      $('#policy').value = `model:${linked}`;$('#blocked').checked = params.get('cerrado') === '1';
+    if (linked && /^[\w.-]+$/.test(linked)) {
+      ensureModelOption(linked);$('#policy').value = `model:${linked}`;$('#blocked').checked = params.get('cerrado') === '1';
       if (/^\d+$/.test(params.get('semilla') || '')) seedInput.value = params.get('semilla');
       await reset();
     } else if (current.model) syncUrl(current);
@@ -293,7 +303,7 @@ async function start() {
 }
 setupCatalog();
 setupModelCatalog({
-  load: (id, blocked) => { $('#policy').value = `model:${id}`;$('#blocked').checked = blocked;reset(); },
+  load: (id, blocked) => { ensureModelOption(id);$('#policy').value = `model:${id}`;$('#blocked').checked = blocked;reset(); },
   initial: params.get('catalogo'),
 });
 setupServiceStatus();

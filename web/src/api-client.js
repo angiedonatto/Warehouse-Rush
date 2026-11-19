@@ -62,8 +62,10 @@ export function createClient({ baseUrl, prod = false, fetchImpl = globalThis.fet
 }
 
 // Cliente configurado por Vite. Es una función para que el módulo se pueda importar fuera de Vite (pruebas).
+// La regla de producción (HTTPS, nunca localhost) aplica al modo `production` (el de `vite build` y Vercel);
+// las pruebas locales compilan con `vite build --mode e2e` contra una API en 127.0.0.1.
 let shared = null;
 export function apiClient() {
-  shared ??= createClient({ baseUrl: import.meta.env.VITE_API_BASE_URL, prod: import.meta.env.PROD });
+  shared ??= createClient({ baseUrl: import.meta.env.VITE_API_BASE_URL, prod: import.meta.env.MODE === 'production' });
   return shared;
 }

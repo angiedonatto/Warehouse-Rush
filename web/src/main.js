@@ -1,7 +1,7 @@
 import { setupCatalog } from './catalog.js';
 import { setupModelCatalog } from './models-catalog.js';
 import { setupServiceStatus } from './service-status.js';
-import { api as viewerApi, onWait } from './viewer-api.js';
+import { api as viewerApi, onWait, API_BASE_URL } from './viewer-api.js';
 import './style.css';
 import { renderOrderSheet, renderRack } from './order-sheet.js';
 import { WarehouseScene } from './warehouse.js';
@@ -55,6 +55,14 @@ async function api(path, body) {
 const waitNotice = document.createElement('div');waitNotice.id = 'server-wait';waitNotice.className = 'server-wait';
 waitNotice.setAttribute('role', 'status');waitNotice.setAttribute('aria-live', 'polite');waitNotice.hidden = true;document.body.append(waitNotice);
 onWait(message => { waitNotice.hidden = !message;waitNotice.textContent = message || ''; });
+// Dónde corre la simulación: el rótulo decía «LOCAL» siempre, también en el sitio publicado.
+{
+  const tag = document.querySelector('.local-tag');
+  let host = '';
+  try { host = API_BASE_URL ? new URL(API_BASE_URL).hostname : ''; } catch { host = ''; }
+  const local = !API_BASE_URL || ['localhost', '127.0.0.1', '0.0.0.0', '[::1]'].includes(host);
+  if (tag) { tag.textContent = !API_BASE_URL ? 'LOCAL' : local ? 'API LOCAL' : 'EN LÍNEA';tag.title = `Simulación: ${API_BASE_URL || 'mismo servidor que la web'}`; }
+}
 
 // Modelos recomendados que sirve la API (configs/modelos_servidos.json): cada uno corre en el ambiente
 // exacto de su evaluación (mapa, pedidos y recompensa), con identidad verificable.

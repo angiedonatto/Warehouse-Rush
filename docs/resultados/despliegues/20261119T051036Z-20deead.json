@@ -1,0 +1,25 @@
+{
+  "git_commit": "20deeadaed00eb8ec262e58d5e27a9eee8b62ca3",
+  "imagen": "ghcr.io/mamezquita/warehouse-rush-api:20deead",
+  "digest": "ghcr.io/mamezquita/warehouse-rush-api@sha256:09abdb7d7ef3d3adf93334388ebd3629900dcbedb3768edf43d35d9fa847298b",
+  "motivo": "rollback real: producción a m1-c3-seed0",
+  "api_url": "https://warehouse-rush-api.onrender.com",
+  "solo_imagen": false,
+  "deploy": {
+    "http": "200",
+    "id": "dep-dbv89djl550s73917vcg"
+  },
+  "tiempos_s": {
+    "build": 3.7,
+    "push": 6.0,
+    "deploy_hook_hasta_version": 25.8,
+    "deploy_hook_hasta_precarga": 26.6
+  },
+  "version_servida": {
+    "run_id": "m1-c3-seed0",
+    "model_sha256": "b6034b3396a676d8d9edd27c4229be239f8d0cf9b3ccd712bb0437c67d76b9a7",
+    "environment_version": "warehouse-v10",
+    "git_commit": "20deeadaed00eb8ec262e58d5e27a9eee8b62ca3"
+  },
+  "creado_en": "2026-11-19T05:09:57Z"
+}

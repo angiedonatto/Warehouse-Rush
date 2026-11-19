@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "environment_version_servida": "warehouse-v10",
-  "aliases_version": 2,
+  "aliases_version": 3,
   "produccion": {
-    "actual": "m1-c3-seed0",
-    "anterior": "m1b-i1-seed1-best"
+    "actual": "m1b-i1-seed1-best",
+    "anterior": "m1-c3-seed0"
   },
   "niveles": {
     "m1": {
@@ -402,7 +402,7 @@
       "estado_manifiesto": "recomendado",
       "alias": [
         "recomendado:m1",
-        "servido:produccion"
+        "anterior:produccion"
       ],
       "environment_version": "warehouse-v10",
       "runtime_ref": "env/warehouse-v10",
@@ -2275,7 +2275,7 @@
       "estado_manifiesto": "recomendado",
       "alias": [
         "recomendado:m1b",
-        "anterior:produccion"
+        "servido:produccion"
       ],
       "environment_version": "warehouse-v10",
       "runtime_ref": "env/warehouse-v10",
@@ -3518,8 +3518,8 @@
       "motivo": "experiment-001.json no cumple manifests/schema.json: [\"(raíz): 'run_id' is a required property\", \"(raíz): 'level_id' is a required property\", \"(raíz): 'git_commit' is a required property\", \"(raíz): 'config_sha256' is a required property\", \"(raíz): 'model_uri' is a required property\", \"(raíz): 'norma"
     }
   ],
-  "contenido_sha256": "f22d0920faab4af4cf2da65c45833c8ab4978a1e82ac39d3c354943df7662492",
-  "generado_en": "2026-11-19T05:08:30.615467+00:00",
-  "git_commit": "2445676eb107a137ec801a0812bc143480a0c627",
+  "contenido_sha256": "3825e77a7b1d3d14ab94a548aad6843c92ea232fdf8f2acd55f2750bc2a7a0d9",
+  "generado_en": "2026-11-19T05:12:23.754334+00:00",
+  "git_commit": "20deeadaed00eb8ec262e58d5e27a9eee8b62ca3",
   "git_dirty": "true"
 }

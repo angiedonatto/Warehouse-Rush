@@ -1,0 +1,54 @@
+{
+  "etapa": "publicar_catalogo",
+  "numero": 7,
+  "inicio": "2026-11-19T05:12:23.790171+00:00",
+  "entradas": {},
+  "estado": "reutilizado",
+  "salidas": {
+    "catalogo": "manifests/catalog.json",
+    "contenido_sha256": "3825e77a7b1d3d14ab94a548aad6843c92ea232fdf8f2acd55f2750bc2a7a0d9",
+    "aliases_version": 3,
+    "produccion": {
+      "actual": "m1b-i1-seed1-best",
+      "anterior": "m1-c3-seed0"
+    },
+    "niveles": {
+      "m1": {
+        "actual": "m1-c3-seed0",
+        "anterior": null
+      },
+      "m1b": {
+        "actual": "m1b-i1-seed1-best",
+        "anterior": null
+      }
+    },
+    "alias_mlflow": {
+      "warehouse-m1": {
+        "recomendado": {
+          "run_id": "m1-c3-seed0",
+          "version": "1",
+          "accion": "sin cambio"
+        },
+        "anterior": {
+          "run_id": null,
+          "version": null,
+          "accion": "sin versión registrada"
+        }
+      },
+      "warehouse-m1b": {
+        "recomendado": {
+          "run_id": "m1b-i1-seed1-best",
+          "version": "1",
+          "accion": "sin cambio"
+        },
+        "anterior": {
+          "run_id": null,
+          "version": null,
+          "accion": "sin versión registrada"
+        }
+      }
+    }
+  },
+  "fin": "2026-11-19T05:12:26.664724+00:00",
+  "duracion_s": 2.875
+}

@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "version": 1,
+  "actualizado_en": "2026-11-18T20:33:27.419857+00:00",
+  "ranuras": {
+    "m1": {
+      "actual": "m1-c3-seed0",
+      "anterior": null
+    },
+    "m1b": {
+      "actual": "m1b-i1-seed1-best",
+      "anterior": null
+    },
+    "produccion": {
+      "actual": "m1b-i1-seed1-best",
+      "anterior": "m1-c3-seed0"
+    }
+  },
+  "historial": [
+    {
+      "version": 1,
+      "fecha": "2026-11-18T20:33:27.419874+00:00",
+      "autor": "miguel",
+      "accion": "inicializar",
+      "ranuras": {
+        "m1": {
+          "actual": "m1-c3-seed0",
+          "anterior": null
+        },
+        "m1b": {
+          "actual": "m1b-i1-seed1-best",
+          "anterior": null
+        },
+        "produccion": {
+          "actual": "m1b-i1-seed1-best",
+          "anterior": "m1-c3-seed0"
+        }
+      },
+      "motivo": "Estado inicial tomado de los manifiestos (2026-11-15): m1-c3-seed0 recomendado para m1 (test-final-m1-v1 100/100) y m1b-i1-seed1-best recomendado para m1b (test-final-m1b-v1 100/100 abierto y cerrado), modelo de producción según docs/modelo-actual.md; m1-c3-seed0 es su rollback."
+    }
+  ]
+}

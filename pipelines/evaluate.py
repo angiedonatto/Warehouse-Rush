@@ -21,11 +21,20 @@ EPISODE_FIELDS = ["policy", "scenario", "orders", "seed", "success", "end_reason
 
 def evaluate(*, policies=("random", "heuristic", "ppo"), orders=1, episodes=20,
              seed_start=10_000, scenarios=(False, True), model_path=None,
-             layout_path=None, output_dir="docs/resultados", reward_overrides=None) -> dict:
+             layout_path=None, output_dir="docs/resultados", reward_overrides=None,
+             policy_objects=None) -> dict:
+    # policy_objects (opcional, 2026-11-18): {nombre de `policies`: política ya construida con
+    # .action(observation, env)} que reemplaza a make_policy para ese nombre; p. ej. la API sirve PPO
+    # con inferencia NumPy sin cargar torch. Sin él, el comportamiento es el de siempre. "random" se
+    # sigue recreando por semilla.
     if episodes < 1 or seed_start < 0 or seed_start <= 42 < seed_start + episodes:
         raise ValueError("episodes > 0 y semillas no negativas distintas de entrenamiento (42)")
     if not policies or len(set(policies)) != len(policies):
         raise ValueError("Selecciona políticas distintas")
+    policy_objects = dict(policy_objects or {})
+    if set(policy_objects) - set(policies) or not all(callable(getattr(p, "action", None))
+                                                      for p in policy_objects.values()):
+        raise ValueError("policy_objects: claves de `policies` y objetos con .action(observation, env)")
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     model_path = Path(model_path) if model_path else default_model(orders)
@@ -38,6 +47,8 @@ def evaluate(*, policies=("random", "heuristic", "ppo"), orders=1, episodes=20,
                      "simulation": asdict(probe.config), "rewards": asdict(probe.reward_config),
                      "ppo_deterministic": True, "reward_std_ddof": 0,
                      "reward_overrides": dict(reward_overrides or {})}
+    if policy_objects:
+        configuration["injected_policies"] = sorted(policy_objects)
     probe.close()
     training = None
     if any(p in policies for p in ("ppo", "dqn")) and model_path.is_file():
@@ -63,7 +74,8 @@ def evaluate(*, policies=("random", "heuristic", "ppo"), orders=1, episodes=20,
             env = make_env(blocked, layout_path, orders, reward_overrides)
             combination = []
             try:
-                policy = make_policy(policy_name, seed_start, model_path)
+                policy = (policy_objects[policy_name] if policy_name in policy_objects
+                          else make_policy(policy_name, seed_start, model_path))
                 for seed in configuration["seeds"]:
                     if policy_name == "random":
                         policy = RandomPolicy(seed)

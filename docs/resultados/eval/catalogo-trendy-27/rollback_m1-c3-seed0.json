@@ -1,0 +1,1663 @@
+{
+  "run_id": "m1-c3-seed0",
+  "model_sha256": "b6034b3396a676d8d9edd27c4229be239f8d0cf9b3ccd712bb0437c67d76b9a7",
+  "semillas": [
+    10000,
+    10049
+  ],
+  "determinista": true,
+  "layout_path": "configs/layout_v0.4.json",
+  "reward_overrides": {
+    "invalid_interaction": -0.2,
+    "collision": -1.0
+  },
+  "casos": {
+    "trendy-27-v1 | cerrado": {
+      "exito": 0.0,
+      "choques_ep": 85.04,
+      "entregas_ep": 0.0,
+      "pasos_exito": null,
+      "causas": {
+        "battery_depleted": 20,
+        "time_limit": 30
+      },
+      "episodios": [
+        {
+          "seed": 10000,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10001,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10002,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 228,
+          "collisions": 210,
+          "deliveries": 0
+        },
+        {
+          "seed": 10003,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 228,
+          "collisions": 210,
+          "deliveries": 0
+        },
+        {
+          "seed": 10004,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 3,
+          "deliveries": 0
+        },
+        {
+          "seed": 10005,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10006,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10007,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10008,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 227,
+          "collisions": 213,
+          "deliveries": 0
+        },
+        {
+          "seed": 10009,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 254,
+          "collisions": 209,
+          "deliveries": 0
+        },
+        {
+          "seed": 10010,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10011,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10012,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10013,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 227,
+          "collisions": 214,
+          "deliveries": 0
+        },
+        {
+          "seed": 10014,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10015,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10016,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 227,
+          "collisions": 213,
+          "deliveries": 0
+        },
+        {
+          "seed": 10017,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 228,
+          "collisions": 210,
+          "deliveries": 0
+        },
+        {
+          "seed": 10018,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10019,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 227,
+          "collisions": 213,
+          "deliveries": 0
+        },
+        {
+          "seed": 10020,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10021,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10022,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10023,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10024,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10025,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 227,
+          "collisions": 213,
+          "deliveries": 0
+        },
+        {
+          "seed": 10026,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10027,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10028,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 254,
+          "collisions": 209,
+          "deliveries": 0
+        },
+        {
+          "seed": 10029,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 228,
+          "collisions": 210,
+          "deliveries": 0
+        },
+        {
+          "seed": 10030,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10031,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10032,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10033,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10034,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10035,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10036,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10037,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 228,
+          "collisions": 210,
+          "deliveries": 0
+        },
+        {
+          "seed": 10038,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 4,
+          "deliveries": 0
+        },
+        {
+          "seed": 10039,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 227,
+          "collisions": 213,
+          "deliveries": 0
+        },
+        {
+          "seed": 10040,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10041,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 228,
+          "collisions": 210,
+          "deliveries": 0
+        },
+        {
+          "seed": 10042,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 228,
+          "collisions": 210,
+          "deliveries": 0
+        },
+        {
+          "seed": 10043,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 254,
+          "collisions": 209,
+          "deliveries": 0
+        },
+        {
+          "seed": 10044,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 227,
+          "collisions": 214,
+          "deliveries": 0
+        },
+        {
+          "seed": 10045,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 3,
+          "deliveries": 0
+        },
+        {
+          "seed": 10046,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 228,
+          "collisions": 210,
+          "deliveries": 0
+        },
+        {
+          "seed": 10047,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 227,
+          "collisions": 213,
+          "deliveries": 0
+        },
+        {
+          "seed": 10048,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 227,
+          "collisions": 214,
+          "deliveries": 0
+        },
+        {
+          "seed": 10049,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        }
+      ]
+    },
+    "trendy-27-v1 | abierto": {
+      "exito": 1.0,
+      "choques_ep": 0.0,
+      "entregas_ep": 3.0,
+      "pasos_exito": 82.3,
+      "causas": {
+        "success": 50
+      },
+      "episodios": [
+        {
+          "seed": 10000,
+          "success": true,
+          "end_reason": "success",
+          "steps": 88,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10001,
+          "success": true,
+          "end_reason": "success",
+          "steps": 83,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10002,
+          "success": true,
+          "end_reason": "success",
+          "steps": 81,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10003,
+          "success": true,
+          "end_reason": "success",
+          "steps": 81,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10004,
+          "success": true,
+          "end_reason": "success",
+          "steps": 85,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10005,
+          "success": true,
+          "end_reason": "success",
+          "steps": 82,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10006,
+          "success": true,
+          "end_reason": "success",
+          "steps": 68,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10007,
+          "success": true,
+          "end_reason": "success",
+          "steps": 79,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10008,
+          "success": true,
+          "end_reason": "success",
+          "steps": 75,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10009,
+          "success": true,
+          "end_reason": "success",
+          "steps": 68,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10010,
+          "success": true,
+          "end_reason": "success",
+          "steps": 115,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10011,
+          "success": true,
+          "end_reason": "success",
+          "steps": 74,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10012,
+          "success": true,
+          "end_reason": "success",
+          "steps": 73,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10013,
+          "success": true,
+          "end_reason": "success",
+          "steps": 75,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10014,
+          "success": true,
+          "end_reason": "success",
+          "steps": 88,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10015,
+          "success": true,
+          "end_reason": "success",
+          "steps": 83,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10016,
+          "success": true,
+          "end_reason": "success",
+          "steps": 75,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10017,
+          "success": true,
+          "end_reason": "success",
+          "steps": 79,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10018,
+          "success": true,
+          "end_reason": "success",
+          "steps": 74,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10019,
+          "success": true,
+          "end_reason": "success",
+          "steps": 85,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10020,
+          "success": true,
+          "end_reason": "success",
+          "steps": 85,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10021,
+          "success": true,
+          "end_reason": "success",
+          "steps": 103,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10022,
+          "success": true,
+          "end_reason": "success",
+          "steps": 86,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10023,
+          "success": true,
+          "end_reason": "success",
+          "steps": 96,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10024,
+          "success": true,
+          "end_reason": "success",
+          "steps": 85,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10025,
+          "success": true,
+          "end_reason": "success",
+          "steps": 75,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10026,
+          "success": true,
+          "end_reason": "success",
+          "steps": 81,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10027,
+          "success": true,
+          "end_reason": "success",
+          "steps": 98,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10028,
+          "success": true,
+          "end_reason": "success",
+          "steps": 68,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10029,
+          "success": true,
+          "end_reason": "success",
+          "steps": 79,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10030,
+          "success": true,
+          "end_reason": "success",
+          "steps": 88,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10031,
+          "success": true,
+          "end_reason": "success",
+          "steps": 74,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10032,
+          "success": true,
+          "end_reason": "success",
+          "steps": 96,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10033,
+          "success": true,
+          "end_reason": "success",
+          "steps": 115,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10034,
+          "success": true,
+          "end_reason": "success",
+          "steps": 79,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10035,
+          "success": true,
+          "end_reason": "success",
+          "steps": 85,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10036,
+          "success": true,
+          "end_reason": "success",
+          "steps": 70,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10037,
+          "success": true,
+          "end_reason": "success",
+          "steps": 71,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10038,
+          "success": true,
+          "end_reason": "success",
+          "steps": 83,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10039,
+          "success": true,
+          "end_reason": "success",
+          "steps": 75,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10040,
+          "success": true,
+          "end_reason": "success",
+          "steps": 81,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10041,
+          "success": true,
+          "end_reason": "success",
+          "steps": 82,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10042,
+          "success": true,
+          "end_reason": "success",
+          "steps": 84,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10043,
+          "success": true,
+          "end_reason": "success",
+          "steps": 68,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10044,
+          "success": true,
+          "end_reason": "success",
+          "steps": 77,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10045,
+          "success": true,
+          "end_reason": "success",
+          "steps": 83,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10046,
+          "success": true,
+          "end_reason": "success",
+          "steps": 71,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10047,
+          "success": true,
+          "end_reason": "success",
+          "steps": 85,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10048,
+          "success": true,
+          "end_reason": "success",
+          "steps": 92,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10049,
+          "success": true,
+          "end_reason": "success",
+          "steps": 88,
+          "collisions": 0,
+          "deliveries": 3
+        }
+      ]
+    },
+    "legacy-18 | cerrado": {
+      "exito": 0.0,
+      "choques_ep": 21.62,
+      "entregas_ep": 0.0,
+      "pasos_exito": null,
+      "causas": {
+        "battery_depleted": 5,
+        "time_limit": 45
+      },
+      "episodios": [
+        {
+          "seed": 10000,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 228,
+          "collisions": 210,
+          "deliveries": 0
+        },
+        {
+          "seed": 10001,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 228,
+          "collisions": 210,
+          "deliveries": 0
+        },
+        {
+          "seed": 10002,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10003,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10004,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10005,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10006,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10007,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 227,
+          "collisions": 210,
+          "deliveries": 0
+        },
+        {
+          "seed": 10008,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10009,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10010,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10011,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10012,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10013,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10014,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10015,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10016,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10017,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10018,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10019,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10020,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10021,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10022,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10023,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10024,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 227,
+          "collisions": 213,
+          "deliveries": 0
+        },
+        {
+          "seed": 10025,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10026,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10027,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10028,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10029,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10030,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10031,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 4,
+          "deliveries": 0
+        },
+        {
+          "seed": 10032,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10033,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10034,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10035,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10036,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 3,
+          "deliveries": 0
+        },
+        {
+          "seed": 10037,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10038,
+          "success": false,
+          "end_reason": "battery_depleted",
+          "steps": 227,
+          "collisions": 210,
+          "deliveries": 0
+        },
+        {
+          "seed": 10039,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10040,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10041,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10042,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10043,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10044,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10045,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10046,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 1,
+          "deliveries": 0
+        },
+        {
+          "seed": 10047,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10048,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10049,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        }
+      ]
+    },
+    "legacy-18 | abierto": {
+      "exito": 0.98,
+      "choques_ep": 0.0,
+      "entregas_ep": 2.94,
+      "pasos_exito": 86.8,
+      "causas": {
+        "success": 49,
+        "time_limit": 1
+      },
+      "episodios": [
+        {
+          "seed": 10000,
+          "success": true,
+          "end_reason": "success",
+          "steps": 82,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10001,
+          "success": true,
+          "end_reason": "success",
+          "steps": 88,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10002,
+          "success": true,
+          "end_reason": "success",
+          "steps": 72,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10003,
+          "success": true,
+          "end_reason": "success",
+          "steps": 85,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10004,
+          "success": true,
+          "end_reason": "success",
+          "steps": 90,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10005,
+          "success": true,
+          "end_reason": "success",
+          "steps": 114,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10006,
+          "success": false,
+          "end_reason": "time_limit",
+          "steps": 400,
+          "collisions": 0,
+          "deliveries": 0
+        },
+        {
+          "seed": 10007,
+          "success": true,
+          "end_reason": "success",
+          "steps": 88,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10008,
+          "success": true,
+          "end_reason": "success",
+          "steps": 87,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10009,
+          "success": true,
+          "end_reason": "success",
+          "steps": 81,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10010,
+          "success": true,
+          "end_reason": "success",
+          "steps": 97,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10011,
+          "success": true,
+          "end_reason": "success",
+          "steps": 97,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10012,
+          "success": true,
+          "end_reason": "success",
+          "steps": 81,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10013,
+          "success": true,
+          "end_reason": "success",
+          "steps": 97,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10014,
+          "success": true,
+          "end_reason": "success",
+          "steps": 72,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10015,
+          "success": true,
+          "end_reason": "success",
+          "steps": 74,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10016,
+          "success": true,
+          "end_reason": "success",
+          "steps": 93,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10017,
+          "success": true,
+          "end_reason": "success",
+          "steps": 70,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10018,
+          "success": true,
+          "end_reason": "success",
+          "steps": 90,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10019,
+          "success": true,
+          "end_reason": "success",
+          "steps": 110,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10020,
+          "success": true,
+          "end_reason": "success",
+          "steps": 86,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10021,
+          "success": true,
+          "end_reason": "success",
+          "steps": 82,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10022,
+          "success": true,
+          "end_reason": "success",
+          "steps": 76,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10023,
+          "success": true,
+          "end_reason": "success",
+          "steps": 92,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10024,
+          "success": true,
+          "end_reason": "success",
+          "steps": 73,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10025,
+          "success": true,
+          "end_reason": "success",
+          "steps": 94,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10026,
+          "success": true,
+          "end_reason": "success",
+          "steps": 89,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10027,
+          "success": true,
+          "end_reason": "success",
+          "steps": 111,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10028,
+          "success": true,
+          "end_reason": "success",
+          "steps": 87,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10029,
+          "success": true,
+          "end_reason": "success",
+          "steps": 71,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10030,
+          "success": true,
+          "end_reason": "success",
+          "steps": 87,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10031,
+          "success": true,
+          "end_reason": "success",
+          "steps": 83,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10032,
+          "success": true,
+          "end_reason": "success",
+          "steps": 81,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10033,
+          "success": true,
+          "end_reason": "success",
+          "steps": 81,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10034,
+          "success": true,
+          "end_reason": "success",
+          "steps": 79,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10035,
+          "success": true,
+          "end_reason": "success",
+          "steps": 88,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10036,
+          "success": true,
+          "end_reason": "success",
+          "steps": 81,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10037,
+          "success": true,
+          "end_reason": "success",
+          "steps": 84,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10038,
+          "success": true,
+          "end_reason": "success",
+          "steps": 90,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10039,
+          "success": true,
+          "end_reason": "success",
+          "steps": 78,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10040,
+          "success": true,
+          "end_reason": "success",
+          "steps": 94,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10041,
+          "success": true,
+          "end_reason": "success",
+          "steps": 85,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10042,
+          "success": true,
+          "end_reason": "success",
+          "steps": 96,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10043,
+          "success": true,
+          "end_reason": "success",
+          "steps": 87,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10044,
+          "success": true,
+          "end_reason": "success",
+          "steps": 89,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10045,
+          "success": true,
+          "end_reason": "success",
+          "steps": 74,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10046,
+          "success": true,
+          "end_reason": "success",
+          "steps": 80,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10047,
+          "success": true,
+          "end_reason": "success",
+          "steps": 84,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10048,
+          "success": true,
+          "end_reason": "success",
+          "steps": 94,
+          "collisions": 0,
+          "deliveries": 3
+        },
+        {
+          "seed": 10049,
+          "success": true,
+          "end_reason": "success",
+          "steps": 108,
+          "collisions": 0,
+          "deliveries": 3
+        }
+      ]
+    }
+  }
+}

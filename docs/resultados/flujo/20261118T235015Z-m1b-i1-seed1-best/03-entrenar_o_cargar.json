@@ -1,0 +1,20 @@
+{
+  "etapa": "entrenar_o_cargar",
+  "numero": 3,
+  "inicio": "2026-11-18T23:50:34.941058+00:00",
+  "entradas": {
+    "modo": "cargar",
+    "run_id": "m1b-i1-seed1-best",
+    "timesteps": null
+  },
+  "estado": "reutilizado",
+  "salidas": {
+    "origen": "manifiesto",
+    "model_path": "models/m1b-i1-seed1/best/best_model.zip",
+    "model_sha256": "46984e97b032920cd8e041e44b4f5d27751235cb7f4e04c634f523c2c41fdbb7",
+    "descargado_con_dvc": false,
+    "mlflow_run_id_entrenamiento": null
+  },
+  "fin": "2026-11-18T23:50:34.987375+00:00",
+  "duracion_s": 0.046
+}

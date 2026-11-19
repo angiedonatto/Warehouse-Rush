@@ -58,6 +58,22 @@ pasos, 0 choques; paso abierto → éxito en 88 pasos.
 incidente sigue activo, volver a `m1-c3-seed0` deja la operación sin un modelo que funcione en ese escenario; en ese
 caso conviene mantener `m1b-i1-seed1-best` o servir la heurística como referencia mientras se corrige.
 
+## Qué se pierde y qué no al dormirse o redesplegarse Render
+
+La API corre en un solo proceso de Render Free, que **se duerme tras 15 min sin tráfico** y se reinicia en cada
+redeploy (también en un rollback). Lo que vive en memoria de ese proceso se pierde; lo que viene de la imagen no:
+
+| Qué | Dónde vive | ¿Se pierde al dormirse o redesplegarse? |
+|---|---|---|
+| Episodios (`/episodios/{id}`) | memoria del proceso (caducan además a los 30 min sin uso; máx. 200) | **Sí**: la web debe crear uno nuevo (el GET responde 404 `episodio_no_encontrado`) |
+| Evaluaciones en curso o terminadas (`/evaluaciones/trabajos/{id}`) | memoria del proceso (las terminadas caducan a los 30 min sin consultarse) | **Sí**: hay que volver a lanzarlas |
+| Métricas de `/monitoreo` | memoria del proceso | **Sí**: los contadores vuelven a cero |
+| Modelos (`models/numpy/`), manifiestos, catálogo y alias (`manifests/`) | dentro de la imagen (Git, commit en `/version`) | **No** |
+| Evaluaciones congeladas (`GET /evaluaciones/{run_id}`) | dentro de la imagen (`docs/resultados/eval/`) | **No** |
+
+Por eso la prueba de rollback verifica el modelo servido con `/version` (estado de la imagen) y no espera conservar
+episodios abiertos a través del redeploy.
+
 ## Pendiente
 
 - Prueba de rollback con la API desplegada: `m1b-i1-seed1-best` → `m1-c3-seed0` → `m1b-i1-seed1-best`, con la

@@ -10,25 +10,25 @@ Modelos recomendados: `m1b-i1-seed1-best` (producción, N3) y `m1-c3-seed0` (N2,
 
 ## Estructura
 `envs/` ambiente · `configs/` niveles, experimentos, suites, criterios · `pipelines/` entrenamiento, evaluación, tracking ·
-`api/` entrada de Vercel y servidor del visor · `tests/` · `web/` Vite+TS+Three.js · `manifests/` modelos recuperables ·
+`api/` API FastAPI (Render) y motor de sesiones del visor · `tests/` · `web/` Vite+TS+Three.js · `manifests/` modelos recuperables ·
 `models/` pesos (DVC; `experiment-001` en Git) · `docs/` ficha del ambiente, decisiones, experimentos, resultados.
 
 ## Arquitectura
 | Capa | Dónde | Qué hay |
 |---|---|---|
 | Web, catálogo y comparación | Vercel (estático, `web/dist`) | Vite + Three.js: bodega 3D, catálogo de productos (Naomi) y catálogo «Modelos y experimentos» (`web/public/modelos/catalogo.json`, generado por `pipelines/catalogo.py`) |
-| Simulación e inferencia | Función Python de Vercel (`api/index.py`, 60 s) | La simulación en Python es la autoridad. API sin estado: cada visitante tiene una cookie firmada y la sesión se reconstruye en cada paso. Rutas `GET health\|layout\|state` y `POST reset\|step\|evaluate` |
-| Modelos servidos | Git (`models/servidos/`, `configs/modelos_servidos.json`) | Los recomendados de `warehouse-v10`, con SHA-256 verificado al cargar (`pipelines/servir.py`) |
+| Simulación, inferencia, evaluaciones y monitoreo | API FastAPI en Render (https://warehouse-rush-api.onrender.com, `api/_app.py`, imagen `api/Dockerfile`) | **Único servidor** (decisión del 2026-11-18). La simulación en Python es la autoridad. Catálogo (`/catalogo`), modelo servido (`/version`), evaluaciones oficiales asíncronas (`/evaluaciones`), episodios, monitoreo (`/monitoreo`) y la capa `/api/*` que usa el visor (sesión en la cabecera `X-Sesion`, sin cookies). Contrato: [docs/api-contrato.md](docs/api-contrato.md). Plan gratuito: se duerme tras 15 min sin uso y tarda ~20 s en despertar |
+| Modelos servidos | Git (`models/numpy/`, `manifests/aliases.json`) | Políticas PPO exportadas a NumPy y verificadas contra SB3 (0 acciones distintas); producción = `m1b-i1-seed1-best`, anterior (rollback) = `m1-c3-seed0`; cadena manifiesto → ficha → SHA-256 comprobada al cargar |
 | Pesos de todos los runs | DVC → Cloudflare R2 (remoto `r2`) | `models/<run>.dvc`; `dvc pull` |
 | Experimentos y registro | MLflow en DagsHub (lectura pública) | Runs, métricas y artefactos; Model Registry `warehouse-m1` y `warehouse-m1b` con alias `recomendado` |
 | Identidad de modelos | Git (`manifests/`) | Un manifiesto por modelo: run, ambiente, config y su hash, pesos, suite, decisión |
 | Entrenamiento y evaluación | PC del equipo | `pipelines/train.py` y `pipelines/evaluate.py`, suites fijas en `configs/suites/` |
-| Orquestación | Pendiente (R3) | Flujo Prefect: validar → probar → entrenar o cargar → evaluar → registrar → decidir → publicar → verificar lo servido |
+| Orquestación y rollback | Prefect (`pipelines/flow.py`), registro en `pipelines/registry.py` | Flujo de 8 etapas: validar → probar → entrenar o cargar → evaluar → registrar → decidir → publicar catálogo → verificar lo servido; flujo de rollback. Procedimiento y prueba: [docs/rollback.md](docs/rollback.md) |
 
 ```
-entrenamiento (PC) ──► MLflow/DagsHub (runs, registro) ──► manifiestos (Git) ──► pipelines/catalogo.py ──► web (Vercel)
-        │                                                        │
-        └──► pesos ──► DVC/R2                    pipelines/servir.py ──► models/servidos ──► API (Vercel) ◄── web
+entrenamiento (PC) ──► MLflow/DagsHub (runs, registro) ──► manifiestos (Git) ──► catálogo ──► API (Render) ◄── web (Vercel)
+        │                                                        │                                 ▲
+        └──► pesos ──► DVC/R2           pipelines/exportar_numpy.py ──► models/numpy (Git) ────────┘
 ```
 Licencias de assets y dependencias: [docs/licencias.md](docs/licencias.md).
 
@@ -37,14 +37,19 @@ Licencias de assets y dependencias: [docs/licencias.md](docs/licencias.md).
 2. PyTorch CPU: `pip install torch==2.2.2 --index-url https://download.pytorch.org/whl/cpu`
 3. `pip install -r requirements.txt`
 4. Pruebas: `python -m pytest tests -q`
-5. Visor: `npm ci --prefix web && python -m pipelines.cli view` (Node LTS, ver `.nvmrc`)
+5. Web contra la API local (Node LTS, ver `.nvmrc`):
+   - API: `CORS_ORIGINS=http://127.0.0.1:5173 WAREHOUSE_PRECARGAR=0 python -m uvicorn api._app:app --host 127.0.0.1 --port 7860 --workers 1`
+   - Web: `npm ci --prefix web && VITE_API_BASE_URL=http://127.0.0.1:7860 npm run dev --prefix web` y abrir http://127.0.0.1:5173
+   - Contra la API publicada basta `VITE_API_BASE_URL=https://warehouse-rush-api.onrender.com`, pero Render solo acepta por CORS el dominio de la web publicada; en local usa la API local.
+   - Pruebas de la web (Playwright): compilar con `VITE_API_BASE_URL=http://127.0.0.1:7860 npx vite build --mode e2e`, servir con `npx vite preview --port 8080`, la API con `CORS_ORIGINS=http://127.0.0.1:8080`, y `npm test --prefix web` (`WAREHOUSE_API_URL` cambia la API que usan las pruebas).
+   - Visor clásico sin API (solo la escena, sin catálogo de modelos ni monitoreo): `python -m pipelines.cli view`.
 6. Entrenar (v10): `python -m pipelines.train --config configs/experiments/m1_c3_largo_seed0.yaml` (receta del modelo recomendado de N2; hipótesis de cada config en [docs/experimentos.md](docs/experimentos.md); los configs `c0`–`c6` son de `warehouse-v1` y ya no entrenan)
 7. Pesos grandes: `pip install dvc-s3` (ya en requirements) y `dvc pull` desde el remoto `r2` (Cloudflare R2, bucket `mlops-final-project`). Las credenciales van solo en `.dvc/config.local` (ignorado por Git): `dvc remote modify --local r2 access_key_id ...` y `... secret_access_key ...`; pídelas al equipo. Un modelo concreto: `dvc pull models/<run>.dvc`.
 8. MLflow (historial de experimentos, persistente y compartido): [DagsHub](https://dagshub.com/mamezquita/Warehouse-Rush.mlflow), lectura pública sin instalar nada. Para registrar runs: copia `.env.example` a `.env`, pon tu usuario y token de DagsHub (Settings → Tokens) y carga las variables antes de entrenar: `set -a; source .env; set +a`. Sin `MLFLOW_TRACKING_URI` el entrenamiento se detiene (no queda en un sqlite local); `MLFLOW_PERMITIR_LOCAL=1` solo para pruebas deliberadas. El historial anterior (96 runs del `mlflow.db` local) se copió con `python -m pipelines.migrar_mlflow`; mapa de ids en `docs/resultados/mlflow-migracion.json`; copia del sqlite original en DVC (`dvc pull mlflow.db.dvc mlruns.dvc`).
 
 Modelo actual, hiperparámetros y reentrenamiento: [docs/modelo-actual.md](docs/modelo-actual.md).
 Ambiente: contrato [envs/CONTRATO.md](envs/CONTRATO.md), ficha vigente [docs/ambiente-v0.10.md](docs/ambiente-v0.10.md) (anteriores: `docs/ambiente-v0.1.md` a `v0.9.md`). Despliegue: [docs/despliegue.md](docs/despliegue.md).
-Decisiones: [docs/decisiones.md](docs/decisiones.md). Variables: `.env.example`.
+Decisiones: [docs/decisiones.md](docs/decisiones.md). Variables: `.env.example` (`VITE_API_BASE_URL` es la dirección de la API para la web, sin barra final; en Vercel está definida para Production y Preview).
 
 ## Catálogo y estética de Trendy (Naomi)
 
